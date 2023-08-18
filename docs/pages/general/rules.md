@@ -4,7 +4,31 @@ Source Orbit does not care about project structure, but does enforce these rules
 
 ### Supported extensions
 
-Coming soon.
+| Extension  | Extension meaning  | Notes                               |
+| ---------- | ------------------ | ----------------------------------- |
+| `sqlrpgle` | RPGLE (SQL)        | Can use `.pgm` notation             |
+| `rpgle`    | RPGLE              | Can use `.pgm` notation             |
+| `clle`     | CLLE               | Can use `.pgm` notation             |
+| `cl`       | CLLE               | Can use `.pgm` notation             |
+| `clp`      | CL (OPM)           | Should be renamed to `clle`         |
+| `pf`       | Phyiscal File      | Table                               |
+| `lf`       | Logical File       | View/Index                          |
+| `dspf`     | Display File       |                                     |
+| `prtf`     | Printer File       |                                     |
+| `sql`      | Any SQL object     | Type determined by create statement |
+| `table`    | SQL table          | Expects `CREATE TABLE`              |
+| `view`     | SQL view           | Expects `CREATE VIEW`               |
+| `index`    | SQL index          | Expects `CREATE INDEX`              |
+| `alias`    | SQL alias          | Expects `CREATE ALIAS`              |
+| `sqlalias` | SQL alias          | Expects `CREATE ALIAS`              |
+| `sqlprc`   | SQL procedure      | Expects `CREATE PROCEDURE`          |
+| `sqludf`   | SQL function       | Expects `CREATE FUNCTION`           |
+| `sqludt`   | SQL table function | Expects `CREATE FUNCTION`           |
+| `sqltrg`   | SQL trigger        | Expects `CREATE TRIGGER`            |
+| `sqlseq`   | SQL sequence       | Expects `CREATE SEQUENCE`           |
+| `bnd`      | Binder source      |                                     |
+| `binder`   | Binder source      | Should be renamed `bnd`             |
+| `cmd`      | Command            |                                     |
 
 ### The system object name is the basename of the source file
 
