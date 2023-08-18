@@ -1,5 +1,5 @@
 {
-  "name": "@halcyontech/source-orbit",
+  "name": "@ibm/source-orbit",
   "version": "0.4.19",
   "description": "IBM i dependency management tool",
   "bin": {
@@ -17,12 +17,12 @@
   "keywords": [
     "ibmi"
   ],
-  "author": "Halcyon Tech",
-  "license": "MIT",
+  "author": "IBM",
+  "license": "Apache 2",
   "bugs": {
-    "url": "https://github.com/orgs/halcyon-tech/discussions"
+    "url": "https://github.com/IBM/sourceorbit/issues"
   },
-  "homepage": "https://github.com/orgs/halcyon-tech/discussions",
+  "homepage": "https://ibm.github.io/sourceorbit/#/",
   "devDependencies": {
     "glob": "^7.2.0",
     "merge-options": "^3.0.4",
