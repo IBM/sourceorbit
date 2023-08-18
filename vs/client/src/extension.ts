@@ -154,6 +154,9 @@ export function activate(context: ExtensionContext) {
 				});
 			}
 		})),
+		commands.registerCommand(`vscode-sourceorbit.autoFix`, (workspaceFolder: WorkspaceFolder, type: "includes"|"renames") => {
+			return fixProject(workspaceFolder, type);
+		}),
 
 		window.registerTreeDataProvider(`activeImpactView`, activeImpactView),
 		window.onDidChangeActiveTextEditor(e => {
