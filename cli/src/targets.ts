@@ -370,6 +370,28 @@ export class Targets {
 			exports: []
 		};
 
+		if (ileObject.extension === `binder`) {
+			const pathDetail = path.parse(localPath);
+
+			if (this.suggestions.renames) {
+				this.logger.fileLog(ileObject.relativePath, {
+					message: `Rename suggestion`,
+					type: `rename`,
+					change: {
+						rename: {
+							path: localPath,
+							newName: pathDetail.name + `.bnd`
+						}
+					}
+				});
+			} else {
+				this.logger.fileLog(ileObject.relativePath, {
+					message: `Extension is '${ileObject.extension}'. Consolidate by using 'bnd'?`,
+					type: `warning`,
+				});
+			}
+		}
+
 		const validStatements = module.statements.filter(s => {
 			const possibleObject = s.getObject();
 			return (possibleObject && possibleObject.name && [`STRPGMEXP`, `ENDPGMEXP`, `EXPORT`].includes(possibleObject.name));
