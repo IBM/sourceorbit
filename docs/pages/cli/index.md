@@ -25,7 +25,7 @@ Types available:
 * `json` Generate all dependency info as JSON
 * `bob` to generate the required `Rules.mk` files
 * `make` generates a single makefile with the targets and rules.
-   *  [See more here](./make.md) for our make support.
+   *  [See more here](./pages/cli/make) for our make support.
 * `imd` can be used to generate analysis reports for branches
    * This is particularly useful for pull-requests. It is possible have a pipeline that runs on a push to a branch/PR to generate dependency information.
    * See an [example report here](https://github.com/worksofliam/ibmi-company_system-rmake/actions/runs/5765430282). See about [GitHub Actions](./gha.md) here.
