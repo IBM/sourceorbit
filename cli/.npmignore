@@ -1,0 +1,8 @@
+index.ts
+tsconfig.json
+webpack.config.js
+test
+src
+!dist/src
+node_modules
+.vscode

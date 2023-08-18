@@ -1,0 +1,40 @@
+{
+  "name": "@halcyontech/source-orbit",
+  "version": "0.4.19",
+  "description": "IBM i dependency management tool",
+  "bin": {
+    "so": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/src/index.d.ts",
+  "scripts": {
+    "test": "vitest",
+    "webpack:dev": "webpack --mode none --config ./webpack.config.js",
+    "webpack": "webpack --mode production --config ./webpack.config.js",
+    "local": "npm run webpack:dev && npm i -g",
+    "deploy": "npm run webpack && npm i && npm publish --access public"
+  },
+  "keywords": [
+    "ibmi"
+  ],
+  "author": "Halcyon Tech",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/orgs/halcyon-tech/discussions"
+  },
+  "homepage": "https://github.com/orgs/halcyon-tech/discussions",
+  "devDependencies": {
+    "glob": "^7.2.0",
+    "merge-options": "^3.0.4",
+    "ts-loader": "^9.4.4",
+    "typescript": "^4.8.4",
+    "vitest": "^0.31.0",
+    "webpack": "^5.24.3",
+    "webpack-cli": "^4.5.0",
+    "vscode-clle": "github:IBM/vscode-clle",
+    "vscode-db2i": "github:halcyon-tech/vscode-db2i",
+    "vscode-displayfile": "github:halcyon-tech/vscode-displayfile",
+    "vscode-rpgle": "github:halcyon-tech/vscode-rpgle"
+  },
+  "dependencies": {}
+}
