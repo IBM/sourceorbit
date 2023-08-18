@@ -93,7 +93,7 @@ async function main() {
 				console.log(`\t\t\tExample: -l EMPS.FILE`);
 				console.log(`\t\t\tExample: -l qddssrc/emps.dspf`);
 				console.log(``);
-				console.log(`\t-bf make|bob|imd\tCreate build files of a specific format`);
+				console.log(`\t-bf make|bob|imd|json\tCreate build files of a specific format`);
 				console.log(`\t\t\tExample: -bf make`);
 				console.log(``);
 				console.log(`\t-ar\t\tRun the auto-rename process after scanning all code`);
@@ -194,6 +194,15 @@ async function main() {
 		case `imd`:
 			const markdown = new ImpactMarkdown(cwd, targets, cliSettings.lookupFiles);
 			writeFileSync(path.join(cwd, `impact.md`), markdown.getContent().join(`\n`));
+			break;
+		case `json`:
+			const outJson = {
+				targets: targets.getDeps(),
+				resolved: targets.getResolvedObjects(),
+				exports: targets.getExports()
+			};
+
+			writeFileSync(path.join(cwd, `sourceorbit.json`), JSON.stringify(outJson, null, 2));
 			break;
 	}
 }

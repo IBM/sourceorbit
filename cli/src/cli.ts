@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { Logger } from "./logger";
 
-export type BuildFiles = "none" | "make" | "bob" | "imd";
+export type BuildFiles = "none" | "make" | "bob" | "imd" | "json";
 
 export let cliSettings = {
 	cliMode: false,
