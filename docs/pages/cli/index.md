@@ -11,8 +11,27 @@ Source Orbit will scan the sources in the current working directory (CWD) and ca
 * List all project objects with `--verbose`
 
 ```sh
+cd myibmiproject
 so -h
 so -bf make && gmake BIN_LIB=libname
+```
+
+## Dependency file generation
+
+Source Orbit CLI can generate different file formats using the `-bf <type>` parameter.
+
+Types available:
+
+* `json` Generate all dependency info as JSON
+* `bob` to generate the required `Rules.mk` files
+* `make` generates a single makefile with the targets and rules.
+   *  [See more here](./make.md) for our make support.
+* `imd` can be used to generate analysis reports for branches
+   * This is particularly useful for pull-requests. It is possible have a pipeline that runs on a push to a branch/PR to generate dependency information.
+   * See an [example report here](https://github.com/worksofliam/ibmi-company_system-rmake/actions/runs/5765430282). See about [GitHub Actions](./gha.md) here.
+
+```
+so -bf imd -l `git diff --name-only origin/main origin/${GITHUB_HEAD_REF}`
 ```
 
 ## Installation
