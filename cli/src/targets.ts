@@ -1332,36 +1332,6 @@ export class Targets {
 
 		return currentItem;
 	}
-
-	public async import(relativePath: string) {
-		try {
-			const content = await fs.readFile(path.join(this.cwd, relativePath), { encoding: `utf8` });
-			const asJson = JSON.parse(content);
-
-			this.resolvedPaths = asJson.resolvedPaths;
-			this.resolvedExports = asJson.resolvedExports || {};
-			this.resolvedObjects = asJson.resolvedObjects || {};
-			this.needsBinder = asJson.needsBinder || false;
-			this.deps = asJson.deps || {};
-
-		} catch (e: any) {
-			warningOut(`Failed to import '${relativePath}: ${e.message}`);
-		}
-	}
-
-	public export(relativePath: string) {
-		return fs.writeFile(
-			path.join(this.cwd, relativePath),
-			JSON.stringify({
-				resolvedPath: this.resolvedPaths,
-				resolvedExports: this.resolvedExports,
-				resolvedObjects: this.resolvedObjects,
-				needsBinder: this.needsBinder,
-				deps: this.deps
-			}, null, 2),
-			{ encoding: `utf8` }
-		);
-	}
 }
 
 function trimQuotes(input: string, value = `'`) {

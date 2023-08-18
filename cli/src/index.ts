@@ -59,10 +59,6 @@ async function main() {
 				cliSettings.fixIncludes = true;
 				break;
 
-			case `--cache`:
-				cliSettings.useCache = true;
-				break;
-
 			case `--verbose`:
 				cliSettings.infoMessages = true;
 				break;
@@ -149,10 +145,6 @@ async function main() {
 		process.exit(1);
 	}
 
-	if (cliSettings.useCache) {
-		await targets.import(`.sourceorbit`);
-	}
-
 	for (const filePath of files) {
 		const result = await targets.handlePath(filePath);
 		if (!result) {
@@ -177,11 +169,7 @@ async function main() {
 	}
 
 	targets.resolveBinder();
-
-	if (cliSettings.useCache) {
-		targets.export(`.sourceorbit`);
-	}
-
+	
 	if (cliSettings.lookupMode && cliSettings.buildFile === `none`) {
 		for (const value of cliSettings.lookupFiles) {
 			listDeps(cwd, targets, value);

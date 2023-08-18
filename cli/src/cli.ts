@@ -10,7 +10,6 @@ export let cliSettings = {
 	buildFile: "none" as BuildFiles,
 	fixIncludes: false,
 	autoRename: false,
-	useCache: false,
 
 	fileList: false,
 	lookupMode: false,
