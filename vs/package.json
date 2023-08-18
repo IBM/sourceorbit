@@ -1,0 +1,93 @@
+{
+	"name": "vscode-sourceorbit",
+	"description": "Object dependency management",
+	"author": "IBM",
+	"license": "MIT",
+	"version": "1.0.0",
+	"publisher": "vscode-samples",
+	"categories": [],
+	"keywords": [
+		"multi-root ready"
+	],
+	"engines": {
+		"vscode": "^1.75.0"
+	},
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"extensionDependencies": ["IBM.vscode-ibmi-projectexplorer", "vscode.git"],
+	"main": "./client/out/extension",
+	"contributes": {
+		"views": {
+			"explorer": [
+				{
+					"id": "activeImpactView",
+					"visibility": "collapsed",
+					"name": "Affected Objects",
+					"contextualTitle": "Active Editor"
+				}
+			],
+			"scm": [
+				{
+					"id": "gitImpactView",
+					"visibility": "collapsed",
+					"name": "Affected Objects",
+					"contextualTitle": "Source Changes"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "vscode-sourceorbit.objects.goToFile",
+				"icon": "$(go-to-file)",
+				"category": "Source Orbit",
+				"title": "Go to file"
+			},
+			{
+				"command": "vscode-sourceorbit.objects.resolve",
+				"category": "Source Orbit",
+				"title": "Resolve"
+			},
+			{
+				"command": "vscode-sourceorbit.objects.autoFix",
+				"category": "Source Orbit",
+				"title": "Autofix"
+			}
+		],
+		"menus": {
+			"view/item/context": [
+				{
+					"command": "vscode-sourceorbit.objects.goToFile",
+					"when": "viewItem == ileObject",
+					"group": "inline"
+				},
+				{
+					"command": "vscode-sourceorbit.objects.resolve",
+					"when": "viewItem == objectsView",
+					"group": "inline"
+				},
+				{
+					"command": "vscode-sourceorbit.objects.autoFix",
+					"when": "viewItem == objectsView",
+					"group": "inline"
+				}
+			]
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w",
+		"lint": "eslint ./client/src ./server/src --ext .ts,.tsx",
+		"postinstall": "cd client && npm install && cd ../server && npm install && cd .."
+	},
+	"devDependencies": {
+		"@types/mocha": "^9.1.0",
+		"@types/node": "^16.18.34",
+		"@typescript-eslint/eslint-plugin": "^5.54.0",
+		"@typescript-eslint/parser": "^5.54.0",
+		"eslint": "^8.35.0",
+		"mocha": "^9.2.1",
+		"typescript": "^5.1.3"
+	}
+}

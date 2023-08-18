@@ -1,0 +1,21 @@
+{
+	"name": "vscode-sourceorbit-server",
+	"description": "Server",
+	"version": "1.0.0",
+	"author": "IBM",
+	"license": "MIT",
+	"engines": {
+		"node": "*"
+	},
+	"dependencies": {
+		"@halcyontech/source-orbit": "^0.4.19",
+		"glob": "^7.2.0",
+		"vscode-languageserver": "^8.1.0",
+		"vscode-languageserver-textdocument": "^1.0.8",
+		"vscode-uri": "^3.0.7"
+	},
+	"scripts": {},
+	"devDependencies": {
+		"@types/glob": "^8.1.0"
+	}
+}

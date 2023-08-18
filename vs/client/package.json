@@ -1,0 +1,20 @@
+{
+	"name": "vscode-sourceorbit-client",
+	"description": "Client",
+	"author": "IBM",
+	"license": "MIT",
+	"version": "0.0.1",
+	"publisher": "vscode",
+	"engines": {
+		"vscode": "^1.75.0"
+	},
+	"dependencies": {
+		"vscode-languageclient": "^8.1.0"
+	},
+	"devDependencies": {
+		"@halcyontech/source-orbit": "^0.4.19",
+		"@ibm/vscode-ibmi-projectexplorer-types": "^1.1.0",
+		"@types/vscode": "^1.75.1",
+		"@vscode/test-electron": "^2.2.3"
+	}
+}
