@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "cli"
+		},
+		{
+			"path": "docs"
+		},
+		{
+			"path": "vs"
+		}
+	],
+	"extensions": {
+		"recommendations": ["amodio.tsl-problem-matcher"]
+	}
+}
