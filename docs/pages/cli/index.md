@@ -28,7 +28,7 @@ Types available:
    *  [See more here](./pages/cli/make) for our make support.
 * `imd` can be used to generate analysis reports for branches
    * This is particularly useful for pull-requests. It is possible have a pipeline that runs on a push to a branch/PR to generate dependency information.
-   * See an [example report here](https://github.com/worksofliam/ibmi-company_system-rmake/actions/runs/5765430282). See about [GitHub Actions](./gha.md) here.
+   * See an [example report here](https://github.com/worksofliam/ibmi-company_system-rmake/actions/runs/5765430282). See about [GitHub Actions](./pages/cli/gha.md) here.
 
 ```
 so -bf imd -l `git diff --name-only origin/main origin/${GITHUB_HEAD_REF}`
