@@ -2,6 +2,10 @@ This page will outline the rules of an IBM i project, including what extensions 
 
 Source Orbit does not care about project structure, but does enforce these rules for source code:
 
+### Supported extensions
+
+Coming soon.
+
 ### The system object name is the basename of the source file
 
 | Source name           | Resulting object |

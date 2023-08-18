@@ -8,3 +8,5 @@
    * [Make](./pages/cli/make.md)
 * Visual Studio Code
    * Coming soon
+* Tutorials
+   * Coming soon
