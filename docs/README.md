@@ -8,6 +8,7 @@ Source Orbit is a dependency management system. As IBM i developers start using 
 2. can show how objects would be affected as developers write code (inside of Visual Studio Code)
 3. can generate JSON, or build scripts, to automatically build your application changes
 4. generates reports for branches being worked on so project owners can see their application in real time.
+5. helps migrate your code to git (See [Fixing up code](TODO:LINK))
 
 ## Start using Source Orbit
 
