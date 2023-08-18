@@ -1,6 +1,6 @@
 import { Uri, WorkspaceFolder } from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
-import { ILEObject, ImpactedObject, TargetSuggestions } from "@halcyontech/source-orbit/dist/src/targets";
+import { ILEObject, ImpactedObject, TargetSuggestions } from "@ibm/source-orbit/dist/src/targets";
 
 let client: LanguageClient;
 

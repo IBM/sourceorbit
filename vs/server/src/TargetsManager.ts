@@ -1,6 +1,6 @@
 
-import { Targets, allExtensions } from "@halcyontech/source-orbit";
-import { ILEObject } from "@halcyontech/source-orbit/dist/src/targets";
+import { Targets, allExtensions } from "@ibm/source-orbit";
+import { ILEObject } from "@ibm/source-orbit/dist/src/targets";
 
 import glob from "glob";
 import { URI } from 'vscode-uri';

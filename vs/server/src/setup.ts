@@ -1,8 +1,8 @@
 import { URI } from 'vscode-uri';
 import { SupportedGlob, TargetsManager, getFiles } from './TargetsManager';
-import { Targets } from '@halcyontech/source-orbit';
-import { TargetSuggestions } from '@halcyontech/source-orbit/dist/src/targets';
-import { Logger } from '@halcyontech/source-orbit/dist/src/logger';
+import { Targets } from '@ibm/source-orbit';
+import { TargetSuggestions } from '@ibm/source-orbit/dist/src/targets';
+import { Logger } from '@ibm/source-orbit/dist/src/logger';
 import path from 'path';
 import fs from 'fs';
 import { connection } from './server';
@@ -22,7 +22,7 @@ export async function initAndRefresh(workspaceUri: string, destoryOld = false) {
 				reloadUi([workspaceUri]);
 			}
 		})
-		.catch(e => {
+		.catch(_e => {
 			progress.report(`Failed to initialise`);
 		})
 		.finally(() => {

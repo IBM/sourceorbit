@@ -8,5 +8,8 @@ export const TypeIcons = {
   "FILE": "database",
   "CMD": "window",
   "SRVPGM": "symbol-constructor",
-  "MODULE": "symbol-module"
+  "MODULE": "symbol-module",
+  "DTAARA": "file-text",
+  "MENU": "menu",
+  "DTAQ": "list-flat"
 };

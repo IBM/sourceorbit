@@ -1,0 +1,9 @@
+{
+	"compilerOptions": {
+		"noImplicitAny": true,
+		"noUnusedParameters": true,
+		"strict": true,
+		"allowJs": true,
+		"types": ["node"]
+	}
+}
