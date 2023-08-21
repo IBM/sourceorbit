@@ -48,7 +48,7 @@ export class TargetsManager {
 
       const targets = new Targets(url);
 
-      await Promise.all(files.map(f => targets.handlePath(f)));
+      await Promise.allSettled(files.map(f => targets.handlePath(f)));
 
       targets.resolveBinder();
 
@@ -109,7 +109,7 @@ export class TargetsManager {
 
               console.log(`Impacted sources:  ${impactedSources.join(`, `)}`);
 
-              return Promise.all(impactedSources.map(sourcePath => targets.handlePath(sourcePath)));
+              return Promise.allSettled(impactedSources.map(sourcePath => targets.handlePath(sourcePath)));
             }
           }
         }

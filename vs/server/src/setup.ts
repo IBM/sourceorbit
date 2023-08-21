@@ -45,7 +45,7 @@ export async function fixProject(workspaceUri: string, suggestions: TargetSugges
 	targets.setSuggestions(suggestions);
 
 	progress.report(`Processing files`);
-	await Promise.all(files.map(f => targets.handlePath(f)));
+	await Promise.allSettled(files.map(f => targets.handlePath(f)));
 
 	progress.report(`Resolving the project`);
 	targets.resolveBinder();
