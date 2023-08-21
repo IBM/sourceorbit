@@ -336,7 +336,7 @@ export class MakeProject {
 				: []
 			),
 			...(data.postCommands ? data.postCommands.map(cmd => `\t${resolve(cmd)}`) : []),
-			`system "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/${ileObject.name}.MBR') TOSTMF('.evfevent/${ileObject.name.toLowerCase()}.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
+			`\tsystem "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/${ileObject.name}.MBR') TOSTMF('.evfevent/${ileObject.name.toLowerCase()}.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
 		);
 
 		return lines;

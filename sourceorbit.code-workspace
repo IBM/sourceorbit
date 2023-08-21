@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "vs"
+		},
+		{
+			"path": "ibmi-company_system-rmake"
 		}
 	],
 	"extensions": {
