@@ -8,22 +8,27 @@
 			"name": "Launch Client",
 			"runtimeExecutable": "${execPath}",
 			"args": ["--extensionDevelopmentPath=${workspaceRoot}"],
-			"outFiles": ["${workspaceRoot}/client/out/**/*.js"],
+			"outFiles": ["${workspaceRoot}/out/**/*.js"],
+			"sourceMaps": true,
 			"preLaunchTask": {
 				"type": "npm",
-				"script": "compile"
-			}
+				"script": "webpack:dev"
+			},
+			"sourceMapPathOverrides": {
+				"webpack://client/./*": "${workspaceFolder}/client/*"
+			},
 		},
 		{
 			"type": "node",
 			"request": "attach",
 			"name": "Attach to Server",
-			"port": 8720,
+			"port": 6009,
+			"restart": true,
+			"outFiles": ["${workspaceRoot}/out/**/*.js"],
 			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceRoot}/server/out/**/*.js",
-				"${workspaceRoot}/../rmake/dist/**/*.js",
-			],
+			"sourceMapPathOverrides": {
+				"webpack://server/./*": "${workspaceFolder}/server/*"
+			},
 		},
 	]
 }

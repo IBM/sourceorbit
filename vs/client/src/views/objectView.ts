@@ -42,7 +42,7 @@ export class ILEObjectTreeItem extends TreeItem implements ProjectExplorerTreeIt
     super(`${ileObject.name}.${ileObject.type}`, canExpand ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
     // const logs = TargetsManager.getLogs(workspaceFolder, ileObject);
 
-    this.description = ileObject.relativePath;
+    this.description = [ileObject.text, ileObject.extension ? `(${ileObject.extension})` : undefined].join(` `);
     this.iconPath = new ThemeIcon(TypeIcons[ileObject.type] || `unverified`);
     this.contextValue = `ileObject`;
 
