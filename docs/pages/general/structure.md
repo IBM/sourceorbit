@@ -44,7 +44,7 @@ While it is possible to use `INCDIR` and then not provide a directory on the inc
 If you want your local project to resolve files on the IFS, make sure you specify your 'include directories' 
 
 * by using the `INCDIR` parameter available on most ILE compilers,
-* or inside the [`iproj.json` file with the `includePath` property](https://ibm.github.io/ibmi-bob/#/prepare-the-project/iproj-json?id=includepath) to the paths where the compiler should look up (this is supported by ibmi-bob)
+* or inside the [`iproj.json` file with the `includePath` property](https://ibm.github.io/vscode-ibmi-projectexplorer/#/pages/ibm-i-projects/iproj-json?id=includepath) to the paths where the compiler should look up (this is supported by ibmi-bob)
 
 ## Example project structure
 
