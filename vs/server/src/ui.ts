@@ -1,6 +1,6 @@
-import { Targets } from '@halcyontech/source-orbit';
+import { Targets } from '@ibm/source-orbit';
 import { TargetsManager } from './TargetsManager';
-import { FileLog } from '@halcyontech/source-orbit/dist/src/logger';
+import { FileLog } from '@ibm/source-orbit/dist/src/logger';
 import path from 'path';
 import { Diagnostic, Range, DiagnosticSeverity } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';

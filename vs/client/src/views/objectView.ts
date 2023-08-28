@@ -1,7 +1,7 @@
 import { ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri, WorkspaceFolder } from "vscode";
 import { ProjectExplorerTreeItem } from "@ibm/vscode-ibmi-projectexplorer-types/views/projectExplorer/projectExplorerTreeItem";
 
-import { ILEObject } from "@halcyontech/source-orbit/dist/src/targets";
+import { ILEObject } from "@ibm/source-orbit/dist/src/targets";
 import { getDeps, getResolvedObjects } from '../requests';
 import path = require('path');
 import { TypeIcons } from './utils';
@@ -42,7 +42,7 @@ export class ILEObjectTreeItem extends TreeItem implements ProjectExplorerTreeIt
     super(`${ileObject.name}.${ileObject.type}`, canExpand ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
     // const logs = TargetsManager.getLogs(workspaceFolder, ileObject);
 
-    this.description = ileObject.relativePath;
+    this.description = [ileObject.text, ileObject.extension ? `(${ileObject.extension})` : undefined].join(` `);
     this.iconPath = new ThemeIcon(TypeIcons[ileObject.type] || `unverified`);
     this.contextValue = `ileObject`;
 

@@ -1,4 +1,4 @@
-import { ImpactedObject } from '@halcyontech/source-orbit/dist/src/targets';
+import { ImpactedObject } from '@ibm/source-orbit/dist/src/targets';
 import { EventEmitter, Uri, WorkspaceFolder, workspace } from "vscode";
 import { Event, ThemeIcon, TreeDataProvider, TreeItem, TreeItemCollapsibleState } from "vscode";
 import { TypeIcons } from './utils';
@@ -9,7 +9,7 @@ export class ImpactView implements TreeDataProvider<any> {
 	private _onDidChangeTreeData: EventEmitter<TreeItem | undefined | null | void> = new EventEmitter<TreeItem | undefined | null | void>();
 	readonly onDidChangeTreeData: Event<TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
-	private impactOf: Uri[];
+	private impactOf: Uri[] = [];
 
 	refresh() {
 		this._onDidChangeTreeData.fire();

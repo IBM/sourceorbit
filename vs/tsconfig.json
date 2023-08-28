@@ -2,10 +2,12 @@
 	"compilerOptions": {
 		"module": "commonjs",
 		"target": "es2020",
+		"moduleResolution": "node",
 		"lib": ["es2020"],
 		"outDir": "out",
 		"rootDir": "src",
-		"sourceMap": true
+		"sourceMap": true,
+		"allowJs": true,
 	},
 	"include": [
 		"src"

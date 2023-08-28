@@ -95,7 +95,7 @@ connection.onInitialized(() => {
 				clearLogs(file);
 			}
 
-			Promise.all(files.map(deleted => TargetsManager.removeSingle(deleted.uri))).then(r => {
+			Promise.allSettled(files.map(deleted => TargetsManager.removeSingle(deleted.uri))).then(_r => {
 				const uris = files.map(f => f.uri);
 				reResolve(uris);
 				reloadUi(uris);

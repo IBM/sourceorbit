@@ -19,9 +19,12 @@ const ignoredObjects = [`QSYSPRT`, `QCMDEXC.PGM`, `*LDA.DTAARA`, `QDCXLATE.PGM`,
 
 const bindingDirectoryTarget: ILEObject = { name: `$(APP_BNDDIR)`, type: `BNDDIR` };
 
+const TextRegex = /\%TEXT.*(?=\n|\*)/gm
+
 export interface ILEObject {
 	name: string;
 	type: ObjectType;
+	text?: string,
 	relativePath?: string;
 	extension?: string;
 
@@ -48,6 +51,11 @@ export interface ImpactedObject {
 interface RpgLookup {
 	lookup: string,
 	line?: number
+}
+
+interface FileOptions {
+	isFree?: boolean;
+	text?: string;
 }
 
 export class Targets {
@@ -101,7 +109,7 @@ export class Targets {
 		}
 	}
 
-	public resolveObject(localPath: string) {
+	public resolveObject(localPath: string, text?: string) {
 		if (this.resolvedObjects[localPath]) return this.resolvedObjects[localPath];
 
 		const detail = path.parse(localPath);
@@ -115,6 +123,7 @@ export class Targets {
 		const theObject: ILEObject = {
 			name: name.toUpperCase(),
 			type: type,
+			text,
 			relativePath,
 			extension
 		};
@@ -287,7 +296,24 @@ export class Targets {
 			try {
 				const content = await fs.readFile(filePath, { encoding: `utf-8` });
 				const eol = content.indexOf(`\r\n`) >= 0 ? `\r\n` : `\n`;
+
+				// Really only applied to rpg
 				const isFree = (content.length >= 6 ? content.substring(0, 6).toLowerCase() === `**free` : false);
+
+				let textMatch;
+				try {
+					[textMatch] = content.match(TextRegex);
+					if (textMatch) {
+						if (textMatch.startsWith(`%TEXT`)) textMatch = textMatch.substring(5);
+						if (textMatch.endsWith(`*`)) textMatch = textMatch.substring(0, textMatch.length-1);
+						textMatch = textMatch.trim();
+					}
+				} catch (e) {}
+
+				const options: FileOptions = {
+					isFree,
+					text: textMatch
+				};
 
 				if (rpgExtensions.includes(ext)) {
 					const rpgDocs = await this.rpgParser.getDocs(
@@ -300,7 +326,7 @@ export class Targets {
 					);
 
 					if (rpgDocs) {
-						this.createRpgTarget(filePath, rpgDocs, isFree);
+						this.createRpgTarget(filePath, rpgDocs, options);
 					}
 
 				}
@@ -311,17 +337,17 @@ export class Targets {
 					const module = new Module();
 					module.parseStatements(tokens);
 
-					this.createClTarget(filePath, module);
+					this.createClTarget(filePath, module, options);
 				}
 				else if (ddsExtension.includes(ext)) {
 					const ddsFile = new dds();
 					ddsFile.parse(content.split(eol));
 
-					this.createDdsFileTarget(filePath, ddsFile);
+					this.createDdsFileTarget(filePath, ddsFile, options);
 				}
 				else if (sqlExtensions.includes(ext)) {
 					const sqlDoc = new Document(content);
-					this.createSqlTargets(filePath, sqlDoc);
+					this.createSqlTargets(filePath, sqlDoc, options);
 				}
 				else if (srvPgmExtensions.includes(ext)) {
 					const clDocs = new CLParser();
@@ -330,10 +356,10 @@ export class Targets {
 					const module = new Module();
 					module.parseStatements(tokens);
 
-					this.createSrvPgmTarget(filePath, module);
+					this.createSrvPgmTarget(filePath, module, options);
 				}
 				else if (cmdExtensions.includes(ext)) {
-					this.createCmdTarget(filePath);
+					this.createCmdTarget(filePath, options);
 				}
 			} catch (e) {
 				this.logger.fileLog(relative, {
@@ -356,14 +382,14 @@ export class Targets {
 
 	}
 
-	private createCmdTarget(localPath) {
-		this.resolveObject(localPath);
+	private createCmdTarget(localPath, options: FileOptions = {}) {
+		this.resolveObject(localPath, options.text);
 
 		// Since cmd source doesn't explicity contains deps, we resolve later on
 	}
 
-	private createSrvPgmTarget(localPath: string, module: Module) {
-		const ileObject = this.resolveObject(localPath);
+	private createSrvPgmTarget(localPath: string, module: Module, options: FileOptions = {}) {
+		const ileObject = this.resolveObject(localPath, options.text);
 		const target: ILEObjectTarget = {
 			...ileObject,
 			deps: [],
@@ -432,9 +458,9 @@ export class Targets {
 	/**
 	 * Handles all DDS types: pf, lf, dspf
 	 */
-	private createDdsFileTarget(localPath: string, dds: dds) {
+	private createDdsFileTarget(localPath: string, dds: dds, options: FileOptions = {}) {
 		const sourceName = path.basename(localPath);
-		const ileObject = this.resolveObject(localPath);
+		const ileObject = this.resolveObject(localPath, options.text);
 		const target: ILEObjectTarget = {
 			...ileObject,
 			deps: []
@@ -489,7 +515,7 @@ export class Targets {
 		this.pushDep(target);
 	}
 
-	private createClTarget(localPath: string, module: Module) {
+	private createClTarget(localPath: string, module: Module, options: FileOptions = {}) {
 		const pathDetail = path.parse(localPath);
 		const sourceName = pathDetail.base;
 		const ileObject = this.resolveObject(localPath);
@@ -627,7 +653,7 @@ export class Targets {
 		this.pushDep(target);
 	}
 
-	private createSqlTargets(localPath: string, document: Document) {
+	private createSqlTargets(localPath: string, document: Document, options: FileOptions = {}) {
 		const pathDetail = path.parse(localPath);
 		const relativePath = this.getRelative(localPath);
 
@@ -717,9 +743,10 @@ export class Targets {
 						case StatementType.Create:
 							let objectName = trimQuotes(mainDef.object.name, `"`);
 
-							let ileObject = {
+							let ileObject: ILEObject = {
 								name: objectName,
 								type: this.getObjectType(relativePath, mainDef.type),
+								text: options.text,
 								relativePath,
 							}
 
@@ -795,10 +822,10 @@ export class Targets {
 		}
 	}
 
-	private createRpgTarget(localPath: string, cache: Cache, isFree = false) {
+	private createRpgTarget(localPath: string, cache: Cache, options: FileOptions = {}) {
 		const pathDetail = path.parse(localPath);
 		const sourceName = pathDetail.base;
-		const ileObject = this.resolveObject(localPath);
+		const ileObject = this.resolveObject(localPath, options.text);
 		const target: ILEObjectTarget = {
 			...ileObject,
 			deps: []
@@ -837,7 +864,7 @@ export class Targets {
 					type: `includeFix`,
 					line: include.line,
 					change: {
-						lineContent: (isFree ? `` : ``.padEnd(6)) + `/copy '${this.getRelative(include.toPath)}'`
+						lineContent: (options.isFree ? `` : ``.padEnd(6)) + `/copy '${this.getRelative(include.toPath)}'`
 					}
 				});
 			}

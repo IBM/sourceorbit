@@ -1,6 +1,6 @@
 
-import { Targets, allExtensions } from "@halcyontech/source-orbit";
-import { ILEObject } from "@halcyontech/source-orbit/dist/src/targets";
+import { Targets, allExtensions } from "@ibm/source-orbit";
+import { ILEObject } from "@ibm/source-orbit/dist/src/targets";
 
 import glob from "glob";
 import { URI } from 'vscode-uri';
@@ -48,7 +48,7 @@ export class TargetsManager {
 
       const targets = new Targets(url);
 
-      await Promise.all(files.map(f => targets.handlePath(f)));
+      await Promise.allSettled(files.map(f => targets.handlePath(f)));
 
       targets.resolveBinder();
 
@@ -109,7 +109,7 @@ export class TargetsManager {
 
               console.log(`Impacted sources:  ${impactedSources.join(`, `)}`);
 
-              return Promise.all(impactedSources.map(sourcePath => targets.handlePath(sourcePath)));
+              return Promise.allSettled(impactedSources.map(sourcePath => targets.handlePath(sourcePath)));
             }
           }
         }

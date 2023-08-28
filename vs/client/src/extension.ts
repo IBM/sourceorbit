@@ -12,8 +12,6 @@ import { fixProject, reloadProject, resolveProject, setClient } from './requests
 import { getProjectExplorer, getProjectManager, loadIBMiProjectExplorer } from './ProjectExplorer';
 import { ILEObjectTreeItem, ObjectsView } from './views/objectView';
 import { IProject } from '@ibm/vscode-ibmi-projectexplorer-types/iproject';
-import { ProjectExplorerTreeItem } from '@ibm/vscode-ibmi-projectexplorer-types/views/projectExplorer/projectExplorerTreeItem';
-import { TargetSuggestions } from '@halcyontech/source-orbit/dist/src/targets';
 import { ImpactView } from './views/impactView';
 import { getDeployGitFiles as getChanged, getDeployGitFiles as getChangedFiles, getGitAPI, lastBranch } from './git';
 
@@ -22,7 +20,7 @@ let client: LanguageClient;
 export function activate(context: ExtensionContext) {
 	// The server is implemented in node
 	const serverModule = context.asAbsolutePath(
-		path.join('server', 'out', 'server.js')
+		path.join('out', 'server.js')
 	);
 
 	const debugOptions = { execArgv: ['--nolazy', '--inspect=8720'] };
@@ -86,41 +84,47 @@ export function activate(context: ExtensionContext) {
 	function setupGitEventHandler(workspaceFolders: WorkspaceFolder[]) {
 		const gitApi = getGitAPI();
 
-		for (const workspaceFolder of workspaceFolders) {
-			const repo = gitApi.getRepository(workspaceFolder.uri);
-			if (repo) {
-				const workspaceUri = workspaceFolder.uri.toString();
-				if (repo.state.HEAD)
-					lastBranch[workspaceUri] = repo.state.HEAD.name;
+		if (gitApi) {
+			for (const workspaceFolder of workspaceFolders) {
+				const repo = gitApi.getRepository(workspaceFolder.uri);
+				if (repo) {
+					const workspaceUri = workspaceFolder.uri.toString();
+					const head = repo.state.HEAD;
+					if (head && head.name) {
+						lastBranch[workspaceUri] = head.name;
 
-				context.subscriptions.push(repo.state.onDidChange((e) => {
-					const currentBranch = repo.state.HEAD.name;
-					if (currentBranch) {
-						if (lastBranch[workspaceUri] && currentBranch !== lastBranch[workspaceUri]) {
-							gitImpactView.showImpactFor([]);
-							reloadProject(workspaceFolder);
+						context.subscriptions.push(repo.state.onDidChange((_e) => {
+							const currentBranch = head.name;
+							if (currentBranch) {
+								if (lastBranch[workspaceUri] && currentBranch !== lastBranch[workspaceUri]) {
+									gitImpactView.showImpactFor([]);
+									reloadProject(workspaceFolder);
 
-						} else {
-							getChangedFiles(workspaceFolder).then(files => {
-								gitImpactView.showImpactFor(files);
-							});
-							
-						}
-						
-						lastBranch[workspaceUri] = currentBranch;
+								} else {
+									getChangedFiles(workspaceFolder).then(files => {
+										gitImpactView.showImpactFor(files);
+									});
+
+								}
+
+								lastBranch[workspaceUri] = currentBranch;
+							}
+						}));
 					}
-				}));
+				}
 			}
 		}
 	}
 
 	context.subscriptions.push(
 		client.onRequest(`reloadUi`, (params: [string[]]) => {
-			const folderPaths = params[0];
+			if (projectExplorer) {
+				const folderPaths = params[0];
 
-			for (const folderPath of folderPaths) {
-				if (objectViews[folderPath]) {
-					projectExplorer.refresh(objectViews[folderPath]);
+				for (const folderPath of folderPaths) {
+					if (objectViews[folderPath]) {
+						projectExplorer.refresh(objectViews[folderPath]);
+					}
 				}
 			}
 		}),
@@ -140,7 +144,7 @@ export function activate(context: ExtensionContext) {
 			if (node && node.workspaceFolder) {
 				window.showInformationMessage(`Select auto fix method for ${node.workspaceFolder.name}`, `Cancel`, `File names`, `RPG includes`).then(chosen => {
 					if (chosen) {
-						let type: "includes" | "renames";
+						let type: "includes" | "renames" | undefined;
 
 						switch (chosen) {
 							case `File names`: type = `renames`; break;
@@ -154,7 +158,7 @@ export function activate(context: ExtensionContext) {
 				});
 			}
 		})),
-		commands.registerCommand(`vscode-sourceorbit.autoFix`, (workspaceFolder: WorkspaceFolder, type: "includes"|"renames") => {
+		commands.registerCommand(`vscode-sourceorbit.autoFix`, (workspaceFolder: WorkspaceFolder, type: "includes" | "renames") => {
 			return fixProject(workspaceFolder, type);
 		}),
 
