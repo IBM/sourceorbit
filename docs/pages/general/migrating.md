@@ -62,9 +62,9 @@ The [IBM i Project Explorer](https://marketplace.visualstudio.com/items?itemName
 
 Under the hood, this process leverages the `cvtsrcpf` command in `makei` to essentially convert all members in a given source physical file to properly encoded, terminated, and named source files in an IFS directory. Following this conversion, the files are bundled into a tar file which will be downloaded and extracted into your local project so that you can begin with local development. As part of this process, you can also enable the clean up features in Source Orbit to then automatically have the migrated source extensions corrected and include/copy directives fixed to use Unix style paths.
 
-![Migrate Source with the IBM i Project Explorer](../../assets/Migrating_01.png)
+Check out the [migrate source](https://ibm.github.io/vscode-ibmi-projectexplorer/#/pages/projectExplorer/migrate-source) documentation for more details on how to use this tool.
 
-Check out the [migrate-source](https://ibm.github.io/vscode-ibmi-projectexplorer/#/pages/projectExplorer/migrate-source) documentation for more details on how to use this tool.
+![Migrate Source with the IBM i Project Explorer](../../assets/Migrating_01.png)
 
 ### 2. Using the migrate tool
 
