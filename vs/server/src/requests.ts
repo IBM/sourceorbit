@@ -25,7 +25,7 @@ export function setupRequestHandler(connection: Connection) {
 		if (target) {
 			const uris = params[1];
 
-			const possibleObjects = uris.map(fileUri => target.getResolvedObject(URI.parse(fileUri).fsPath)).filter(x => x && x.relativePath);
+			const possibleObjects = uris.map(fileUri => target.getResolvedObject(URI.parse(fileUri).fsPath.replace(/\\/g, '/'))).filter(x => x && x.relativePath);
 
 			return possibleObjects.map(ileObject => target.getImpactFor(ileObject));
 		}
