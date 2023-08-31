@@ -7,15 +7,15 @@
 			"request": "launch",
 			"name": "Launch Client",
 			"runtimeExecutable": "${execPath}",
-			"args": ["--extensionDevelopmentPath=${workspaceRoot}"],
-			"outFiles": ["${workspaceRoot}/out/**/*.js"],
+			"args": ["--extensionDevelopmentPath=${workspaceFolder:vs}"],
+			"outFiles": ["${workspaceFolder:vs}/out/**/*.js"],
 			"sourceMaps": true,
 			"preLaunchTask": {
 				"type": "npm",
 				"script": "webpack:dev"
 			},
 			"sourceMapPathOverrides": {
-				"webpack://client/./*": "${workspaceFolder}/client/*"
+				"webpack://vscode-sourceorbit-client/./*": "${workspaceFolder:vs}/client/*"
 			},
 		},
 		{
@@ -24,11 +24,12 @@
 			"name": "Attach to Server",
 			"port": 6009,
 			"restart": true,
-			"outFiles": ["${workspaceRoot}/out/**/*.js"],
+			"outFiles": ["${workspaceFolder:vs}/out/**/*.js"],
 			"sourceMaps": true,
 			"sourceMapPathOverrides": {
-				"webpack://server/./*": "${workspaceFolder}/server/*"
+				"webpack://vscode-sourceorbit-server/./*": "${workspaceFolder:vs}/server/*"
 			},
 		},
+		
 	]
 }
