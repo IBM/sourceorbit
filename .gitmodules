@@ -1,0 +1,3 @@
+[submodule "ibmi-company_system-rmake"]
+	path = ibmi-company_system-rmake
+	url = https://github.com/worksofliam/ibmi-company_system-rmake.git
