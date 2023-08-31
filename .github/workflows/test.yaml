@@ -33,4 +33,6 @@ jobs:
           npm install
 
       - name: Run Test
-        run: npm run test
+        run: |
+          cd cli
+          npm run test
