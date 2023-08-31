@@ -1365,9 +1365,9 @@ export class Targets {
 
 			for (const target of allDeps) {
 				const containsLookup = target.deps.some(d => d.name === currentItem.ileObject.name && d.type === currentItem.ileObject.type);
-				const circurlar = currentTree.some(d => d.name === target.name && d.type === target.type);
+				const circular = currentTree.some(d => d.name === target.name && d.type === target.type);
 
-				if (containsLookup && !circurlar) {
+				if (containsLookup && !circular) {
 					let newDependant: ImpactedObject = { ileObject: target, children: [] };
 					lookupObject(newDependant);
 					currentItem.children.push(newDependant);

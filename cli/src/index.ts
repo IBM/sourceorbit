@@ -78,7 +78,7 @@ async function main() {
 				console.log(``);
 				console.log(`\t-i`);
 				console.log(`\t--init\t\tAdd default compile options to 'iproj.json' file`);
-				console.log(`\t\t\tShould be used for project initialisation or to customise compile commands.`);
+				console.log(`\t\t\tShould be used for project initialisation or to customize compile commands.`);
 				console.log(`\t\t\tThis is specific to using '-bf' with the 'make' option.`);
 				console.log(``);
 				console.log(`\t-d <dir>`)
@@ -270,9 +270,9 @@ function listDeps(cwd: string, targets: Targets, query: string) {
 
 		for (const target of allDeps) {
 			const containsLookup = target.deps.some(d => d.name === ileObject.name && d.type === ileObject.type);
-			const circurlar = currentTree.some(d => d.name === target.name && d.type === target.type);
+			const circular = currentTree.some(d => d.name === target.name && d.type === target.type);
 
-			if (containsLookup && !circurlar) {
+			if (containsLookup && !circular) {
 				lookupObject(target);
 			}
 		}

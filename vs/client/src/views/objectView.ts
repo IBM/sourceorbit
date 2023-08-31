@@ -57,7 +57,7 @@ export class ILEObjectTreeItem extends TreeItem implements ProjectExplorerTreeIt
       return deps.map(d => new ILEObjectTreeItem(this.workspaceFolder, d, false));
 
     } else {
-      return [new Notice(this.workspaceFolder, `No depenedencies.`)];
+      return [new Notice(this.workspaceFolder, `No dependencies.`)];
     }
   }
 }

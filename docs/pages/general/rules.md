@@ -11,7 +11,7 @@ Source Orbit does not care about project structure, but does enforce these rules
 | `clle`     | CLLE               | Can use `.pgm` notation             |
 | `cl`       | CLLE               | Can use `.pgm` notation             |
 | `clp`      | CL (OPM)           | Should be renamed to `clle`         |
-| `pf`       | Phyiscal File      | Table                               |
+| `pf`       | Physical File      | Table                               |
 | `lf`       | Logical File       | View/Index                          |
 | `dspf`     | Display File       |                                     |
 | `prtf`     | Printer File       |                                     |
@@ -53,7 +53,7 @@ Source Orbit does not care about project structure, but does enforce these rules
 
 ### SQL sources
 
-SQL sources can be defined with many different extenions like `.sql`, `.table`, `.sqlprc`, `.view`, and so on. It is important that the name of source matches the system name of the object that is going to be created.
+SQL sources can be defined with many different extensions like `.sql`, `.table`, `.sqlprc`, `.view`, and so on. It is important that the name of source matches the system name of the object that is going to be created.
 
 ```sql
 -- cusord.sql
