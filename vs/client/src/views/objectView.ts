@@ -8,7 +8,7 @@ import { TypeIcons } from './utils';
 
 
 /**
- * Tree item for the Project Metadata heading.
+ * Tree item for the objects heading.
  */
 export class ObjectsView extends TreeItem implements ProjectExplorerTreeItem {
 
@@ -35,7 +35,7 @@ export class ObjectsView extends TreeItem implements ProjectExplorerTreeItem {
 }
 
 /**
-* Tree item for metadata information.
+* Tree item for an ILE object.
 */
 export class ILEObjectTreeItem extends TreeItem implements ProjectExplorerTreeItem {
   constructor(public workspaceFolder: WorkspaceFolder, private ileObject: ILEObject, canExpand = false) {
@@ -57,7 +57,7 @@ export class ILEObjectTreeItem extends TreeItem implements ProjectExplorerTreeIt
       return deps.map(d => new ILEObjectTreeItem(this.workspaceFolder, d, false));
 
     } else {
-      return [new Notice(this.workspaceFolder, `No depenedencies.`)];
+      return [new Notice(this.workspaceFolder, `No dependencies.`)];
     }
   }
 }

@@ -1,6 +1,6 @@
 # Source Orbit
 
-Source Orbit is a depenendency management tool for RPGLE/CLLE/SQL/DDS/binder sources.
+Source Orbit is a dependency management tool for RPGLE/CLLE/SQL/DDS/binder sources.
 
 ## General usage
 

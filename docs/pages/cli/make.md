@@ -8,7 +8,7 @@ If you are making use of service programs, Source Orbit will automatically maint
 
 ## Changing compile options
 
-The `iproj.json` can contain a `compiles` property to customise how each extension type gets compiled. To generate the defaults, you can use `so --init` to create or update the `iproj.json` file. When you define an extension in the `compiles` property, the properties of it will override the `so` defaults.
+The `iproj.json` can contain a `compiles` property to customize how each extension type gets compiled. To generate the defaults, you can use `so --init` to create or update the `iproj.json` file. When you define an extension in the `compiles` property, the properties of it will override the `so` defaults.
 
 Here is the schema for the compiles option:
 
