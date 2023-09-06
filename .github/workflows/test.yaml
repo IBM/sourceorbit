@@ -1,0 +1,38 @@
+name: Test with Vitest
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches: ["main"]
+
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        node-version: [18.x]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install NPM Dependencies
+        run: |
+          cd cli
+          npm install
+
+      - name: Run Test
+        run: |
+          cd cli
+          npm run test
