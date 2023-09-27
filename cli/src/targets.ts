@@ -840,7 +840,14 @@ export class Targets {
 				const possibleName = includeDetail.name.toLowerCase().endsWith(`.pgm`) ? includeDetail.name.substring(0, includeDetail.name.length - 4) : includeDetail.name;
 
 				if (this.suggestions.renames) {
-					this.logger.fileLog(this.getRelative(include.toPath), {
+					const renameLogPath = this.getRelative(include.toPath);
+
+					// We need to make sure the .rpgleinc rename is most important
+					if (this.logger.exists(renameLogPath, `rename`)) {
+						this.logger.flush(renameLogPath);
+					}
+
+					this.logger.fileLog(renameLogPath, {
 						message: `Rename suggestion`,
 						type: `rename`,
 						change: {

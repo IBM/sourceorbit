@@ -54,6 +54,10 @@ export class Logger {
     this.logs[path].push(log);
   }
 
+  exists(path: string, type: LogType) {
+    return this.logs[path].some(l => l.type === type)
+  }
+
   getAllLogs() {
     return this.logs;
   }
