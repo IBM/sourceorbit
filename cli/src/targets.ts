@@ -679,11 +679,11 @@ export class Targets {
 			const defs = statement.getObjectReferences();
 			const mainDef = defs[0];
 
-			if (mainDef && mainDef.type && mainDef.object.name) {
+			if (mainDef && mainDef.createType && mainDef.object.name) {
 				const tokens = mainDef.tokens;
 				if (mainDef.object.schema) {
 					this.logger.fileLog(relativePath, {
-						message: `${mainDef.object.schema}/${mainDef.object.name} (${mainDef.type}) reference not included as possible reference to library found.`,
+						message: `${mainDef.object.schema}/${mainDef.object.name} (${mainDef.createType}) reference not included as possible reference to library found.`,
 						range: {
 							start: tokens[0].range.start,
 							end: tokens[tokens.length - 1].range.end
@@ -701,7 +701,7 @@ export class Targets {
 							// because it's too easy to create circular deps.
 							// This is bad!!
 							this.logger.fileLog(relativePath, {
-								message: `${mainDef.object.name} (${mainDef.type}) alter not tracked due to possible circular dependency.`,
+								message: `${mainDef.object.name} (${mainDef.createType}) alter not tracked due to possible circular dependency.`,
 								range: {
 									start: tokens[0].range.start,
 									end: tokens[tokens.length - 1].range.end
@@ -745,7 +745,7 @@ export class Targets {
 
 							let ileObject: ILEObject = {
 								name: objectName,
-								type: this.getObjectType(relativePath, mainDef.type),
+								type: this.getObjectType(relativePath, mainDef.createType),
 								text: options.text,
 								relativePath,
 							}
