@@ -139,7 +139,7 @@ export function multiModuleObjects() {
   handlerAMod.imports = [`JSON_SQLRESULTSET`, `IL_RESPONSEWRITESTREAM`];
 
   // Another module that is required by the MYWEBAPP.PGM
-  const handlerBMod = targets.resolveObject(path.join(cwd, `qrpglesrc`, `handlerA.rpgle`));
+  const handlerBMod = targets.resolveObject(path.join(cwd, `qrpglesrc`, `handlerB.rpgle`));
   handlerBMod.exports = [`ROUTEHANDLERB`];
   handlerBMod.imports = [`API_VALIDATE`, `JSON_SQLRESULTSET`, `IL_RESPONSEWRITESTREAM`];
 
@@ -164,4 +164,6 @@ export function multiModuleObjects() {
   targets.createOrAppend(jwtHandlerSrv);
 
   targets.resolveBinder();
+
+  return targets;
 }

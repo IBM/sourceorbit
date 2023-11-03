@@ -223,7 +223,6 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
       '\tliblist -c $(BIN_LIB);\\',
       `\tsystem "CRTSRVPGM SRVPGM($(BIN_LIB)/UTILS) MODULE(UTILS) SRCSTMF('qsrvsrc/utils.bnd') BNDDIR($(BNDDIR))" > .logs/utils.splf`,
       '\t-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/UTILS *SRVPGM *IMMED))"',
-      `\tsystem "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/UTILS.MBR\') TOSTMF(\'.evfevent/utils.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
     ].join());
   });
 
@@ -237,9 +236,8 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
       '\t-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/BANKING))"',
       '\t-system "DLTOBJ OBJ($(BIN_LIB)/BANKING) OBJTYPE(*SRVPGM)"',
       '\tliblist -c $(BIN_LIB);\\',
-      '\tsystem "CRTSRVPGM SRVPGM($(BIN_LIB)/BANKING) MODULE(*SRVPGM) EXPORT(*ALL) BNDDIR($(BNDDIR))" > .logs/banking.splf',
+      '\tsystem "CRTSRVPGM SRVPGM($(BIN_LIB)/BANKING) MODULE(BANKING) SRCSTMF(\'qsrvsrc/banking.bnd\') BNDDIR($(BNDDIR))" > .logs/banking.splf',
       '\t-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/BANKING *SRVPGM *IMMED))"',
-      `\tsystem "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/BANKING.MBR\') TOSTMF(\'.evfevent/banking.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
     ].join());
   });
 

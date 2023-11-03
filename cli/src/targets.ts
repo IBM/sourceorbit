@@ -1226,12 +1226,24 @@ export class Targets {
 
 				target.imports.forEach(importName => {
 					// Find if this import resolves to another object
-					const possibleDep = this.resolvedExports[importName.toUpperCase()];
+					const possibleSrvPgmDep = this.resolvedExports[importName.toUpperCase()];
 					// We can't add a module as a dependency at this step.
-					if (possibleDep && possibleDep.type === `SRVPGM`) {
+					if (possibleSrvPgmDep && possibleSrvPgmDep.type === `SRVPGM`) {
 						// Make sure we haven't imported it before!
-						if (!newImports.some(i => i.name === possibleDep.name && i.type === possibleDep.type)) {
-							newImports.push(possibleDep);
+						if (!newImports.some(i => i.name === possibleSrvPgmDep.name && i.type === possibleSrvPgmDep.type)) {
+							newImports.push(possibleSrvPgmDep);
+						}
+
+					} else if (target.type === `PGM`) {
+						// Perhaps we're looking at a program object, which actually should be a multi
+						// module program, so we do a lookup for additional modules.
+						const possibleModuleDep = allModules.find(mod => mod.exports.includes(importName.toUpperCase()))
+						if (possibleModuleDep) {
+							if (!newImports.some(i => i.name === possibleModuleDep.name && i.type === possibleModuleDep.type)) {
+								newImports.push(possibleModuleDep);
+
+								// TODO: consider other IMPORTS that `possibleModuleDep` needs.
+							}
 						}
 					}
 				});
@@ -1239,6 +1251,14 @@ export class Targets {
 				if (newImports.length > 0) {
 					infoOut(`${target.name}.${target.type} has additional dependencies: ${newImports.map(i => `${i.name}.${i.type}`)}`);
 					target.deps.push(...newImports);
+
+					if (target.type === `PGM`) {
+						// If this program has MODULE dependecies, that means we need to change the way it's compiled
+						// to be a program made up of many modules, usually done with CRTPGM
+						if (target.deps.some(d => d.type === `MODULE`)) {
+							this.convertBoundProgramToMultiModuleProgram(target);
+						}
+					}
 				}
 			}
 		}
@@ -1264,6 +1284,22 @@ export class Targets {
 				});
 			}
 		}
+	}
+
+	private convertBoundProgramToMultiModuleProgram(currentTarget: ILEObjectTarget) {
+		const objectAsMod: ILEObject = {
+			...currentTarget,
+			type: `MODULE`
+		};
+
+		this.resolvedObjects[path.join(this.cwd, currentTarget.relativePath)].extension = `pgm`;
+		this.pushDep({
+			...objectAsMod,
+			deps: []
+		});
+
+		currentTarget.deps.push(objectAsMod);
+		currentTarget.extension = `pgm`; // Change the extension so it's picked up correctly during the build process.
 	}
 
 	public createOrAppend(parentObject: ILEObject, newDep?: ILEObject) {
@@ -1308,17 +1344,7 @@ export class Targets {
 
 	public getObjectsByExtension(ext: string): ILEObject[] {
 		const upperExt = ext.toUpperCase();
-		return Object.
-			keys(this.resolvedObjects).
-			filter(filePath => {
-				const basename = path.basename(filePath);
-				const dotIndex = basename.indexOf(`.`);
-				if (dotIndex >= 0) {
-					const lastPart = basename.substring(dotIndex + 1);
-					return (lastPart.toUpperCase() === upperExt);
-				}
-			}).
-			map(filePath => this.resolvedObjects[filePath]);
+		return Object.values(this.resolvedObjects).filter(obj => obj.extension?.toUpperCase() == upperExt);
 	}
 
 	public getExports() {
