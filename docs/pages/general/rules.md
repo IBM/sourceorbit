@@ -44,8 +44,10 @@ Source Orbit does not care about project structure, but does enforce these rules
 
 * if your source includes `.pgm`, then it will become a program.
    * `mypgm.pgm.rpgle` becomes a `MYPGM.PGM` object
+   * If you want to use multi-module programs, go ahead and add the prototypes to export functions/procedures in other modules and Source Orbit will automatically take care of the binding.
 * if your source does not include `.pgm`, then it will become a module, cmd, dtaara, etc.
-* assumes binder source (`.bnd`/`.binder`) is a service program. Source Orbit will scan the binder source to find the exported functions/procedures from modules inside the project.
+* assumes binder source (`.bnd`/`.binder`) is a service program. 
+   * Source Orbit will scan the binder source to find the exported functions/procedures from modules inside the project.
 * Source Orbit does not yet support SQL long name references. (Coming soon)
 
 ### SQL sources

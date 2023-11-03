@@ -2,9 +2,18 @@ This page describes information about the `makefile` that is generated for a pro
 
 This section only applies if you use `-bf make`.
 
+## `iproj.json` properties
+
+Source Orbit makes use of a few properties that you can put inside your `iproj.json` file.
+
+| Property       | Type                                                                                                                             |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `binders`      | Array of strings. Use this if you want to use export functions/procedures from other service programs outside of your repository |
+| `includePaths` | Array of strings. Use this if you want to include headers that can be found in the IFS at compile time. **You do not need to list directories that are part of the repository.** |
+
 ## Binding handled automatically
 
-If you are making use of service programs, Source Orbit will automatically maintain this for you. Service programs will be added to the binding directory automatically and programs automatically include them. No need to use the `BNDDIR` header. Be careful, because changing the custom compile commands from the default may break this functionality.
+If you are making use of service programs, Source Orbit will automatically maintain this for you. Your service programs will be added to the binding directory automatically and programs automatically include them. **No need to use the `BNDDIR` header** in your source code. Be careful, because changing the custom compile commands from the default may break this functionality. **You should still create binder source for all your service programs** in order for Source Orbit to create them automatically.
 
 ## Changing compile options
 
@@ -22,14 +31,14 @@ interface CompileData {
 	becomes: ObjectType;
 	/** will copy the source to a temp member first */
 	member?: boolean,
-	/** `commands` do not respect the library list and is run before 'command' */
-	commands?: string[]
+	/** `preCommands` do not respect the library list and is run before 'command' */
+	preCommands?: string[]
 	/** `command` does respect the library list */
 	command?: string;
 	/** Used if the commands are built up from source. Usually means `command` and `commands` is blank */
 	commandSource?: boolean;
-	/** if the non-source object now requires source. Use make generic name like `qbndsrc/%.bnd` */
-	targetSource?: string;
+	/** `postCommands` do not respect the library list and is run after 'command' */
+	postCommands?: string[]
 };
 ```
 
