@@ -25,7 +25,7 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
   });
 
   test(`Check objects are generated`, async () => {
-    expect(targets.getResolvedObjects().length).toBe(10);
+    expect(targets.getResolvedObjects().length).toBe(11);
     expect(targets.getDeps().length).toBe(12);
     expect(targets.getParentObjects(`FILE`).length).toBe(4);
     expect(targets.getParentObjects(`PGM`).length).toBe(3);
@@ -102,16 +102,17 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
 
     expect(myBinder.deps.length).toBe(2);
 
-    const utilsSrvpgm = myBinder.deps[0];
+    console.log(myBinder.deps);
+
+    const bankingSrvpgm = myBinder.deps[0];
+    expect(bankingSrvpgm.name).toBe(`BANKING`);
+    expect(bankingSrvpgm.type).toBe(`SRVPGM`);
+    expect(bankingSrvpgm.relativePath).toBe(`qsrvsrc/banking.bnd`);
+
+    const utilsSrvpgm = myBinder.deps[1];
     expect(utilsSrvpgm.name).toBe(`UTILS`);
     expect(utilsSrvpgm.type).toBe(`SRVPGM`);
     expect(utilsSrvpgm.relativePath).toBe(`qsrvsrc/utils.bnd`);
-
-    const bankingSrvpgm = myBinder.deps[1];
-    expect(bankingSrvpgm.name).toBe(`BANKING`);
-    expect(bankingSrvpgm.type).toBe(`SRVPGM`);
-    // Because no binder source
-    expect(bankingSrvpgm.relativePath).toBeUndefined();
   });
 
   test(`Check employee table`, async () => {
@@ -233,7 +234,7 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
     const lines = MakeProject.generateSpecificTarget(makeDefaults.compiles[`srvpgm`], myPgm);
 
     expect(lines.join()).toBe([
-      '$(PREPATH)/BANKING.SRVPGM: ',
+      '$(PREPATH)/BANKING.SRVPGM: qsrvsrc/banking.bnd',
       '\t-system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/$(APP_BNDDIR))"',
       '\t-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/BANKING))"',
       '\t-system "DLTOBJ OBJ($(BIN_LIB)/BANKING) OBJTYPE(*SRVPGM)"',

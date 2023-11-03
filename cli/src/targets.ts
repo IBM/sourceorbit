@@ -1215,40 +1215,6 @@ export class Targets {
 			}
 		}
 
-		// Next, we loop through all the modules we know of and if that module
-		// is not a dependency on any service program, then we assume it's a
-		// service program object with EXPORT(*ALL)
-		const allServicePrograms = this.getParentObjects("SRVPGM");
-		for (const module of allModules) {
-			const isBoundSomewhere = allServicePrograms.some(srvpgm => srvpgm.deps.some(dep => dep.name === module.name && dep.type === `MODULE`));
-			if (!isBoundSomewhere) {
-				infoOut(`Assuming ${module.name}.${module.type} is a service program (SRVPGM)`);
-
-				const newServiceProgramTarget: ILEObject = {
-					...module,
-					type: `SRVPGM`,
-					relativePath: undefined,
-					extension: undefined,
-					exports: module.exports
-				};
-
-				// This creates the service program target if it does not exist.
-				const serviceProgramTarget = this.createOrAppend(newServiceProgramTarget, module);
-
-				// Add this new service program to the project binding directory
-				this.createOrAppend(bindingDirectoryTarget, serviceProgramTarget);
-
-				// Resolve the exports to this new service program
-				if (serviceProgramTarget.exports) {
-					serviceProgramTarget.exports.forEach(e => {
-						this.resolvedExports[e.toUpperCase()] = serviceProgramTarget;
-					});
-				}
-
-				infoOut(``);
-			}
-		}
-
 		// We loop through all programs and service programs and study their imports.
 		// We do this in case they depend on another service programs based on import
 		for (let target of deps) {
