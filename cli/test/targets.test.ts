@@ -1,12 +1,12 @@
 import {  expect, test } from 'vitest'
-import { createTargets } from './createTargets';
+import { baseTargets } from './fixture';
 
 test('resolveObject', () => {
-  createTargets();
+  baseTargets();
 });
 
 test('createOrApend', () => {
-  const targets = createTargets(true);
+  const targets = baseTargets(true);
 
   const deps = targets.getDeps();
 
@@ -33,7 +33,7 @@ test('createOrApend', () => {
 });
 
 test('resolveBinder', () => {
-  const targets = createTargets(true);
+  const targets = baseTargets(true);
 
   expect(targets.getDeps().length).toBe(10);
   expect(targets.binderRequired()).toBe(false);
@@ -61,14 +61,14 @@ test('resolveBinder', () => {
 
   const deps = targets.getDeps();
 
-  expect(deps.length).toBe(12);
+  expect(deps.length).toBe(9);
   expect(targets.binderRequired()).toBe(true);
 
   const bnddir = deps.find(d => d.name === `$(APP_BNDDIR)` && d.type === `BNDDIR`);
   expect(bnddir).toBeDefined();
   expect(bnddir.extension).toBeUndefined();
   expect(bnddir.relativePath).toBeUndefined();
-  expect(bnddir.deps.length).toBe(4);
+  expect(bnddir.deps.length).toBe(2);
 
   for (const srvPgmDep of bnddir.deps) {
     // Ensure that the deps of the bnddir exist
@@ -77,14 +77,8 @@ test('resolveBinder', () => {
     expect(srvPgm).toBeDefined();
     expect(srvPgm.deps.length).toBe(1);
 
-    // ORDENTSRV actually has 
-    if (srvPgm.name === `ORDENTSRV`) {
-      expect(srvPgm.relativePath).toBe(`qbndsrc/ordentsrv.binder`);
-      expect(srvPgm.extension).toBe(`binder`);
-    } else {
-      expect(srvPgm.relativePath).toBeUndefined();
-      expect(srvPgm.extension).toBeUndefined();
-    }
+    expect(srvPgm.relativePath).toBeDefined();
+    expect(srvPgm.extension).toBeDefined();
   }
 
   const programACmd = deps.find(d => d.name === `PROGRAMA` && d.type === `CMD`);
@@ -94,15 +88,14 @@ test('resolveBinder', () => {
 });
 
 test('getObjectsByExtension', () => {
-  const targets = createTargets(true);
+  const targets = baseTargets(true);
 
   const rpglePrograms = targets.getObjectsByExtension(`pgm.rpgle`);
   expect(rpglePrograms.length).toBe(1);
   expect(rpglePrograms[0].relativePath).toBe(`qrpglesrc/programA.pgm.rpgle`);
 
   const rpgleModules = targets.getObjectsByExtension(`rpgle`);
-  expect(rpgleModules.length).toBe(3);
+  expect(rpgleModules.length).toBe(2);
   expect(rpgleModules[0].relativePath).toBe(`qrpglesrc/moduleA.rpgle`);
-  expect(rpgleModules[1].relativePath).toBe(`qrpglesrc/srvpgmA.rpgle`);
-  expect(rpgleModules[2].relativePath).toBe(`qrpglesrc/ordentmod.rpgle`);
+  expect(rpgleModules[1].relativePath).toBe(`qrpglesrc/ordentmod.rpgle`);
 })

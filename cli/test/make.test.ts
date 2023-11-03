@@ -1,11 +1,11 @@
 import { assert, expect, test } from 'vitest'
 import { Targets } from '../src/targets'
 import path from 'path';
-import { createTargets, cwd } from './createTargets';
+import { baseTargets, cwd } from './fixture';
 import { MakeProject } from '../src/builders/make';
 
 test('generateTargets (pre-resolve)', () => {
-  const targets = createTargets(true);
+  const targets = baseTargets(true);
   const project = new MakeProject(cwd, targets);
 
   const targetContent = project.generateTargets();
@@ -23,7 +23,7 @@ test('generateTargets (pre-resolve)', () => {
 });
 
 test('generateTargets (post-resolve)', () => {
-  const targets = createTargets(true);
+  const targets = baseTargets(true);
 
   targets.resolveBinder();
 
@@ -36,22 +36,19 @@ test('generateTargets (post-resolve)', () => {
       'all: $(PREPATH)/$(APP_BNDDIR).BNDDIR $(PREPATH)/PROGRAMA.PGM $(PREPATH)/PROGRAMB.PGM $(PREPATH)/PROGRAMA.CMD',
       '',
       '$(PREPATH)/PROGRAMA.PGM: $(PREPATH)/FILEA.FILE $(PREPATH)/PROGRAMB.PGM',
-      '$(PREPATH)/PROGRAMB.PGM: $(PREPATH)/MODULEB.SRVPGM',
+      '$(PREPATH)/PROGRAMB.PGM: $(PREPATH)/SRVPGMA.SRVPGM',
       '$(PREPATH)/MODULEA.MODULE: $(PREPATH)/FILEA.FILE $(PREPATH)/FILEB.FILE',
       '$(PREPATH)/MODULEB.MODULE: $(PREPATH)/FILEB.FILE',
-      `$(PREPATH)/SRVPGMA.MODULE: $(PREPATH)/MODULEB.SRVPGM`,
+      `$(PREPATH)/SRVPGMA.SRVPGM: $(PREPATH)/MODULEB.MODULE`,
       `$(PREPATH)/ORDENTSRV.SRVPGM: $(PREPATH)/ORDENTMOD.MODULE`,
-      `$(PREPATH)/PROGRAMA.CMD: $(PREPATH)/PROGRAMA.PGM`,
-      '$(PREPATH)/$(APP_BNDDIR).BNDDIR: $(PREPATH)/ORDENTSRV.SRVPGM $(PREPATH)/MODULEA.SRVPGM $(PREPATH)/MODULEB.SRVPGM $(PREPATH)/SRVPGMA.SRVPGM',
-      '$(PREPATH)/MODULEA.SRVPGM: $(PREPATH)/MODULEA.MODULE',
-      '$(PREPATH)/MODULEB.SRVPGM: $(PREPATH)/MODULEB.MODULE',
-      `$(PREPATH)/SRVPGMA.SRVPGM: $(PREPATH)/SRVPGMA.MODULE`,
+      '$(PREPATH)/PROGRAMA.CMD: $(PREPATH)/PROGRAMA.PGM',
+      '$(PREPATH)/$(APP_BNDDIR).BNDDIR: $(PREPATH)/SRVPGMA.SRVPGM $(PREPATH)/ORDENTSRV.SRVPGM',
     ]
   );
 });
 
 test('generateHeader (binder changes)', () => {
-  const targets = createTargets(true);
+  const targets = baseTargets(true);
 
   const project = new MakeProject(cwd, targets);
 
@@ -69,7 +66,7 @@ test('generateHeader (binder changes)', () => {
 });
 
 test('applySettings (binder)', () => {
-  const targets = createTargets(true);
+  const targets = baseTargets(true);
 
   const project = new MakeProject(cwd, targets);
 

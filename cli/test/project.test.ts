@@ -102,8 +102,6 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
 
     expect(myBinder.deps.length).toBe(2);
 
-    console.log(myBinder.deps);
-
     const bankingSrvpgm = myBinder.deps[0];
     expect(bankingSrvpgm.name).toBe(`BANKING`);
     expect(bankingSrvpgm.type).toBe(`SRVPGM`);

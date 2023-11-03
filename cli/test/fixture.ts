@@ -4,7 +4,7 @@ import path from 'path';
 
 export const cwd = path.join(`/`, `projects`);
 
-export function createTargets(withDeps = false) {
+export function baseTargets(withDeps = false) {
   const targets = new Targets(cwd);
 
   // Command object for PROGRAMA.PGM
@@ -61,11 +61,11 @@ export function createTargets(withDeps = false) {
   moduleB.exports = [`TOLOWER`];
 
   // SRVPGMA.SRVPGM, which imports TOLOWER from MODULEB.MODULE and therefore exports TOLOWER
-  const srvpgmAModule = targets.resolveObject(path.join(cwd, `qrpglesrc`, `srvpgmA.rpgle`));
+  const srvpgmAModule = targets.resolveObject(path.join(cwd, `qsrvsrc`, `srvpgmA.bnd`));
   expect(srvpgmAModule.name).toBe(`SRVPGMA`);
-  expect(srvpgmAModule.type).toBe(`MODULE`);
-  expect(srvpgmAModule.extension).toBe(`rpgle`);
-  expect(srvpgmAModule.relativePath).toBe(path.join(`qrpglesrc`, `srvpgmA.rpgle`));
+  expect(srvpgmAModule.type).toBe(`SRVPGM`);
+  expect(srvpgmAModule.extension).toBe(`bnd`);
+  expect(srvpgmAModule.relativePath).toBe(path.join(`qsrvsrc`, `srvpgmA.bnd`));
   srvpgmAModule.imports = [`TOLOWER`];
   srvpgmAModule.exports = [`TOLOWER`];
   
@@ -124,4 +124,44 @@ export function createTargets(withDeps = false) {
   }
 
   return targets;
+}
+
+export function multiModuleObjects() {
+  const targets = new Targets(cwd);
+
+  // Base program object MYWEBAPP.PGM
+  const myWebApp = targets.resolveObject(path.join(cwd, `qrpglesrc`, `mywebapp.pgm.rpgle`));
+  myWebApp.imports = [`ROUTEHANDLERA`, `ROUTEHANDLERB`, `JWT_MIDDLEWARE`, `IL_LISTEN`, `IL_RESPONSEWRITESTREAM`];
+
+  // Module that is required by the MYWEBAPP.PGM
+  const handlerAMod = targets.resolveObject(path.join(cwd, `qrpglesrc`, `handlerA.rpgle`));
+  handlerAMod.exports = [`ROUTEHANDLERA`];
+  handlerAMod.imports = [`JSON_SQLRESULTSET`, `IL_RESPONSEWRITESTREAM`];
+
+  // Another module that is required by the MYWEBAPP.PGM
+  const handlerBMod = targets.resolveObject(path.join(cwd, `qrpglesrc`, `handlerA.rpgle`));
+  handlerBMod.exports = [`ROUTEHANDLERB`];
+  handlerBMod.imports = [`API_VALIDATE`, `JSON_SQLRESULTSET`, `IL_RESPONSEWRITESTREAM`];
+
+  // Another module that is part of the JWTHANDLER.SRVPGM object
+  const jwtHandlerMod = targets.resolveObject(path.join(cwd, `qrpglesrc`, `jwtHandler.rpgle`));
+  jwtHandlerMod.exports = [`JWT_MIDDLEWARE`];
+
+  // Another module that is part of the JWTHANDLER.SRVPGM object
+  const validateMod = targets.resolveObject(path.join(cwd, `qrpglesrc`, `validate.rpgle`));
+  validateMod.exports = [`API_VALIDATE`];
+
+  // Service program for JWTHANDLER, used by MYWEBAPP
+  const jwtHandlerSrv = targets.resolveObject(path.join(cwd, `qsrvsrc`, `utils.binder`));
+  jwtHandlerSrv.imports = [`JWT_MIDDLEWARE`, `API_VALIDATE`];
+  jwtHandlerSrv.exports = [`JWT_MIDDLEWARE`, `API_VALIDATE`];
+
+  targets.createOrAppend(myWebApp);
+  targets.createOrAppend(handlerAMod);
+  targets.createOrAppend(handlerBMod);
+  targets.createOrAppend(jwtHandlerMod);
+  targets.createOrAppend(validateMod);
+  targets.createOrAppend(jwtHandlerSrv);
+
+  targets.resolveBinder();
 }
