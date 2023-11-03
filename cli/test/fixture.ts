@@ -44,7 +44,7 @@ export function baseTargets(withDeps = false) {
   expect(programC.relativePath).toBe(path.join(`qrpglesrc`, `programC.pgm.sqlrpgle`));
   programC.imports = [`TOUPPER`];
 
-  // Module MODULEA.MODULE, which has no parents
+  // Module MODULEA.MODULE, which is not used at all.
   const moduleA = targets.resolveObject(path.join(cwd, `qrpglesrc`, `moduleA.rpgle`));
   expect(moduleA.name).toBe(`MODULEA`);
   expect(moduleA.type).toBe(`MODULE`);
@@ -100,7 +100,7 @@ export function baseTargets(withDeps = false) {
   expect(ORDENTMOD.extension).toBe(`rpgle`);
   expect(ORDENTMOD.relativePath).toBe(path.join(`qrpglesrc`, `ordentmod.rpgle`));
 
-  // UNUSEDSRV.SRVPGM, which exports BIGNOPE
+  // UNUSEDSRV.SRVPGM, which exports BIGNOPE and is not used.
   const UNUSEDSRV = targets.resolveObject(path.join(cwd, `qbndsrc`, `unusedsrv.binder`));
   UNUSEDSRV.exports = [`BIGNOPE`];
   expect(UNUSEDSRV.name).toBe(`UNUSEDSRV`);
