@@ -1342,16 +1342,27 @@ export class Targets {
 		return this.resolvedObjects[fullPath];
 	}
 
+	/**
+	 * This API is a little trick.
+	 * You can pass in a valid file extension, or if you pass
+	 * solely just `pgm`, it will return all programs that
+	 * have multiple modules.
+	 */
 	public getObjectsByExtension(ext: string): ILEObject[] {
 		const extensionParts = ext.split(`.`);
-		let extension = ext.toUpperCase(), shouldBeProgram = false;
+		let extension = ext.toUpperCase(), shouldBeProgram = false, anyPrograms = false;
 
 		if (extensionParts.length === 2 && extensionParts[0].toUpperCase() === `PGM`) {
 			extension = extensionParts[1].toUpperCase();
 			shouldBeProgram = true;
+		} else if (extension === `PGM`) {
+			anyPrograms = true;
 		}
 
-		return Object.values(this.resolvedObjects).filter(obj => obj.extension?.toUpperCase() === extension && (obj.type === `PGM`) === shouldBeProgram);
+		return Object.values(this.resolvedObjects).filter(obj => 
+			(obj.extension?.toUpperCase() === extension && (obj.type === `PGM`) === shouldBeProgram) ||
+			(anyPrograms === true && obj.type === `PGM` && obj.extension.toUpperCase() === extension)
+		);
 	}
 
 	public getExports() {

@@ -128,7 +128,6 @@ test(`Multi-module program and service program`, () => {
   const utilsSrvpgm = targets.getDep({name: `UTILS`, type: `SRVPGM`});
   const utilsTarget = MakeProject.generateSpecificTarget(settings.compiles[`srvpgm`], utilsSrvpgm);
 
-  console.log(utilsTarget);
   expect(utilsTarget.join()).toBe([
     '$(PREPATH)/UTILS.SRVPGM: qsrvsrc/utils.binder',
     '\t-system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/$(APP_BNDDIR))"',
