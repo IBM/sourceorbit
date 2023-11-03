@@ -111,7 +111,7 @@ test(`Multi-module program and service program`, () => {
   const webappPgm = targets.getDep({name: `MYWEBAPP`, type: `PGM`});
   const webPgmTarget = MakeProject.generateSpecificTarget(settings.compiles[`pgm`], webappPgm);
   expect(webPgmTarget.join()).toBe([
-    '$(PREPATH)/MYWEBAPP.PGM: qrpglesrc/mywebapp.pgm.rpgle',
+    '$(PREPATH)/MYWEBAPP.PGM: ',
     '\tliblist -c $(BIN_LIB);\\',
     '\tsystem "CRTPGM PGM($(BIN_LIB)/MYWEBAPP) ENTRY(MYWEBAPP) MODULES(HANDLERA HANDLERB MYWEBAPP) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)" > .logs/mywebapp.splf'
   ].join());

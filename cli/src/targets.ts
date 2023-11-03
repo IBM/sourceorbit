@@ -1294,26 +1294,29 @@ export class Targets {
 	}
 
 	private convertBoundProgramToMultiModuleProgram(currentTarget: ILEObjectTarget) {
-		const objectAsMod: ILEObject = {
-			name: currentTarget.name,
-			extension: currentTarget.extension,
-			relativePath: currentTarget.relativePath,
-			imports: currentTarget.imports,
-			exports: currentTarget.exports,
-			text: currentTarget.text,
-			type: `MODULE`
-		};
+		const basePath = currentTarget.relativePath;
 
-		this.resolvedObjects[path.join(this.cwd, currentTarget.relativePath)].extension = `pgm`;
-		this.pushDep({
-			...objectAsMod,
-			deps: []
-		});
+		// First, let's change this current target to be solely a program
+		// Change the extension so it's picked up correctly during the build process.
+		currentTarget.extension = `pgm`;
+		currentTarget.relativePath = undefined;
 
-		currentTarget.deps.push(objectAsMod);
-		currentTarget.extension = `pgm`; // Change the extension so it's picked up correctly during the build process.
-		currentTarget.imports = [];
-		currentTarget.exports = [];
+		// Store new resolved path for this object
+		this.storeResolved(path.join(this.cwd, `${currentTarget.name}.PGM`), currentTarget);
+
+		// Then we can resolve the same path again
+		const newModule = this.resolveObject(path.join(this.cwd, basePath));
+		// Force it as a module
+		newModule.type = `MODULE`;
+
+		// Create a new target for the module
+		const newModTarget = this.createOrAppend(newModule);
+
+		// Clean up imports for module and program
+		newModTarget.imports = currentTarget.imports;
+		currentTarget.imports = undefined;
+
+		this.createOrAppend(currentTarget, newModule);
 	}
 
 	public createOrAppend(parentObject: ILEObject, newDep?: ILEObject) {

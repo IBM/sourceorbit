@@ -111,7 +111,7 @@ test(`Multi-module program and service programs`, () => {
   expect(srvPgms.length).toBe(1);
 
   const modules = targets.getResolvedObjects(`MODULE`);
-  expect(modules.length).toBe(4);
+  expect(modules.length).toBe(5);
 
   const webappPgm = programs[0];
   expect(webappPgm.extension).toBe(`pgm`);
