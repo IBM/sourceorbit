@@ -1129,11 +1129,18 @@ export class Targets {
 			.map(ref => {
 				const keyword = ref.keyword;
 				let importName: string = ref.name;
-				const extproc = keyword[`EXTPROC`];
+				const extproc: string|boolean = keyword[`EXTPROC`];
 				if (extproc) {
 					if (extproc === true) importName = ref.name;
-					else importName = trimQuotes(extproc);
+					else importName = extproc;
 				}
+
+				if (importName.includes(`:`)) {
+					const parmParms = importName.split(`:`);
+					importName = parmParms.filter(p => !p.startsWith(`*`)).join(``);
+				}
+
+				importName = trimQuotes(importName);
 
 				return importName;
 			});
@@ -1288,7 +1295,12 @@ export class Targets {
 
 	private convertBoundProgramToMultiModuleProgram(currentTarget: ILEObjectTarget) {
 		const objectAsMod: ILEObject = {
-			...currentTarget,
+			name: currentTarget.name,
+			extension: currentTarget.extension,
+			relativePath: currentTarget.relativePath,
+			imports: currentTarget.imports,
+			exports: currentTarget.exports,
+			text: currentTarget.text,
 			type: `MODULE`
 		};
 
@@ -1300,6 +1312,8 @@ export class Targets {
 
 		currentTarget.deps.push(objectAsMod);
 		currentTarget.extension = `pgm`; // Change the extension so it's picked up correctly during the build process.
+		currentTarget.imports = [];
+		currentTarget.exports = [];
 	}
 
 	public createOrAppend(parentObject: ILEObject, newDep?: ILEObject) {
