@@ -1343,8 +1343,15 @@ export class Targets {
 	}
 
 	public getObjectsByExtension(ext: string): ILEObject[] {
-		const upperExt = ext.toUpperCase();
-		return Object.values(this.resolvedObjects).filter(obj => obj.extension?.toUpperCase() == upperExt);
+		const extensionParts = ext.split(`.`);
+		let extension = ext.toUpperCase(), shouldBeProgram = false;
+
+		if (extensionParts.length === 2 && extensionParts[0].toUpperCase() === `PGM`) {
+			extension = extensionParts[1].toUpperCase();
+			shouldBeProgram = true;
+		}
+
+		return Object.values(this.resolvedObjects).filter(obj => obj.extension?.toUpperCase() === extension && (obj.type === `PGM`) === shouldBeProgram);
 	}
 
 	public getExports() {
