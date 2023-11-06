@@ -30,7 +30,7 @@ Types available:
    * This is particularly useful for pull-requests. It is possible have a pipeline that runs on a push to a branch/PR to generate dependency information.
    * See an [example report here](https://github.com/worksofliam/ibmi-company_system-rmake/actions/runs/5765430282). See about [GitHub Actions](./pages/cli/gha.md) here.
 
-```
+```sh
 so -bf imd -l `git diff --name-only origin/main origin/${GITHUB_HEAD_REF}`
 ```
 

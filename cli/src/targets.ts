@@ -1129,11 +1129,18 @@ export class Targets {
 			.map(ref => {
 				const keyword = ref.keyword;
 				let importName: string = ref.name;
-				const extproc = keyword[`EXTPROC`];
+				const extproc: string|boolean = keyword[`EXTPROC`];
 				if (extproc) {
 					if (extproc === true) importName = ref.name;
-					else importName = trimQuotes(extproc);
+					else importName = extproc;
 				}
+
+				if (importName.includes(`:`)) {
+					const parmParms = importName.split(`:`);
+					importName = parmParms.filter(p => !p.startsWith(`*`)).join(``);
+				}
+
+				importName = trimQuotes(importName);
 
 				return importName;
 			});
@@ -1215,40 +1222,6 @@ export class Targets {
 			}
 		}
 
-		// Next, we loop through all the modules we know of and if that module
-		// is not a dependency on any service program, then we assume it's a
-		// service program object with EXPORT(*ALL)
-		const allServicePrograms = this.getParentObjects("SRVPGM");
-		for (const module of allModules) {
-			const isBoundSomewhere = allServicePrograms.some(srvpgm => srvpgm.deps.some(dep => dep.name === module.name && dep.type === `MODULE`));
-			if (!isBoundSomewhere) {
-				infoOut(`Assuming ${module.name}.${module.type} is a service program (SRVPGM)`);
-
-				const newServiceProgramTarget: ILEObject = {
-					...module,
-					type: `SRVPGM`,
-					relativePath: undefined,
-					extension: undefined,
-					exports: module.exports
-				};
-
-				// This creates the service program target if it does not exist.
-				const serviceProgramTarget = this.createOrAppend(newServiceProgramTarget, module);
-
-				// Add this new service program to the project binding directory
-				this.createOrAppend(bindingDirectoryTarget, serviceProgramTarget);
-
-				// Resolve the exports to this new service program
-				if (serviceProgramTarget.exports) {
-					serviceProgramTarget.exports.forEach(e => {
-						this.resolvedExports[e.toUpperCase()] = serviceProgramTarget;
-					});
-				}
-
-				infoOut(``);
-			}
-		}
-
 		// We loop through all programs and service programs and study their imports.
 		// We do this in case they depend on another service programs based on import
 		for (let target of deps) {
@@ -1260,12 +1233,24 @@ export class Targets {
 
 				target.imports.forEach(importName => {
 					// Find if this import resolves to another object
-					const possibleDep = this.resolvedExports[importName.toUpperCase()];
+					const possibleSrvPgmDep = this.resolvedExports[importName.toUpperCase()];
 					// We can't add a module as a dependency at this step.
-					if (possibleDep && possibleDep.type === `SRVPGM`) {
+					if (possibleSrvPgmDep && possibleSrvPgmDep.type === `SRVPGM`) {
 						// Make sure we haven't imported it before!
-						if (!newImports.some(i => i.name === possibleDep.name && i.type === possibleDep.type)) {
-							newImports.push(possibleDep);
+						if (!newImports.some(i => i.name === possibleSrvPgmDep.name && i.type === possibleSrvPgmDep.type)) {
+							newImports.push(possibleSrvPgmDep);
+						}
+
+					} else if (target.type === `PGM`) {
+						// Perhaps we're looking at a program object, which actually should be a multi
+						// module program, so we do a lookup for additional modules.
+						const possibleModuleDep = allModules.find(mod => mod.exports.includes(importName.toUpperCase()))
+						if (possibleModuleDep) {
+							if (!newImports.some(i => i.name === possibleModuleDep.name && i.type === possibleModuleDep.type)) {
+								newImports.push(possibleModuleDep);
+
+								// TODO: consider other IMPORTS that `possibleModuleDep` needs.
+							}
 						}
 					}
 				});
@@ -1273,6 +1258,14 @@ export class Targets {
 				if (newImports.length > 0) {
 					infoOut(`${target.name}.${target.type} has additional dependencies: ${newImports.map(i => `${i.name}.${i.type}`)}`);
 					target.deps.push(...newImports);
+
+					if (target.type === `PGM`) {
+						// If this program has MODULE dependecies, that means we need to change the way it's compiled
+						// to be a program made up of many modules, usually done with CRTPGM
+						if (target.deps.some(d => d.type === `MODULE`)) {
+							this.convertBoundProgramToMultiModuleProgram(target);
+						}
+					}
 				}
 			}
 		}
@@ -1298,6 +1291,32 @@ export class Targets {
 				});
 			}
 		}
+	}
+
+	private convertBoundProgramToMultiModuleProgram(currentTarget: ILEObjectTarget) {
+		const basePath = currentTarget.relativePath;
+
+		// First, let's change this current target to be solely a program
+		// Change the extension so it's picked up correctly during the build process.
+		currentTarget.extension = `pgm`;
+		currentTarget.relativePath = undefined;
+
+		// Store new resolved path for this object
+		this.storeResolved(path.join(this.cwd, `${currentTarget.name}.PGM`), currentTarget);
+
+		// Then we can resolve the same path again
+		const newModule = this.resolveObject(path.join(this.cwd, basePath));
+		// Force it as a module
+		newModule.type = `MODULE`;
+
+		// Create a new target for the module
+		const newModTarget = this.createOrAppend(newModule);
+
+		// Clean up imports for module and program
+		newModTarget.imports = currentTarget.imports;
+		currentTarget.imports = undefined;
+
+		this.createOrAppend(currentTarget, newModule);
 	}
 
 	public createOrAppend(parentObject: ILEObject, newDep?: ILEObject) {
@@ -1340,19 +1359,27 @@ export class Targets {
 		return this.resolvedObjects[fullPath];
 	}
 
+	/**
+	 * This API is a little trick.
+	 * You can pass in a valid file extension, or if you pass
+	 * solely just `pgm`, it will return all programs that
+	 * have multiple modules.
+	 */
 	public getObjectsByExtension(ext: string): ILEObject[] {
-		const upperExt = ext.toUpperCase();
-		return Object.
-			keys(this.resolvedObjects).
-			filter(filePath => {
-				const basename = path.basename(filePath);
-				const dotIndex = basename.indexOf(`.`);
-				if (dotIndex >= 0) {
-					const lastPart = basename.substring(dotIndex + 1);
-					return (lastPart.toUpperCase() === upperExt);
-				}
-			}).
-			map(filePath => this.resolvedObjects[filePath]);
+		const extensionParts = ext.split(`.`);
+		let extension = ext.toUpperCase(), shouldBeProgram = false, anyPrograms = false;
+
+		if (extensionParts.length === 2 && extensionParts[0].toUpperCase() === `PGM`) {
+			extension = extensionParts[1].toUpperCase();
+			shouldBeProgram = true;
+		} else if (extension === `PGM`) {
+			anyPrograms = true;
+		}
+
+		return Object.values(this.resolvedObjects).filter(obj => 
+			(obj.extension?.toUpperCase() === extension && (obj.type === `PGM`) === shouldBeProgram) ||
+			(anyPrograms === true && obj.type === `PGM` && obj.extension.toUpperCase() === extension)
+		);
 	}
 
 	public getExports() {

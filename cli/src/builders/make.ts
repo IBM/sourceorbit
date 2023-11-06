@@ -41,6 +41,10 @@ export class MakeProject {
 			binders: [],
 			includePaths: [],
 			compiles: {
+				"pgm": {
+					becomes: `PGM`,
+					command: `CRTPGM PGM($(BIN_LIB)/$*) ENTRY($*) MODULES(*MODULES) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)` // TODO: fix this
+				},
 				"pgm.rpgle": {
 					becomes: `PGM`,
 					command: `CRTBNDRPG PGM($(BIN_LIB)/$*) SRCSTMF('$<') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)`
@@ -51,6 +55,10 @@ export class MakeProject {
 						`system -s "CHGATR OBJ('$<') ATR(*CCSID) VALUE(1252)"`
 					],
 					command: `CRTSQLRPGI OBJ($(BIN_LIB)/$*) SRCSTMF('$<') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) COMPILEOPT('BNDDIR($(BNDDIR)) DFTACTGRP(*no)')`
+				},
+				"rpgle": {
+					becomes: `MODULE`,
+					command: `CRTRPGMOD MODULE($(BIN_LIB)/$*) SRCSTMF('$<') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB)`
 				},
 				"sqlrpgle": {
 					becomes: "MODULE",
@@ -89,14 +97,13 @@ export class MakeProject {
 				binder: binderSourceCompile,
 				bnd: binderSourceCompile,
 				srvpgm: {
-					sourceOptional: true,
 					becomes: `SRVPGM`,
 					preCommands: [
 						`-system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/$(APP_BNDDIR))"`,
 						`-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/$*))"`,
 						`-system "DLTOBJ OBJ($(BIN_LIB)/$*) OBJTYPE(*SRVPGM)"`
 					],
-					command: `CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE(*SRVPGM) EXPORT(*ALL) BNDDIR($(BNDDIR))`,
+					command: `CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE(*MODULES) SRCSTMF('$<') BNDDIR($(BNDDIR))`,
 					postCommands: [
 						`-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/$* *SRVPGM *IMMED))"`
 					]
@@ -141,6 +148,10 @@ export class MakeProject {
 		} catch (e) {
 			// console.log(`Failed to read 'iproj.json'.`);
 		}
+	}
+
+	public getSettings() {
+		return this.settings;
 	}
 
 	public applySettings(input: iProject) {
@@ -320,6 +331,8 @@ export class MakeProject {
 			return command;
 		}
 
+		const resolvedCommand = resolve(data.command);
+
 		lines.push(
 			`$(PREPATH)/${ileObject.name}.${ileObject.type}: ${ileObject.relativePath || ``}`,
 			...(qsysTempName && data.member ?
@@ -331,12 +344,12 @@ export class MakeProject {
 			...(data.command ?
 				[
 					`\tliblist -c $(BIN_LIB);\\`,
-					`\tsystem "${resolve(data.command)}" > .logs/${ileObject.name.toLowerCase()}.splf` // TODO: write the spool file somewhere?
+					`\tsystem "${resolvedCommand}" > .logs/${ileObject.name.toLowerCase()}.splf` // TODO: write the spool file somewhere?
 				]
 				: []
 			),
 			...(data.postCommands ? data.postCommands.map(cmd => `\t${resolve(cmd)}`) : []),
-			`\tsystem "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/${ileObject.name}.MBR') TOSTMF('.evfevent/${ileObject.name.toLowerCase()}.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
+			...(resolvedCommand.includes(`*EVENTF`) ? [`\tsystem "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/${ileObject.name}.MBR') TOSTMF('.evfevent/${ileObject.name.toLowerCase()}.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`] : []),
 		);
 
 		return lines;
