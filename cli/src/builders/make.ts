@@ -202,8 +202,7 @@ export class MakeProject {
 			`PREPATH=/QSYS.LIB/$(BIN_LIB).LIB`,
 			`SHELL=/QOpenSys/usr/bin/qsh`,
 			``,
-			`mkdir .evfevent`,
-			`mkdir .logs`
+			`CHEAT_ARG := $(mkdir .logs .evfevent)`,
 		];
 	}
 
