@@ -55,7 +55,7 @@ export class Logger {
   }
 
   exists(path: string, type: LogType) {
-    return this.logs[path].some(l => l.type === type)
+    return this.logs[path] && this.logs[path].some(l => l.type === type)
   }
 
   getAllLogs() {
