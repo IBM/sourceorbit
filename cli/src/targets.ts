@@ -748,6 +748,7 @@ export class Targets {
 								type: this.getObjectType(relativePath, mainDef.createType),
 								text: options.text,
 								relativePath,
+								extension: pathDetail.ext.substring(1)
 							}
 
 							// TODO: better support for 'for system name' in SQL

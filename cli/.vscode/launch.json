@@ -11,7 +11,7 @@
 			"cwd": "${workspaceFolder:cli}",
 			"program": "${workspaceFolder:cli}/dist/index.js",
 			"sourceMaps": true,
-			"args": ["-d", "${workspaceFolder:ibmi-company_system-rmake}", "-bf", "json"],
+			"args": ["-d", "${workspaceFolder:ibmi-company_system-rmake}", "-bf", "make"],
 			"preLaunchTask": {
 				"type": "npm",
 				"script": "webpack:dev"

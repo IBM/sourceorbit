@@ -241,6 +241,17 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
     ].join());
   });
 
+  test(`Checking makefile rule generation`, async () => {
+    const project = new MakeProject(cwd, targets);
+
+    const headerContent = project.generateGenericRules();
+
+    expect(headerContent.find(l => l === `$(PREPATH)/DEPTS.PGM: qrpglesrc/depts.pgm.sqlrpgle`)).toBeDefined();
+    expect(headerContent.find(l => l === `$(PREPATH)/BANKING.MODULE: qrpglesrc/banking.sqlrpgle`)).toBeDefined();
+    expect(headerContent.find(l => l === `$(PREPATH)/BANKING.SRVPGM: qsrvsrc/banking.bnd`)).toBeDefined();
+    expect(headerContent.find(l => l === `$(PREPATH)/DEPARTMENT.FILE: qddssrc/department.table`)).toBeDefined();
+  });
+
   test(`Impact of EMPLOYEES`, () => {
     const empPgm = targets.getDep({name: `EMPLOYEES`, type: `PGM`});
     expect(empPgm.relativePath).toBe(`qrpglesrc/employees.pgm.sqlrpgle`);
