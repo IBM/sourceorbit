@@ -1,2 +1,5 @@
 .DS_Store
 *.vsix
+
+from_qsys
+include_fix

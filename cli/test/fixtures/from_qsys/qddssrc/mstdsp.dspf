@@ -1,0 +1,253 @@
+     A*%%TS  DD  19990303  233157  CODELAB01   REL-V3R2M2  5763-CL2
+     A*  89/04/10  16:28:41    SING        REL-R01M02  5728-PW1
+     A****************************************************************
+     A*  THIS DISPLAY FILE PROVIDES MAINTENANCE FORMATS FOR ALL THE
+     A*  TIME REPORTING MASTER FILES - EMPLOYEE MASTER
+     A*                              - PROJECT MASTER
+     A*                              - REASON CODE MASTER
+     A****************************************************************
+     A*%%EC
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      PRINT
+     A                                      INDARA
+     A                                      CA03(03 'end of job')
+     A                                      CA04(04 'return to maintenance sele-
+     A                                      ction')
+     A*  89/03/02  12:07:25    DOUG        REL-R01M02  5728-PW1
+     A*  THE SELECT FORMAT ALLOWS SELECTION OF THE TIME REPORTING
+     A*  MASTER FILE THE OPERATOR WANTS TO MAINTAIN
+     A          R SELECT
+     A*%%TS  SD  19920629  165055  SMYTH       REL-V2R2M0  5738-PW1
+     A                                      BLINK
+     A  60                                  ALARM
+     A                                  2  5'PRG01'
+     A                                  2 30'Time Reporting System'
+     A                                  2 70DATE
+     A                                      EDTCDE(Y)
+     A                                  3 30'Maintenance Selection'
+     A                                  3 70TIME
+     A                                  6 14'Enter an X beside the application -
+     A                                      you want to maintain'
+     A            EMPAPL         1A  B  9 25
+     A                                  9 28'Employee Master Maintenance'
+     A            PRJAPL         1A  B 10 25
+     A                                 10 28'Project Master Maintenance'
+     A            RSNAPL         1A  B 11 25
+     A                                 11 28'Reason Code Master Maintenance'
+     A            EMESS         50A  O 21 16
+     A  60                                  DSPATR(HI)
+     A                                 23  7'F3-End of Job'
+     A*  89/04/10  16:28:41    SING        REL-R01M02  5728-PW1
+     A*  THE EMPSEL FORMAT ALLOWS SELECTION OF THE EMPLOYEE TO BE
+     A*  MAINTAINED AND THE TYPE OF MAINTENANCE TO BE PERFORMED
+     A          R EMPSEL
+     A*%%TS  SD  19920629  165055  SMYTH       REL-V2R2M0  5738-PW1
+     A                                      BLINK
+     A  60                                  ALARM
+     A                                      CA11(11 'Use subfile')
+     A                                  2  5'PRG01'
+     A                                  2 30'Time Reporting System'
+     A                                  2 70DATE
+     A                                      EDTCDE(Y)
+     A                                  3 27'Employee Master Maintenance'
+     A                                  3 70TIME
+     A                                  6 27'Employee Number'
+     A            EMPNO     R        B  6 45REFFLD(RCEMP/EMPNO *LIBL/EMPMST)
+     A                                  8 27'Action Code'
+     A            ACODE          1A  B  8 44
+     A                                  8 48'A-Add'
+     A                                  9 48'C-Change'
+     A                                 10 48'D-Delete'
+     A            EMESS         50A  O 21 17
+     A  60                                  DSPATR(HI)
+     A                                 23 11'F3-End of Job'
+     A                                 23 32'F4-Maintenance Selection'
+     A          R EMPMNT
+     A*%%TS  DD  19990303  194045  CODELAB01   REL-V3R2M2  5763-CL2
+     A*  89/01/10  13:15:25    DOUG        REL-R01M02  5728-PW1
+     A*  THE EMPMNT FORMAT ALLOWS UPDATE OF THE EMPLOYEE NUMBER
+     A*  SPECIFIED ON THE EMPSEL FORMAT.
+     A                                      BLINK
+     A  60                                  ALARM
+     A                                      CA05(05 'return to employee selecti-
+     A                                      on')
+     A                                  2  5'PRG01'
+     A                                  2 30'Time Reporting System'
+     A                                  2 70DATE
+     A                                      EDTCDE(Y)
+     A                                  3 70TIME
+     A                                  3 27'Employee Master Maintenance'
+     A                                  5 14'Number'
+     A            EMPNO     R        O  5 22REFFLD(RCEMP/EMPNO *LIBL/EMPMST)
+     A                                  5 31'Name'
+     A            ENAME     R        B  5 37REFFLD(RCEMP/ENAME *LIBL/EMPMST)
+     A  90                                  DSPATR(PR)
+     A                                  7 18'Category'
+     A            EMCAT     R        B  7 37REFFLD(RCEMP/EMCAT *LIBL/EMPMST)
+     A  90                                  DSPATR(PR)
+     A                                  8 18'Department'
+     A            EDEPT     R        B  8 37REFFLD(RCEMP/EDEPT *LIBL/EMPMST)
+     A  90                                  DSPATR(PR)
+     A                                  9 18'Location'
+     A            ELOCN     R        B  9 37REFFLD(RCEMP/ELOCN *LIBL/EMPMST)
+     A  90                                  DSPATR(PR)
+     A                                 10 18'USRID'
+     A            EUSRI     R        B 10 37REFFLD(RCEMP/EUSRI *LIBL/EMPMST)
+     A  90                                  DSPATR(PR)
+     A                                 11 18'Normal week hours'
+     A            ENHRS     R        B 11 37REFFLD(RCEMP/ENHRS *LIBL/EMPMST)
+     A  90                                  DSPATR(PR)
+     A                                 13 30'Time Reporting History'
+     A                                 15 40'Current  Year To   Prior'
+     A                                 16 40' Month     Date     Year'
+     A                                 17 19'Project Related'
+     A            EPHRC     R        O 17 41REFFLD(RCEMP/EPHRC *LIBL/EMPMST)
+     A            EPHRY     R        O 17 49REFFLD(RCEMP/EPHRY *LIBL/EMPMST)
+     A            EPHRP     R        O 17 58REFFLD(RCEMP/EPHRP *LIBL/EMPMST)
+     A                                 18 19'Non Project Related'
+     A            EPNRC     R        O 18 41REFFLD(RCEMP/EPNRC *LIBL/EMPMST)
+     A            EPNRY     R        O 18 49REFFLD(RCEMP/EPNRY *LIBL/EMPMST)
+     A            EPNRP     R        O 18 58REFFLD(RCEMP/EPNRP *LIBL/EMPMST)
+     A            EMESS         50   O 21 16
+     A  60                                  DSPATR(HI)
+     A                                 23  7'F3-End of Job'
+     A                                 23 25'F4-Maintenance Selection'
+     A                                 23 55'F5-Employee Selection'
+     A                                 11 44'(eg. 40.0 enter 400)'
+     A          R PRJSEL
+     A*%%TS  DD  19990303  194045  CODELAB01   REL-V3R2M2  5763-CL2
+     A*  89/01/10  13:15:25    DOUG        REL-R01M02  5728-PW1
+     A*  THE PRJSEL FORMAT ALLOWS SELECTION OF THE PROJECT CODE TO
+     A*  BE MAINTAINED AND THE TYPE OF MAINTENANCE TO BE PERFORMED
+     A                                      BLINK
+     A  60                                  ALARM
+     A                                  2  5'PRG01'
+     A                                  2 30'Time Reporting System'
+     A                                  2 70DATE
+     A                                      EDTCDE(Y)
+     A                                  3 27'Project Master Maintenance'
+     A                                  3 70TIME
+     A                                  6 27'Project Code'
+     A            PRCDE     R        B  6 44REFFLD(RCPRJ/PRCDE *LIBL/PRJMST)
+     A                                  8 27'Action Code'
+     A            ACODE          1A  B  8 44
+     A                                  8 48'A-Add'
+     A                                  9 48'C-Change'
+     A                                 10 48'D-Delete'
+     A            EMESS         50   O 21 16
+     A  60                                  DSPATR(HI)
+     A                                 23  7'F3-End of Job'
+     A                                 23 25'F4-Maintenance Selection'
+     A          R PRJMNT
+     A*%%TS  DD  19990303  194045  CODELAB01   REL-V3R2M2  5763-CL2
+     A*  89/01/10  13:15:25    DOUG        REL-R01M02  5728-PW1
+     A*  THE PRJMNT FORMAT ALLOWS UPDATE OF THE PROJECT CODE
+     A*  SPECIFIED ON THE PRJSEL FORMAT.
+     A                                      BLINK
+     A  60                                  ALARM
+     A                                      CA06(06 'return to prjoect selectio-
+     A                                      n')
+     A                                  2  5'PRG01'
+     A                                  2 30'Time Reporting System'
+     A                                  2 70DATE
+     A                                      EDTCDE(Y)
+     A                                  3 70TIME
+     A                                  3 27'Project Master Maintenance'
+     A                                  5 29'Project Code'
+     A            PRCDE     R        O  5 43REFFLD(RCPRJ/PRCDE *LIBL/PRJMST)
+     A                                  7 10'Description'
+     A            PRDSC     R        B  7 23REFFLD(RCPRJ/PRDSC *LIBL/PRJMST)
+     A  90                                  DSPATR(PR)
+     A                                  9 13'Responsibility'
+     A            PRRSP     R        B  9 41REFFLD(RCPRJ/PRRSP *LIBL/PRJMST)
+     A  90                                  DSPATR(PR)
+     A                                 10 13'Project Start Date'
+     A            PRSTR     R        B 10 41REFFLD(RCPRJ/PRSTR *LIBL/PRJMST)
+     A  90                                  DSPATR(PR)
+     A                                 10 53'(MMDDYY)'
+     A                                 11 13'Project Estimated End Date'
+     A            PREND     R        B 11 41REFFLD(RCPRJ/PREND *LIBL/PRJMST)
+     A  90                                  DSPATR(PR)
+     A                                 11 53'(MMDDYY)'
+     A                                 12 13'Project Completion Date'
+     A            PRCMP     R        B 12 41REFFLD(RCPRJ/PRCMP *LIBL/PRJMST)
+     A  90                                  DSPATR(PR)
+     A                                 12 53'(MMDDYY)'
+     A                                 13 13'Project Estimated Hours'
+     A            PREST     R        B 13 41REFFLD(RCPRJ/PREST *LIBL/PRJMST)
+     A  90                                  DSPATR(PR)
+     A                                 15 33'Project History'
+     A                                 17 27'Current'
+     A                                 17 37'Year To     Prior'
+     A                                 18 28'Month'
+     A                                 18 39'Date       Year'
+     A            PRHRC     R        O 19 27REFFLD(RCPRJ/PRHRC *LIBL/PRJMST)
+     A            PRHRY     R        O 19 36REFFLD(RCPRJ/PRHRY *LIBL/PRJMST)
+     A            PRHRP     R        O 19 47REFFLD(RCPRJ/PRHRP *LIBL/PRJMST)
+     A            EMESS         50   O 21 16
+     A  60                                  DSPATR(HI)
+     A                                 23  7'F3-End of Job'
+     A                                 23 25'F4-Maintenance Selection'
+     A                                 23 54'F6-Project Code Selection'
+     A          R RSNSEL
+     A*%%TS  DD  19990303  194045  CODELAB01   REL-V3R2M2  5763-CL2
+     A*  89/01/10  13:15:25    DOUG        REL-R01M02  5728-PW1
+     A*  THE RSNSEL FORMAT ALLOWS SELECTION OF THE REASON CODE TO
+     A*  BE MAINTAINED AND THE TYPE OF MAINTENANCE TO BE PERFORMED
+     A                                      BLINK
+     A  60                                  ALARM
+     A                                  2  5'PRG01'
+     A                                  2 30'Time Reporting System'
+     A                                  2 70DATE
+     A                                      EDTCDE(Y)
+     A                                  3 26'Reason Code Master Maintenance'
+     A                                  3 70TIME
+     A                                  6 27'Reason Code'
+     A            RSCDE     R        B  6 44REFFLD(RCRSN/RSCDE *LIBL/RSNMST)
+     A                                  8 27'Action Code'
+     A            ACODE          1A  B  8 44
+     A                                  8 48'A-Add'
+     A                                  9 48'C-Change'
+     A                                 10 48'D-Delete'
+     A            EMESS         50   O 21 16
+     A  60                                  DSPATR(HI)
+     A                                 23  7'F3-End of Job'
+     A                                 23 25'F4-Maintenance Selection'
+     A          R RSNMNT
+     A*%%TS  DD  19990303  194045  CODELAB01   REL-V3R2M2  5763-CL2
+     A*  89/01/10  13:15:25    DOUG        REL-R01M02  5728-PW1
+     A*  THE RSNMNT FORMAT ALLOWS UPDATE OF THE REASON CODE
+     A*  SPECIFIED ON THE RSNSEL FORMAT.
+     A                                      BLINK
+     A  60                                  ALARM
+     A                                      CA07(07 'return to reason code sele-
+     A                                      ction')
+     A                                  2  5'PRG01'
+     A                                  2 30'Time Reporting System'
+     A                                  2 70DATE
+     A                                      EDTCDE(Y)
+     A                                  3 70TIME
+     A                                  3 27'Employee Master Maintenance'
+     A                                  5 30'Reason Code'
+     A            RSCDE     R        O  5 43REFFLD(RCRSN/RSCDE *LIBL/RSNMST)
+     A                                  7  9'Description'
+     A            RSDSC     R        B  7 22REFFLD(RCRSN/RSDSC *LIBL/RSNMST)
+     A  90                                  DSPATR(PR)
+     A                                  9 31'Reason Code History'
+     A                                 11 26'Current'
+     A                                 11 36'Year To     Prior'
+     A                                 12 27'Month'
+     A                                 12 38'Date       Year'
+     A            RSHRC     R        O 13 26REFFLD(RCRSN/RSHRC *LIBL/RSNMST)
+     A            RSHRY     R        O 13 35REFFLD(RCRSN/RSHRY *LIBL/RSNMST)
+     A            RSHRP     R        O 13 46REFFLD(RCRSN/RSHRP *LIBL/RSNMST)
+     A            EMESS         50   O 21 16
+     A  60                                  DSPATR(HI)
+     A                                 23  7'F3-End of Job'
+     A                                 23 25'F4-Maintenance Selection'
+     A                                 23 54'F7-Reason Code Selection'
+     A*%%RS+<record-sequences>
+     A*%%RS+ <sequence name="MAIN_MENU">
+     A*%%RS+  <record-write record-format="SELECT" />
+     A*%%RS+ </sequence>
+     A*%%RS </record-sequences>

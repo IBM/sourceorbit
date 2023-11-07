@@ -1,13 +1,11 @@
 import { assert, beforeAll, describe, expect, test } from 'vitest';
 
-import glob from "glob";
 import { Targets } from '../src/targets'
 import path from 'path';
-import { allExtensions } from '../src/extensions';
 import { MakeProject } from '../src/builders/make';
+import { getFiles, scanGlob } from './fixtures/files';
 
 const cwd = path.join(__dirname, `..`, `..`, `ibmi-company_system-rmake`);
-const scanGlob = `**/*.{${allExtensions.join(`,`)},${allExtensions.map(e => e.toUpperCase()).join(`,`)}}`;
 
 const makeDefaults = MakeProject.getDefaultSettings();
 
@@ -137,8 +135,10 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
     expect(impacted[0].type).toBe(`PGM`);
     
     const logs = targets.logger.getLogsFor(deptsPgm.relativePath);
-    expect(logs.length).toBe(1);
-    expect(logs[0].message).toBe(`This object depended on DEPTS.FILE before it was deleted.`);
+    expect(logs.length).toBe(3);
+    expect(logs[0].message).toBe(`Include at line 14 found, to path 'qrpgleref/utils.rpgleinc'`);
+    expect(logs[1].message).toBe(`Include at line 13 found, to path 'qrpgleref/constants.rpgleinc'`);
+    expect(logs[2].message).toBe(`This object depended on DEPTS.FILE before it was deleted.`);
 
     expect(targets.getDep({name: `DEPTS`, type: `FILE`})).toBeUndefined();
 
@@ -298,11 +298,3 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
     expect(resolvedObject.type).toBe(`FILE`);
   })
 });
-
-function getFiles(cwd: string, globPath: string): string[] {
-	return glob.sync(globPath, {
-		cwd,
-		absolute: true,
-		nocase: true,
-	});
-}
