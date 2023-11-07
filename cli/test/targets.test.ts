@@ -1,5 +1,5 @@
 import {  expect, test } from 'vitest'
-import { baseTargets, multiModuleObjects } from './fixture';
+import { baseTargets, multiModuleObjects } from './fixtures/targets';
 
 test('resolveObject', () => {
   baseTargets();

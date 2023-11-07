@@ -1,5 +1,5 @@
 import { assert, expect, test } from 'vitest'
-import { Targets } from '../src/targets'
+import { Targets } from '../../src/targets'
 import path from 'path';
 
 export const cwd = path.join(`/`, `projects`);
