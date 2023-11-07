@@ -288,7 +288,7 @@ export class Targets {
 		if (pathDetail.ext.length > 1) {
 			if (!this.suggestions.renames) {
 				// Don't clear the logs if we're suggestion renames.
-				this.logger.flush();
+				this.logger.flush(filePath);
 			}
 
 			const ext = pathDetail.ext.substring(1).toLowerCase();
@@ -874,6 +874,11 @@ export class Targets {
 					change: {
 						lineContent: (options.isFree ? `` : ``.padEnd(6)) + `/copy '${this.getRelative(include.toPath)}'`
 					}
+				});
+			} else {
+				this.logger.fileLog(this.getRelative(include.toPath), {
+					message: `Include at line ${include.line} found, to path '${this.getRelative(include.toPath)}'`,
+					type: `info`,
 				});
 			}
 		});

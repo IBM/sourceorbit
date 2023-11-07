@@ -27,14 +27,17 @@ export function replaceIncludes(logger: Logger) {
 			const lines = content.split(eol);
 
 			const logs = allLogs[filePath].filter(l => l.type === `includeFix` && l.line);
-			for (const log of logs) {
-				if (log.change && log.change.lineContent) {
-					lines[log.line] = log.change.lineContent;
-				}
-			}
 
-			infoOut(`${filePath} changes: ${logs.length}`);
-			fs.writeFileSync(filePath, lines.join(eol));
+			if (logs.length > 0) {
+				for (const log of logs) {
+					if (log.change && log.change.lineContent) {
+						lines[log.line] = log.change.lineContent;
+					}
+				}
+
+				infoOut(`${filePath} changes: ${logs.length}`);
+				fs.writeFileSync(filePath, lines.join(eol));
+			}
 		}
 	}
 }
