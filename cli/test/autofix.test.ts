@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { describe, expect, test } from "vitest";
 import { getFiles, scanGlob } from "./fixtures/files";
 import { setupIncludeFix, setupProjectFromQsys } from "./fixtures/projects";
 
@@ -26,6 +26,43 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
 
   const errorTable = allLogs["qprotosrc/errortable.rpgle"];
   const payroll = allLogs["qrpglesrc/payroll.rpgle"];
+  const empmst = allLogs["qsqlsrc/empmst.sql"];
+  const emp = allLogs["qsqlsrc/emp.sql"];
+  const dept = allLogs["qsqlsrc/super_long_dept_name.sql"];
+
+  expect(emp.length).toBe(1);
+  expect(emp[0]).toStrictEqual({
+    message: "SUPER_LONG_EMP_NAME (FILE) name is longer than 10 characters. Consider using 'FOR SYSTEM NAME' in the CREATE statement.",
+    type: "warning",
+    range: {
+      start: 94,
+      end: 113,
+    },
+  });
+
+  expect(dept.length).toBe(1);
+  expect(dept[0]).toStrictEqual({
+    message: "Rename suggestion",
+    type: "rename",
+    change: {
+      rename: {
+        path: "/Users/barry/Repos/sourceorbit/from_qsys/qsqlsrc/super_long_dept_name.sql",
+        newName: "dept.table",
+      },
+    },
+  });
+
+  expect(empmst.length).toBe(1);
+  expect(empmst[0]).toStrictEqual({
+    message: "Rename suggestion",
+    type: "rename",
+    change: {
+      rename: {
+        path: "/Users/barry/Repos/sourceorbit/from_qsys/qsqlsrc/empmst.sql",
+        newName: "empmst.table",
+      },
+    },
+  });
 
   expect(errorTable.length).toBe(1);
   expect(errorTable[0]).toStrictEqual({

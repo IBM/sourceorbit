@@ -17,6 +17,16 @@ export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAA
 
 const ignoredObjects = [`QSYSPRT`, `QCMDEXC.PGM`, `*LDA.DTAARA`, `QDCXLATE.PGM`, `QUSRJOBI`, `QTQCVRT.PGM`];
 
+const sqlTypeExtension = {
+	'TABLE': `table`,
+	'VIEW': `view`,
+	'PROCEDURE': `sqlprc`,
+	'FUNCTION': `sqludf`,
+	'TRIGGER': `sqltrg`,
+	'ALIAS': `sqlalias`,
+	'SEQUENCE': `sqlseq`
+};
+
 const bindingDirectoryTarget: ILEObject = { name: `$(APP_BNDDIR)`, type: `BNDDIR` };
 
 const TextRegex = /\%TEXT.*(?=\n|\*)/gm
@@ -61,7 +71,7 @@ interface FileOptions {
 export class Targets {
 	private rpgParser: Parser;
 
-	private pathCache: { [path: string]: true|string[] } | undefined;
+	private pathCache: { [path: string]: true | string[] } | undefined;
 	private resolvedPaths: { [query: string]: string } = {};
 	private resolvedObjects: { [localPath: string]: ILEObject } = {};
 	private resolvedExports: { [name: string]: ILEObject } = {};
@@ -305,10 +315,10 @@ export class Targets {
 					[textMatch] = content.match(TextRegex);
 					if (textMatch) {
 						if (textMatch.startsWith(`%TEXT`)) textMatch = textMatch.substring(5);
-						if (textMatch.endsWith(`*`)) textMatch = textMatch.substring(0, textMatch.length-1);
+						if (textMatch.endsWith(`*`)) textMatch = textMatch.substring(0, textMatch.length - 1);
 						textMatch = textMatch.trim();
 					}
-				} catch (e) {}
+				} catch (e) { }
 
 				const options: FileOptions = {
 					isFree,
@@ -667,7 +677,7 @@ export class Targets {
 
 		if (createCount > 1) {
 			this.logger.fileLog(relativePath, {
-				message: `includes multiple create statements. They should be in individual sources. This file will not be parsed.`,
+				message: `Includes multiple create statements. They should be in individual sources. This file will not be parsed.`,
 				type: `warning`,
 			});
 
@@ -741,36 +751,40 @@ export class Targets {
 
 						// Creates should be in their own unique file
 						case StatementType.Create:
-							let objectName = trimQuotes(mainDef.object.name, `"`);
+							let objectName = mainDef.object.system || trimQuotes(mainDef.object.name, `"`);
+
+							const extension = pathDetail.ext.substring(1);
 
 							let ileObject: ILEObject = {
-								name: objectName,
+								name: objectName.toUpperCase(),
 								type: this.getObjectType(relativePath, mainDef.createType),
 								text: options.text,
 								relativePath,
-								extension: pathDetail.ext.substring(1)
+								extension
 							}
 
 							// TODO: better support for 'for system name' in SQL
 
-							const fileObjName = pathDetail.name.toUpperCase();
+							let suggestRename = false;
+							const sqlFileName = pathDetail.name.toUpperCase();
 
-							if (ileObject.name.length > 10) {
-								this.logger.fileLog(ileObject.relativePath, {
-									message: `${ileObject.name} (${ileObject.type}) name is longer than 10 characters. Assuming system name (object name) is '${fileObjName}'`,
-									type: `warning`,
-									range: {
-										start: tokens[0].range.start,
-										end: tokens[tokens.length - 1].range.end
-									},
-								});
+							if (ileObject.name.length <= 10) {
+								if (sqlFileName.length > 10) {
+									suggestRename = true;
+								}
 
-								ileObject.name = fileObjName;
+								if (ileObject.name.toUpperCase() !== sqlFileName) {
+									suggestRename = true;
+								}
 							}
-							else if (fileObjName.length <= 10 && ileObject.name !== fileObjName) {
-								// We must do this because we resolve objects by file name!
+
+							if (extension.toUpperCase() === `SQL` && mainDef.createType) {
+								suggestRename = true;
+							}
+
+							if (ileObject.name.length > 10 && mainDef.object.system === undefined) {
 								this.logger.fileLog(ileObject.relativePath, {
-									message: `${ileObject.name} does not match file basename. Assuming system name (object name) is '${fileObjName}'`,
+									message: `${ileObject.name} (${ileObject.type}) name is longer than 10 characters. Consider using 'FOR SYSTEM NAME' in the CREATE statement.`,
 									type: `warning`,
 									range: {
 										start: tokens[0].range.start,
@@ -778,7 +792,7 @@ export class Targets {
 									},
 								});
 
-								ileObject.name = fileObjName;
+								suggestRename = false;
 							}
 
 							let newTarget: ILEObjectTarget = {
@@ -815,6 +829,42 @@ export class Targets {
 							this.storeResolved(localPath, ileObject);
 
 							this.pushDep(newTarget);
+
+							// If the extension is SQL, let's make better suggestions
+							// based on the create type in the CREATE statement
+							if (suggestRename) {
+								const newExtension = sqlTypeExtension[mainDef.createType.toUpperCase()];
+
+								if (newExtension) {
+									const possibleName = ileObject.name.toLowerCase() + `.` + newExtension;
+
+									if (this.suggestions.renames) {
+										const renameLogPath = relativePath;
+
+										// We need to make sure the .rpgleinc rename is most important
+										if (this.logger.exists(renameLogPath, `rename`)) {
+											this.logger.flush(renameLogPath);
+										}
+
+										this.logger.fileLog(renameLogPath, {
+											message: `Rename suggestion`,
+											type: `rename`,
+											change: {
+												rename: {
+													path: localPath,
+													newName: possibleName
+												}
+											}
+										});
+									} else {
+										this.logger.fileLog(relativePath, {
+											message: `Extension should be based on type. Suggested name is '${possibleName}'`,
+											type: `warning`,
+										});
+									}
+								}
+							}
+
 							break;
 					}
 
@@ -1136,7 +1186,7 @@ export class Targets {
 			.map(ref => {
 				const keyword = ref.keyword;
 				let importName: string = ref.name;
-				const extproc: string|boolean = keyword[`EXTPROC`];
+				const extproc: string | boolean = keyword[`EXTPROC`];
 				if (extproc) {
 					if (extproc === true) importName = ref.name;
 					else importName = extproc;
@@ -1383,7 +1433,7 @@ export class Targets {
 			anyPrograms = true;
 		}
 
-		return Object.values(this.resolvedObjects).filter(obj => 
+		return Object.values(this.resolvedObjects).filter(obj =>
 			(obj.extension?.toUpperCase() === extension && (obj.type === `PGM`) === shouldBeProgram) ||
 			(anyPrograms === true && obj.type === `PGM` && obj.extension.toUpperCase() === extension)
 		);
