@@ -25,13 +25,38 @@ Types available:
 * `json` Generate all dependency info as JSON
 * `bob` to generate the required `Rules.mk` files
 * `make` generates a single makefile with the targets and rules.
-   *  [See more here](./pages/cli/make) for our make support.
+   *  [See more here](./make.md) for our make support.
 * `imd` can be used to generate analysis reports for branches
    * This is particularly useful for pull-requests. It is possible have a pipeline that runs on a push to a branch/PR to generate dependency information.
-   * See an [example report here](https://github.com/worksofliam/ibmi-company_system-rmake/actions/runs/5765430282). See about [GitHub Actions](./pages/cli/gha.md) here.
+   * See about [GitHub Actions](./pages/cli/gha.md) here.
 
 ```sh
 so -bf imd -l `git diff --name-only origin/main origin/${GITHUB_HEAD_REF}`
+```
+
+## Cleanup capabilities
+
+The ability to cleanup your source code is usually a one-and-done situation. After you've migrated your source code into git, you may find that a majority of your source extensions are incorrect (like missing the `.pgm` attribute on your source). There are currently two methods of cleanup available:
+
+* `-ar` for **auto-rename**. This fixes most extensions for your repository. For example, adds the `.pgm` attribute where possible, changes RPGLE headers to use `.rpgleinc` and fixes SQL sources to use right extension based on the `CREATE` statement inside of it.
+* `-fi` for **fix includes**. This will scan all RPGLE source code and change the include statements to use the unix style path if the mapped source member can be found in the current working directory.
+
+You can also use `--verbose` before using those parameters to see impact it will have before running them. To follow up to that, consider using git before using this parameters.
+
+```sh
+cd myrpgrepo
+
+# Preview warnings and infos
+so --verbose
+
+# Fix names
+so -ar
+
+# Preview warnings and infos. Will be different since file names changed
+so --verbose
+
+# Fix names
+so -fi
 ```
 
 ## Installation
