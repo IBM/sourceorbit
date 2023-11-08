@@ -4,14 +4,15 @@ import { Targets } from '../src/targets'
 import path from 'path';
 import { MakeProject } from '../src/builders/make';
 import { getFiles, scanGlob } from './fixtures/files';
+import { setupCompanySystem } from './fixtures/projects';
 
-const cwd = path.join(__dirname, `..`, `..`, `ibmi-company_system-rmake`);
+const cwd = setupCompanySystem();
 
 const makeDefaults = MakeProject.getDefaultSettings();
 
 let files = getFiles(cwd, scanGlob);
 
-describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
+describe.skipIf(files.length === 0)(`company_system tests`, () => {
   const targets = new Targets(cwd);
   
   beforeAll(async () => {

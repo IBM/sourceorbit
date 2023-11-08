@@ -1,0 +1,5 @@
+**free
+
+dcl-pr ToLower char(50) extproc;
+  inputString char(50) value;
+end-pr;

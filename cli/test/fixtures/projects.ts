@@ -21,6 +21,16 @@ export function setupIncludeFix() {
   return projectPath;
 }
 
+export function setupCompanySystem() {
+  const fixturePath = path.join(__dirname, `company_system`);
+  const projectPath = path.join(__dirname, `..`, `..`, `..`, `company_system`);
+
+  deleteDir(projectPath);
+  fs.cpSync(fixturePath, projectPath, {recursive: true});
+
+  return projectPath;
+}
+
 function deleteDir(dirPath: string) {
   try {
     fs.rmSync(dirPath, {recursive: true, force: true});

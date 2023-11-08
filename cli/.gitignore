@@ -4,3 +4,4 @@ node_modules
 
 !from_qsys
 !include_fix
+!company_system
