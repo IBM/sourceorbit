@@ -100,7 +100,11 @@ export class Targets {
 	}
 
 	public getRelative(fullPath: string) {
-		return path.relative(this.cwd, fullPath);
+		return Targets.getPosixyPath(path.relative(this.cwd, fullPath));
+	}
+
+	private static getPosixyPath(filePath: string): string {
+		return filePath.split(path.sep).join(path.posix.sep);
 	}
 
 	private storeResolved(localPath: string, ileObject: ILEObject) {
@@ -144,7 +148,7 @@ export class Targets {
 	}
 
 	public removeObjectByPath(localPath: string) {
-		const resolvedObject = this.resolvedObjects[localPath];
+		const resolvedObject = this.resolvedObjects[Targets.getPosixyPath(localPath)];
 		const pathDetail = path.parse(localPath);
 
 		if (resolvedObject) {
@@ -1359,10 +1363,10 @@ export class Targets {
 		currentTarget.relativePath = undefined;
 
 		// Store new resolved path for this object
-		this.storeResolved(path.join(this.cwd, `${currentTarget.name}.PGM`), currentTarget);
+		this.storeResolved(path.posix.join(this.cwd, `${currentTarget.name}.PGM`), currentTarget);
 
 		// Then we can resolve the same path again
-		const newModule = this.resolveObject(path.join(this.cwd, basePath));
+		const newModule = this.resolveObject(path.posix.join(this.cwd, basePath));
 		// Force it as a module
 		newModule.type = `MODULE`;
 
@@ -1413,7 +1417,7 @@ export class Targets {
 	}
 
 	public getResolvedObject(fullPath: string): ILEObject {
-		return this.resolvedObjects[fullPath];
+		return this.resolvedObjects[Targets.getPosixyPath(fullPath)];
 	}
 
 	/**
