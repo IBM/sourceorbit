@@ -4,13 +4,20 @@ import { infoOut, warningOut } from "./cli";
 
 import * as fs from "fs";
 import * as path from "path";
+import * as os from "os"
 
 export function getFiles(cwd: string, globPath: string): string[] {
-	return glob.sync(globPath, {
+	let paths: string[] = glob.sync(globPath, {
 		cwd,
 		absolute: true,
 		nocase: true,
 	});
+
+	if (os.platform() === `win32`) {
+		paths = paths.map(p => p.split(path.posix.sep).join(path.sep))
+	}
+
+	return paths;
 }
 
 
