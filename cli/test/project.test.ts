@@ -35,25 +35,25 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
   test(`Check mypgm`, async () => {
     const myPgm = targets.getDep({name: `MYPGM`, type: `PGM`});
-    expect(myPgm.relativePath).toBe(`qrpglesrc/mypgm.pgm.rpgle`);
+    expect(myPgm.relativePath).toBe(path.join(`qrpglesrc`, `mypgm.pgm.rpgle`));
     expect(myPgm.deps.length).toBe(0);
   });
 
   test(`Check employees`, async () => {
     const myPgm = targets.getDep({name: `EMPLOYEES`, type: `PGM`});
-    expect(myPgm.relativePath).toBe(`qrpglesrc/employees.pgm.sqlrpgle`);
+    expect(myPgm.relativePath).toBe(path.join(`qrpglesrc`, `employees.pgm.sqlrpgle`));
 
     expect(myPgm.deps.length).toBe(2);
 
     const empTable = myPgm.deps[0];
     expect(empTable.name).toBe(`EMPLOYEE`);
     expect(empTable.type).toBe(`FILE`);
-    expect(empTable.relativePath).toBe(`qddssrc/employee.table`);
+    expect(empTable.relativePath).toBe(path.join(`qddssrc`, `employee.table`));
 
     const empDisplay = myPgm.deps[1];
     expect(empDisplay.name).toBe(`EMPS`);
     expect(empDisplay.type).toBe(`FILE`);
-    expect(empDisplay.relativePath).toBe(`qddssrc/emps.dspf`);
+    expect(empDisplay.relativePath).toBe(path.join(`qddssrc`, `emps.dspf`));
   });
 
   test(`Check depts`, async () => {
@@ -66,34 +66,34 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     const empPgm = myPgm.deps[0];
     expect(empPgm.name).toBe(`EMPLOYEES`);
     expect(empPgm.type).toBe(`PGM`);
-    expect(empPgm.relativePath).toBe(`qrpglesrc/employees.pgm.sqlrpgle`);
+    expect(empPgm.relativePath).toBe(path.join(`qrpglesrc`, `employees.pgm.sqlrpgle`));
 
     const deptTable = myPgm.deps[1];
     expect(deptTable.name).toBe(`DEPARTMENT`);
     expect(deptTable.type).toBe(`FILE`);
-    expect(deptTable.relativePath).toBe(`qddssrc/department.table`);
+    expect(deptTable.relativePath).toBe(path.join(`qddssrc`, `department.table`));
 
     const deptFile = myPgm.deps[2];
     expect(deptFile.name).toBe(`DEPTS`);
     expect(deptFile.type).toBe(`FILE`);
-    expect(deptFile.relativePath).toBe(`qddssrc/depts.dspf`);
+    expect(deptFile.relativePath).toBe(path.join(`qddssrc`, `depts.dspf`));
 
     const utilsSrvPgm = myPgm.deps[3];
     expect(utilsSrvPgm.name).toBe(`UTILS`);
     expect(utilsSrvPgm.type).toBe(`SRVPGM`);
-    expect(utilsSrvPgm.relativePath).toBe(`qsrvsrc/utils.bnd`);
+    expect(utilsSrvPgm.relativePath).toBe(path.join(`qsrvsrc`, `utils.bnd`));
   });
 
   test(`Check utils`, async () => {
     const myPgm = targets.getDep({name: `UTILS`, type: `SRVPGM`});
-    expect(myPgm.relativePath).toBe(`qsrvsrc/utils.bnd`);
+    expect(myPgm.relativePath).toBe(path.join(`qsrvsrc`, `utils.bnd`));
 
     expect(myPgm.deps.length).toBe(1);
 
     const empPgm = myPgm.deps[0];
     expect(empPgm.name).toBe(`UTILS`);
     expect(empPgm.type).toBe(`MODULE`);
-    expect(empPgm.relativePath).toBe(`qrpglesrc/utils.sqlrpgle`);
+    expect(empPgm.relativePath).toBe(path.join(`qrpglesrc`, `utils.sqlrpgle`));
   });
 
   test(`Check binding directory`, async () => {
@@ -105,17 +105,17 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     const bankingSrvpgm = myBinder.deps[0];
     expect(bankingSrvpgm.name).toBe(`BANKING`);
     expect(bankingSrvpgm.type).toBe(`SRVPGM`);
-    expect(bankingSrvpgm.relativePath).toBe(`qsrvsrc/banking.bnd`);
+    expect(bankingSrvpgm.relativePath).toBe(path.join(`qsrvsrc`, `banking.bnd`));
 
     const utilsSrvpgm = myBinder.deps[1];
     expect(utilsSrvpgm.name).toBe(`UTILS`);
     expect(utilsSrvpgm.type).toBe(`SRVPGM`);
-    expect(utilsSrvpgm.relativePath).toBe(`qsrvsrc/utils.bnd`);
+    expect(utilsSrvpgm.relativePath).toBe(path.join(`qsrvsrc`, `utils.bnd`));
   });
 
   test(`Check employee table`, async () => {
     const empTable = targets.getDep({name: `EMPLOYEE`, type: `FILE`});
-    expect(empTable.relativePath).toBe(`qddssrc/employee.table`);
+    expect(empTable.relativePath).toBe(path.join(`qddssrc`, `employee.table`));
     expect(empTable.text).toBe(`Employee File`);
     
   });
@@ -256,7 +256,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
   test(`Impact of EMPLOYEES`, () => {
     const empPgm = targets.getDep({name: `EMPLOYEES`, type: `PGM`});
-    expect(empPgm.relativePath).toBe(`qrpglesrc/employees.pgm.sqlrpgle`);
+    expect(empPgm.relativePath).toBe(path.join(`qrpglesrc`, `employees.pgm.sqlrpgle`));
 
     const impactTree = targets.getImpactFor(empPgm);
     expect(impactTree.ileObject.name).toBe(`EMPLOYEES`);
@@ -268,7 +268,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
   test(`Impact of UTILS`, () => {
     const utilsModule = targets.getDep({name: `UTILS`, type: `MODULE`});
-    expect(utilsModule.relativePath).toBe(`qrpglesrc/utils.sqlrpgle`);
+    expect(utilsModule.relativePath).toBe(path.join(`qrpglesrc`, `utils.sqlrpgle`));
 
     const impactTree = targets.getImpactFor(utilsModule);
     expect(impactTree.ileObject.name).toBe(`UTILS`);
