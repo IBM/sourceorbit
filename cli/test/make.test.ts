@@ -1,6 +1,4 @@
 import { assert, expect, test } from 'vitest'
-import { Targets } from '../src/targets'
-import path from 'path';
 import { baseTargets, cwd, multiModuleObjects } from './fixtures/targets';
 import { MakeProject } from '../src/builders/make';
 

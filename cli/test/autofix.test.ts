@@ -1,9 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { getFiles, scanGlob } from "./fixtures/files";
 import { setupIncludeFix, setupProjectFromQsys } from "./fixtures/projects";
 
 import { Targets } from '../src/targets'
-import { renameFiles } from "../src/cli";
+import { getFiles, renameFiles } from "../src/utils";
+import { scanGlob } from "../src/extensions";
 
 test(`Auto rename RPGLE program and include and fix-include infos`, async () => {
   const cwd = setupProjectFromQsys();

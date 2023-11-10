@@ -3,8 +3,9 @@ import { assert, beforeAll, describe, expect, test } from 'vitest';
 import { Targets } from '../src/targets'
 import path from 'path';
 import { MakeProject } from '../src/builders/make';
-import { getFiles, scanGlob } from './fixtures/files';
+import { getFiles } from '../src/utils';
 import { setupCompanySystem } from './fixtures/projects';
+import { scanGlob } from '../src/extensions';
 
 const cwd = setupCompanySystem();
 
