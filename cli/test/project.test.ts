@@ -101,12 +101,14 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
     expect(myBinder.deps.length).toBe(2);
 
-    const bankingSrvpgm = myBinder.deps[0];
+    let deps = myBinder.deps;
+    deps.sort((a,b) => a.name.localeCompare(b.name));
+    const bankingSrvpgm = deps[0];
     expect(bankingSrvpgm.name).toBe(`BANKING`);
     expect(bankingSrvpgm.type).toBe(`SRVPGM`);
     expect(bankingSrvpgm.relativePath).toBe(`qsrvsrc/banking.bnd`);
 
-    const utilsSrvpgm = myBinder.deps[1];
+    const utilsSrvpgm = deps[1];
     expect(utilsSrvpgm.name).toBe(`UTILS`);
     expect(utilsSrvpgm.type).toBe(`SRVPGM`);
     expect(utilsSrvpgm.relativePath).toBe(`qsrvsrc/utils.bnd`);
