@@ -10,13 +10,13 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
 
   // First step is to rename the files
 
-	let targets = new Targets(cwd);
+  let targets = new Targets(cwd);
 	targets.setSuggestions({renames: true});
 
   const initialFiles = getFiles(cwd, scanGlob);
-	await Promise.allSettled(initialFiles.map(f => targets.handlePath(f)));
+  await Promise.allSettled(initialFiles.map(f => targets.handlePath(f)));
 
-	targets.resolveBinder();
+  targets.resolveBinder();
 
   const oldPrograms = targets.getParentObjects(`PGM`);
   expect(oldPrograms.length).toBe(0); //Because the initial project extension is wrong
@@ -46,7 +46,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
     type: "rename",
     change: {
       rename: {
-        path: "/Users/barry/Repos/sourceorbit/from_qsys/qsqlsrc/super_long_dept_name.sql",
+        path: Targets.getPosixyPath(targets.getCwd() + "/qsqlsrc/super_long_dept_name.sql"),
         newName: "dept.table",
       },
     },
@@ -58,7 +58,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
     type: "rename",
     change: {
       rename: {
-        path: "/Users/barry/Repos/sourceorbit/from_qsys/qsqlsrc/empmst.sql",
+        path: Targets.getPosixyPath(targets.getCwd() + "/qsqlsrc/empmst.sql"),
         newName: "empmst.table",
       },
     },
@@ -70,7 +70,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
     type: "rename",
     change: {
       rename: {
-        path: "/Users/barry/Repos/sourceorbit/from_qsys/qprotosrc/errortable.rpgle",
+        path: Targets.getPosixyPath(targets.getCwd() + "/qprotosrc/errortable.rpgle"),
         newName: "errortable.rpgleinc",
       },
     },
@@ -87,7 +87,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
     type: "rename",
     change: {
       rename: {
-        path: "/Users/barry/Repos/sourceorbit/from_qsys/qrpglesrc/payroll.rpgle",
+        path: Targets.getPosixyPath(targets.getCwd() + "/qrpglesrc/payroll.rpgle"),
         newName: "payroll.pgm.rpgle",
       },
     },
@@ -101,9 +101,9 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
 	targets.setSuggestions({renames: true});
 
   const newFiles = getFiles(cwd, scanGlob);
-	await Promise.allSettled(newFiles.map(f => targets.handlePath(f)));
+  await Promise.allSettled(newFiles.map(f => targets.handlePath(f)));
 
-	targets.resolveBinder();
+  targets.resolveBinder();
 
   const newPrograms = targets.getParentObjects(`PGM`);
   expect(newPrograms.length).toBe(1); //Because the extension was fixed
@@ -129,13 +129,13 @@ test(`Fix includes in same directory`, async () => {
 
   // First step is to rename the files
 
-	let targets = new Targets(cwd);
+  let targets = new Targets(cwd);
 	targets.setSuggestions({includes: true});
 
   const initialFiles = getFiles(cwd, scanGlob);
-	await Promise.allSettled(initialFiles.map(f => targets.handlePath(f)));
+  await Promise.allSettled(initialFiles.map(f => targets.handlePath(f)));
 
-	targets.resolveBinder();
+  targets.resolveBinder();
 
   const programs = targets.getParentObjects(`PGM`);
   expect(programs.length).toBe(1);

@@ -103,7 +103,7 @@ export class Targets {
 		return Targets.getPosixyPath(path.relative(this.cwd, fullPath));
 	}
 
-	private static getPosixyPath(filePath: string): string {
+	public static getPosixyPath(filePath: string): string {
 		return filePath.split(path.sep).join(path.posix.sep);
 	}
 
