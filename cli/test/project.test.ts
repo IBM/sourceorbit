@@ -103,12 +103,12 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
     expect(myBinder.deps.length).toBe(2);
 
-    const bankingSrvpgm = myBinder.deps[0];
+    const bankingSrvpgm = myBinder.deps.find(d => d.name === `BANKING`);
     expect(bankingSrvpgm.name).toBe(`BANKING`);
     expect(bankingSrvpgm.type).toBe(`SRVPGM`);
     expect(bankingSrvpgm.relativePath).toBe(path.join(`qsrvsrc`, `banking.bnd`));
 
-    const utilsSrvpgm = myBinder.deps[1];
+    const utilsSrvpgm = myBinder.deps.find(d => d.name === `UTILS`);
     expect(utilsSrvpgm.name).toBe(`UTILS`);
     expect(utilsSrvpgm.type).toBe(`SRVPGM`);
     expect(utilsSrvpgm.relativePath).toBe(path.join(`qsrvsrc`, `utils.bnd`));
