@@ -346,6 +346,7 @@ export class MakeProject {
 			...(data.command ?
 				[
 					`\tliblist -c $(BIN_LIB);\\`,
+					`\tliblist -a $(LIBL);\\`,
 					`\tsystem "${resolvedCommand}" > .logs/${ileObject.name.toLowerCase()}.splf` // TODO: write the spool file somewhere?
 				]
 				: []
