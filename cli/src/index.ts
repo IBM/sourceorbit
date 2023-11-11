@@ -9,6 +9,7 @@ import { BuildFiles, cliSettings, error, infoOut, warningOut } from './cli';
 import { BobProject } from "./builders/bob";
 import { ImpactMarkdown } from "./builders/imd";
 import { allExtensions } from "./extensions";
+import { getBranchLibraryName } from "./builders/environment";
 import { getFiles, renameFiles, replaceIncludes } from './utils';
 
 const isCli = process.argv.length >= 2 && process.argv[1].endsWith(`so`);
@@ -68,6 +69,11 @@ async function main() {
 				i++;
 				break;
 
+			case `-bl`:
+				cliSettings.userBranch = parms[i+1];
+				i++;
+				break;
+
 			case `-l`:
 				cliSettings.lookupMode = true;
 				cliSettings.lookupFiles = [];
@@ -95,6 +101,11 @@ async function main() {
 				console.log(``);
 				console.log(`\t-bf make|bob|imd|json\tCreate build files of a specific format`);
 				console.log(`\t\t\tExample: -bf make`);
+				console.log(``);
+				console.log(`\t-bl <name>\tSet the BRANCHLIB environment variable`);
+				console.log(`\t\t\tbased on a user provided branch name`);
+				console.log(`\t\t\tExample: -bl feature/123-cool-idea`);
+				console.log(`\t\t\t\t -bl bug/123-bad-move`);
 				console.log(``);
 				console.log(`\t-ar\t\tRun the auto-rename process after scanning all code`);
 				console.log(`\t\t\tEnsure it is run inside of source control.`);
@@ -131,6 +142,13 @@ async function main() {
 		includes: cliSettings.fixIncludes,
 		renames: cliSettings.autoRename
 	});
+
+	if (cliSettings.userBranch) {
+		const branchLibrary = getBranchLibraryName(cliSettings.userBranch);
+		console.log(`Setting BRANCHLIB to ${branchLibrary}.`);
+		
+		process.env.BRANCHLIB = branchLibrary;
+	}
 
 	try {
 		if (files.length === 0) {
@@ -175,7 +193,6 @@ async function main() {
 			listDeps(cwd, targets, value);
 		}
 	}
-
 
 	switch (cliSettings.buildFile) {
 		case `bob`:

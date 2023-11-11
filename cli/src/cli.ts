@@ -10,7 +10,8 @@ export let cliSettings = {
 
 	fileList: false,
 	lookupMode: false,
-	lookupFiles: [] as string[]
+	lookupFiles: [] as string[],
+	userBranch: ``
 };
 
 export function infoOut(message: string) {

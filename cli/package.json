@@ -29,12 +29,14 @@
     "ts-loader": "^9.4.4",
     "typescript": "^4.8.4",
     "vitest": "^0.31.0",
-    "webpack": "^5.24.3",
-    "webpack-cli": "^4.5.0",
     "vscode-clle": "github:IBM/vscode-clle",
     "vscode-db2i": "github:halcyon-tech/vscode-db2i",
     "vscode-displayfile": "github:halcyon-tech/vscode-displayfile",
-    "vscode-rpgle": "github:halcyon-tech/vscode-rpgle"
+    "vscode-rpgle": "github:halcyon-tech/vscode-rpgle",
+    "webpack": "^5.24.3",
+    "webpack-cli": "^4.5.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "crc-32": "https://cdn.sheetjs.com/crc-32-latest/crc-32-latest.tgz"
+  }
 }
