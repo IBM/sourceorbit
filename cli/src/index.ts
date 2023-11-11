@@ -136,19 +136,20 @@ async function main() {
 		}
 	}
 
+	if (cliSettings.userBranch) {
+		const branchLibrary = getBranchLibraryName(cliSettings.userBranch);
+		console.log(branchLibrary);
+		
+		process.env.BRANCHLIB = branchLibrary;
+		process.exit(0);
+	}
+
 	const targets = new Targets(cwd);
 
 	targets.setSuggestions({
 		includes: cliSettings.fixIncludes,
 		renames: cliSettings.autoRename
 	});
-
-	if (cliSettings.userBranch) {
-		const branchLibrary = getBranchLibraryName(cliSettings.userBranch);
-		console.log(`Setting BRANCHLIB to ${branchLibrary}.`);
-		
-		process.env.BRANCHLIB = branchLibrary;
-	}
 
 	try {
 		if (files.length === 0) {
