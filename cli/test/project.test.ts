@@ -25,7 +25,6 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Check objects are generated`, async () => {
-    console.log(targets.getResolvedObjects());
     expect(targets.getResolvedObjects().length).toBe(11);
     expect(targets.getDeps().length).toBe(12);
     expect(targets.getParentObjects(`FILE`).length).toBe(4);
@@ -182,6 +181,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     expect(lines.join()).toBe([
       '$(PREPATH)/MYPGM.PGM: qrpglesrc/mypgm.pgm.rpgle',
       '\tliblist -c $(BIN_LIB);\\',
+      '\tliblist -a $(LIBL);\\',
       `\tsystem "CRTBNDRPG PGM($(BIN_LIB)/MYPGM) SRCSTMF('qrpglesrc/mypgm.pgm.rpgle') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)" > .logs/mypgm.splf`,
       `\tsystem "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/MYPGM.MBR\') TOSTMF(\'.evfevent/mypgm.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
     ].join());
@@ -195,6 +195,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
       '$(PREPATH)/DEPTS.PGM: qrpglesrc/depts.pgm.sqlrpgle',
       `\tsystem -s "CHGATR OBJ('qrpglesrc/depts.pgm.sqlrpgle') ATR(*CCSID) VALUE(1252)"`,
       '\tliblist -c $(BIN_LIB);\\',
+      '\tliblist -a $(LIBL);\\',
       `\tsystem "CRTSQLRPGI OBJ($(BIN_LIB)/DEPTS) SRCSTMF('qrpglesrc/depts.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) COMPILEOPT('BNDDIR($(BNDDIR)) DFTACTGRP(*no)')" > .logs/depts.splf`,
       `\tsystem "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/DEPTS.MBR\') TOSTMF(\'.evfevent/depts.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
     ].join());
@@ -209,6 +210,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
       '\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/qddssrc) RCDLEN(112)"',
       `\tsystem "CPYFRMSTMF FROMSTMF('qddssrc/depts.dspf') TOMBR('$(PREPATH)/qddssrc.FILE/DEPTS.MBR') MBROPT(*REPLACE)"`,
       '\tliblist -c $(BIN_LIB);\\',
+      '\tliblist -a $(LIBL);\\',
       '\tsystem "CRTDSPF FILE($(BIN_LIB)/DEPTS) SRCFILE($(BIN_LIB)/qddssrc) SRCMBR(DEPTS) OPTION(*EVENTF)" > .logs/depts.splf',
       `\tsystem "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/DEPTS.MBR\') TOSTMF(\'.evfevent/depts.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
     ].join());
@@ -224,6 +226,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
       '\t-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/UTILS))"',
       '\t-system "DLTOBJ OBJ($(BIN_LIB)/UTILS) OBJTYPE(*SRVPGM)"',
       '\tliblist -c $(BIN_LIB);\\',
+      '\tliblist -a $(LIBL);\\',
       `\tsystem "CRTSRVPGM SRVPGM($(BIN_LIB)/UTILS) MODULE(UTILS) SRCSTMF('qsrvsrc/utils.bnd') BNDDIR($(BNDDIR))" > .logs/utils.splf`,
       '\t-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/UTILS *SRVPGM *IMMED))"',
     ].join());
@@ -239,6 +242,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
       '\t-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/BANKING))"',
       '\t-system "DLTOBJ OBJ($(BIN_LIB)/BANKING) OBJTYPE(*SRVPGM)"',
       '\tliblist -c $(BIN_LIB);\\',
+      '\tliblist -a $(LIBL);\\',
       '\tsystem "CRTSRVPGM SRVPGM($(BIN_LIB)/BANKING) MODULE(BANKING) SRCSTMF(\'qsrvsrc/banking.bnd\') BNDDIR($(BNDDIR))" > .logs/banking.splf',
       '\t-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/BANKING *SRVPGM *IMMED))"',
     ].join());

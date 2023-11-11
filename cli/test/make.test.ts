@@ -8,14 +8,21 @@ test('generateTargets (pre-resolve)', () => {
 
   const targetContent = project.generateTargets();
 
-  expect(targetContent.length).toBe(5);
+  expect(targetContent.length).toBe(12);
   expect(targetContent).toEqual(
     [
-      'all: $(PREPATH)/PROGRAMA.PGM $(PREPATH)/PROGRAMB.PGM $(PREPATH)/PROGRAMA.CMD $(PREPATH)/UNUSED.CMD',
+      'all: .logs .evfevent $(PREPATH)/PROGRAMA.PGM $(PREPATH)/PROGRAMB.PGM $(PREPATH)/PROGRAMA.CMD $(PREPATH)/UNUSED.CMD',
       '',
       '$(PREPATH)/PROGRAMA.PGM: $(PREPATH)/FILEA.FILE $(PREPATH)/PROGRAMB.PGM',
       '$(PREPATH)/MODULEA.MODULE: $(PREPATH)/FILEA.FILE $(PREPATH)/FILEB.FILE',
       '$(PREPATH)/MODULEB.MODULE: $(PREPATH)/FILEB.FILE',
+      ``,
+      `.logs:`,
+			`  mkdir .logs`,
+			`.evfevent:`,
+			`  mkdir .evfevent`,
+			`library: $(PREPATH)`,
+			`  mkdir -system -q "CRTLIB LIB($(BIN_LIB))"`,
     ]
   );
 });
@@ -31,7 +38,7 @@ test('generateTargets (post-resolve)', () => {
 
   expect(targetContent).toEqual(
     [
-      'all: $(PREPATH)/$(APP_BNDDIR).BNDDIR $(PREPATH)/PROGRAMA.PGM $(PREPATH)/PROGRAMB.PGM $(PREPATH)/PROGRAMA.CMD',
+      'all: .logs .evfevent $(PREPATH)/$(APP_BNDDIR).BNDDIR $(PREPATH)/PROGRAMA.PGM $(PREPATH)/PROGRAMB.PGM $(PREPATH)/PROGRAMA.CMD',
       '',
       '$(PREPATH)/PROGRAMA.PGM: $(PREPATH)/FILEA.FILE $(PREPATH)/PROGRAMB.PGM',
       '$(PREPATH)/PROGRAMB.PGM: $(PREPATH)/SRVPGMA.SRVPGM',
@@ -41,6 +48,13 @@ test('generateTargets (post-resolve)', () => {
       `$(PREPATH)/ORDENTSRV.SRVPGM: $(PREPATH)/ORDENTMOD.MODULE`,
       '$(PREPATH)/PROGRAMA.CMD: $(PREPATH)/PROGRAMA.PGM',
       '$(PREPATH)/$(APP_BNDDIR).BNDDIR: $(PREPATH)/SRVPGMA.SRVPGM $(PREPATH)/ORDENTSRV.SRVPGM',
+      ``,
+      `.logs:`,
+			`  mkdir .logs`,
+			`.evfevent:`,
+			`  mkdir .evfevent`,
+			`library: $(PREPATH)`,
+			`  mkdir -system -q "CRTLIB LIB($(BIN_LIB))"`,
     ]
   );
 });
@@ -98,12 +112,19 @@ test(`Multi-module program and service program`, () => {
   const headerContent = project.generateTargets();
 
   expect(headerContent.join()).toBe([
-    'all: $(PREPATH)/$(APP_BNDDIR).BNDDIR $(PREPATH)/MYWEBAPP.PGM',
+    'all: .logs .evfevent $(PREPATH)/$(APP_BNDDIR).BNDDIR $(PREPATH)/MYWEBAPP.PGM',
     '',
     '$(PREPATH)/MYWEBAPP.PGM: $(PREPATH)/HANDLERA.MODULE $(PREPATH)/HANDLERB.MODULE $(PREPATH)/UTILS.SRVPGM $(PREPATH)/MYWEBAPP.MODULE',
     '$(PREPATH)/HANDLERB.MODULE: $(PREPATH)/UTILS.SRVPGM',
     '$(PREPATH)/UTILS.SRVPGM: $(PREPATH)/JWTHANDLER.MODULE $(PREPATH)/VALIDATE.MODULE',
-    '$(PREPATH)/$(APP_BNDDIR).BNDDIR: $(PREPATH)/UTILS.SRVPGM'
+    '$(PREPATH)/$(APP_BNDDIR).BNDDIR: $(PREPATH)/UTILS.SRVPGM',
+    ``,
+    `.logs:`,
+    `  mkdir .logs`,
+    `.evfevent:`,
+    `  mkdir .evfevent`,
+    `library: $(PREPATH)`,
+    `  mkdir -system -q "CRTLIB LIB($(BIN_LIB))"`,
   ].join());
 
   const webappPgm = targets.getDep({name: `MYWEBAPP`, type: `PGM`});
@@ -111,6 +132,7 @@ test(`Multi-module program and service program`, () => {
   expect(webPgmTarget.join()).toBe([
     '$(PREPATH)/MYWEBAPP.PGM: ',
     '\tliblist -c $(BIN_LIB);\\',
+    '\tliblist -a $(LIBL);\\',
     '\tsystem "CRTPGM PGM($(BIN_LIB)/MYWEBAPP) ENTRY(MYWEBAPP) MODULES(HANDLERA HANDLERB MYWEBAPP) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)" > .logs/mywebapp.splf'
   ].join());
 
@@ -119,6 +141,7 @@ test(`Multi-module program and service program`, () => {
   expect(webModTarget.join()).toBe([
     '$(PREPATH)/MYWEBAPP.MODULE: qrpglesrc/mywebapp.pgm.rpgle',
     '\tliblist -c $(BIN_LIB);\\',
+    '\tliblist -a $(LIBL);\\',
     `\tsystem "CRTRPGMOD MODULE($(BIN_LIB)/MYWEBAPP) SRCSTMF('qrpglesrc/mywebapp.pgm.rpgle') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB)" > .logs/mywebapp.splf`,
     `\tsystem "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/MYWEBAPP.MBR') TOSTMF('.evfevent/mywebapp.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
   ].join());
@@ -132,6 +155,7 @@ test(`Multi-module program and service program`, () => {
     '\t-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/UTILS))"',
     '\t-system "DLTOBJ OBJ($(BIN_LIB)/UTILS) OBJTYPE(*SRVPGM)"',
     '\tliblist -c $(BIN_LIB);\\',
+    '\tliblist -a $(LIBL);\\',
     `\tsystem "CRTSRVPGM SRVPGM($(BIN_LIB)/UTILS) MODULE(JWTHANDLER VALIDATE) SRCSTMF('qsrvsrc/utils.binder') BNDDIR($(BNDDIR))" > .logs/utils.splf`,
     '\t-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/UTILS *SRVPGM *IMMED))"'
   ].join());

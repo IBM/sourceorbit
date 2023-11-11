@@ -197,13 +197,12 @@ export class MakeProject {
 		return [
 			`BIN_LIB=DEV`,
 			`APP_BNDDIR=APP`,
+			`LIBL=$(BIN_LIB)`,
 			``,
 			`INCDIR="${this.settings.includePaths ? this.settings.includePaths.join(`:`) : `.`}"`,
 			`BNDDIR=${baseBinders.join(` `)}`,
 			`PREPATH=/QSYS.LIB/$(BIN_LIB).LIB`,
 			`SHELL=/QOpenSys/usr/bin/qsh`,
-			``,
-			`CHEAT_ARG := $(mkdir .logs .evfevent)`,
 		];
 	}
 
@@ -218,7 +217,7 @@ export class MakeProject {
 
 		if (all.length > 0) {
 			lines.push(
-				`all: ${all.map(dep => `$(PREPATH)/${dep.name}.${dep.type}`).join(` `)}`,
+				`all: .logs .evfevent ${all.map(dep => `$(PREPATH)/${dep.name}.${dep.type}`).join(` `)}`,
 				``
 			)
 		}
@@ -230,6 +229,16 @@ export class MakeProject {
 				)
 			}
 		};
+
+		lines.push(
+			``,
+			`.logs:`,
+			`  mkdir .logs`,
+			`.evfevent:`,
+			`  mkdir .evfevent`,
+			`library: $(PREPATH)`,
+			`  mkdir -system -q "CRTLIB LIB($(BIN_LIB))"`
+		);
 
 		return lines;
 	}
@@ -290,6 +299,7 @@ export class MakeProject {
 						...(data.command ?
 							[
 								`\tliblist -c $(BIN_LIB);\\`,
+								`\tliblist -a $(LIBL);\\`,
 								`\tsystem "${data.command}"` // TODO: write the spool file somewhere?
 							]
 							: []
@@ -344,6 +354,7 @@ export class MakeProject {
 			...(data.command ?
 				[
 					`\tliblist -c $(BIN_LIB);\\`,
+					`\tliblist -a $(LIBL);\\`,
 					`\tsystem "${resolvedCommand}" > .logs/${ileObject.name.toLowerCase()}.splf` // TODO: write the spool file somewhere?
 				]
 				: []
