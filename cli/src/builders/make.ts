@@ -203,8 +203,6 @@ export class MakeProject {
 			`BNDDIR=${baseBinders.join(` `)}`,
 			`PREPATH=/QSYS.LIB/$(BIN_LIB).LIB`,
 			`SHELL=/QOpenSys/usr/bin/qsh`,
-			``,
-			`CHEAT_ARG := $(mkdir .logs .evfevent)`,
 		];
 	}
 
@@ -219,7 +217,7 @@ export class MakeProject {
 
 		if (all.length > 0) {
 			lines.push(
-				`all: ${all.map(dep => `$(PREPATH)/${dep.name}.${dep.type}`).join(` `)}`,
+				`all: .logs .evfevent ${all.map(dep => `$(PREPATH)/${dep.name}.${dep.type}`).join(` `)}`,
 				``
 			)
 		}
@@ -231,6 +229,16 @@ export class MakeProject {
 				)
 			}
 		};
+
+		lines.push(
+			``,
+			`.logs:`,
+			`  mkdir .logs`,
+			`.evfevent:`,
+			`  mkdir .evfevent`,
+			`library: $(PREPATH)`,
+			`  mkdir -system -q "CRTLIB LIB($(BIN_LIB))"`
+		);
 
 		return lines;
 	}
