@@ -1,11 +1,9 @@
 import { assert, expect, test } from 'vitest'
-import { Targets } from '../src/targets'
-import path from 'path';
-import { createTargets, cwd } from './createTargets';
+import { baseTargets, cwd, multiModuleObjects } from './fixtures/targets';
 import { MakeProject } from '../src/builders/make';
 
 test('generateTargets (pre-resolve)', () => {
-  const targets = createTargets(true);
+  const targets = baseTargets(true);
   const project = new MakeProject(cwd, targets);
 
   const targetContent = project.generateTargets();
@@ -23,7 +21,7 @@ test('generateTargets (pre-resolve)', () => {
 });
 
 test('generateTargets (post-resolve)', () => {
-  const targets = createTargets(true);
+  const targets = baseTargets(true);
 
   targets.resolveBinder();
 
@@ -36,22 +34,19 @@ test('generateTargets (post-resolve)', () => {
       'all: $(PREPATH)/$(APP_BNDDIR).BNDDIR $(PREPATH)/PROGRAMA.PGM $(PREPATH)/PROGRAMB.PGM $(PREPATH)/PROGRAMA.CMD',
       '',
       '$(PREPATH)/PROGRAMA.PGM: $(PREPATH)/FILEA.FILE $(PREPATH)/PROGRAMB.PGM',
-      '$(PREPATH)/PROGRAMB.PGM: $(PREPATH)/MODULEB.SRVPGM',
+      '$(PREPATH)/PROGRAMB.PGM: $(PREPATH)/SRVPGMA.SRVPGM',
       '$(PREPATH)/MODULEA.MODULE: $(PREPATH)/FILEA.FILE $(PREPATH)/FILEB.FILE',
       '$(PREPATH)/MODULEB.MODULE: $(PREPATH)/FILEB.FILE',
-      `$(PREPATH)/SRVPGMA.MODULE: $(PREPATH)/MODULEB.SRVPGM`,
+      `$(PREPATH)/SRVPGMA.SRVPGM: $(PREPATH)/MODULEB.MODULE`,
       `$(PREPATH)/ORDENTSRV.SRVPGM: $(PREPATH)/ORDENTMOD.MODULE`,
-      `$(PREPATH)/PROGRAMA.CMD: $(PREPATH)/PROGRAMA.PGM`,
-      '$(PREPATH)/$(APP_BNDDIR).BNDDIR: $(PREPATH)/ORDENTSRV.SRVPGM $(PREPATH)/MODULEA.SRVPGM $(PREPATH)/MODULEB.SRVPGM $(PREPATH)/SRVPGMA.SRVPGM',
-      '$(PREPATH)/MODULEA.SRVPGM: $(PREPATH)/MODULEA.MODULE',
-      '$(PREPATH)/MODULEB.SRVPGM: $(PREPATH)/MODULEB.MODULE',
-      `$(PREPATH)/SRVPGMA.SRVPGM: $(PREPATH)/SRVPGMA.MODULE`,
+      '$(PREPATH)/PROGRAMA.CMD: $(PREPATH)/PROGRAMA.PGM',
+      '$(PREPATH)/$(APP_BNDDIR).BNDDIR: $(PREPATH)/SRVPGMA.SRVPGM $(PREPATH)/ORDENTSRV.SRVPGM',
     ]
   );
 });
 
 test('generateHeader (binder changes)', () => {
-  const targets = createTargets(true);
+  const targets = baseTargets(true);
 
   const project = new MakeProject(cwd, targets);
 
@@ -69,7 +64,7 @@ test('generateHeader (binder changes)', () => {
 });
 
 test('applySettings (binder)', () => {
-  const targets = createTargets(true);
+  const targets = baseTargets(true);
 
   const project = new MakeProject(cwd, targets);
 
@@ -89,3 +84,55 @@ test('applySettings (binder)', () => {
 
   expect(headerContentB[bndDirIndex]).toBe(`BNDDIR=($(BIN_LIB)/$(APP_BNDDIR)) (TESTING)`);
 });
+
+test(`Multi-module program and service program`, () => {
+  const targets = multiModuleObjects();
+
+  const project = new MakeProject(cwd, targets);
+  const settings = project.getSettings();
+
+  project.applySettings({
+    binders: [`ILEASTIC`, `NOXDB`]
+  });
+
+  const headerContent = project.generateTargets();
+
+  expect(headerContent.join()).toBe([
+    'all: $(PREPATH)/$(APP_BNDDIR).BNDDIR $(PREPATH)/MYWEBAPP.PGM',
+    '',
+    '$(PREPATH)/MYWEBAPP.PGM: $(PREPATH)/HANDLERA.MODULE $(PREPATH)/HANDLERB.MODULE $(PREPATH)/UTILS.SRVPGM $(PREPATH)/MYWEBAPP.MODULE',
+    '$(PREPATH)/HANDLERB.MODULE: $(PREPATH)/UTILS.SRVPGM',
+    '$(PREPATH)/UTILS.SRVPGM: $(PREPATH)/JWTHANDLER.MODULE $(PREPATH)/VALIDATE.MODULE',
+    '$(PREPATH)/$(APP_BNDDIR).BNDDIR: $(PREPATH)/UTILS.SRVPGM'
+  ].join());
+
+  const webappPgm = targets.getDep({name: `MYWEBAPP`, type: `PGM`});
+  const webPgmTarget = MakeProject.generateSpecificTarget(settings.compiles[`pgm`], webappPgm);
+  expect(webPgmTarget.join()).toBe([
+    '$(PREPATH)/MYWEBAPP.PGM: ',
+    '\tliblist -c $(BIN_LIB);\\',
+    '\tsystem "CRTPGM PGM($(BIN_LIB)/MYWEBAPP) ENTRY(MYWEBAPP) MODULES(HANDLERA HANDLERB MYWEBAPP) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)" > .logs/mywebapp.splf'
+  ].join());
+
+  const webappMod = targets.getDep({name: `MYWEBAPP`, type: `MODULE`});
+  const webModTarget = MakeProject.generateSpecificTarget(settings.compiles[`rpgle`], webappMod);
+  expect(webModTarget.join()).toBe([
+    '$(PREPATH)/MYWEBAPP.MODULE: qrpglesrc/mywebapp.pgm.rpgle',
+    '\tliblist -c $(BIN_LIB);\\',
+    `\tsystem "CRTRPGMOD MODULE($(BIN_LIB)/MYWEBAPP) SRCSTMF('qrpglesrc/mywebapp.pgm.rpgle') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB)" > .logs/mywebapp.splf`,
+    `\tsystem "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/MYWEBAPP.MBR') TOSTMF('.evfevent/mywebapp.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
+  ].join());
+
+  const utilsSrvpgm = targets.getDep({name: `UTILS`, type: `SRVPGM`});
+  const utilsTarget = MakeProject.generateSpecificTarget(settings.compiles[`srvpgm`], utilsSrvpgm);
+
+  expect(utilsTarget.join()).toBe([
+    '$(PREPATH)/UTILS.SRVPGM: qsrvsrc/utils.binder',
+    '\t-system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/$(APP_BNDDIR))"',
+    '\t-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/UTILS))"',
+    '\t-system "DLTOBJ OBJ($(BIN_LIB)/UTILS) OBJTYPE(*SRVPGM)"',
+    '\tliblist -c $(BIN_LIB);\\',
+    `\tsystem "CRTSRVPGM SRVPGM($(BIN_LIB)/UTILS) MODULE(JWTHANDLER VALIDATE) SRCSTMF('qsrvsrc/utils.binder') BNDDIR($(BNDDIR))" > .logs/utils.splf`,
+    '\t-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/UTILS *SRVPGM *IMMED))"'
+  ].join());
+})

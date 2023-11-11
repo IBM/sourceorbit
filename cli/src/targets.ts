@@ -12,10 +12,21 @@ import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensi
 import Parser from "vscode-rpgle/language/parser";
 import { setupParser } from './parser';
 import { Logger } from './logger';
+import { asPosix, toLocalPath } from './utils';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
 const ignoredObjects = [`QSYSPRT`, `QCMDEXC.PGM`, `*LDA.DTAARA`, `QDCXLATE.PGM`, `QUSRJOBI`, `QTQCVRT.PGM`];
+
+const sqlTypeExtension = {
+	'TABLE': `table`,
+	'VIEW': `view`,
+	'PROCEDURE': `sqlprc`,
+	'FUNCTION': `sqludf`,
+	'TRIGGER': `sqltrg`,
+	'ALIAS': `sqlalias`,
+	'SEQUENCE': `sqlseq`
+};
 
 const bindingDirectoryTarget: ILEObject = { name: `$(APP_BNDDIR)`, type: `BNDDIR` };
 
@@ -61,7 +72,7 @@ interface FileOptions {
 export class Targets {
 	private rpgParser: Parser;
 
-	private pathCache: { [path: string]: true|string[] } | undefined;
+	private pathCache: { [path: string]: true | string[] } | undefined;
 	private resolvedPaths: { [query: string]: string } = {};
 	private resolvedObjects: { [localPath: string]: ILEObject } = {};
 	private resolvedExports: { [name: string]: ILEObject } = {};
@@ -94,11 +105,14 @@ export class Targets {
 	}
 
 	private storeResolved(localPath: string, ileObject: ILEObject) {
-		const detail = path.parse(localPath);
 		this.resolvedObjects[localPath] = ileObject;
 
+		// Path cache stores everything as unix, but localPath might be Windows
 		if (this.pathCache) {
-			this.pathCache[localPath] = true;
+			const posixPath = asPosix(localPath);
+			const detail = path.parse(posixPath);
+
+			this.pathCache[posixPath] = true;
 			if (Array.isArray(this.pathCache[detail.dir])) {
 				const paths = this.pathCache[detail.dir] as string[];
 				const parentIndex = paths.findIndex(p => p === detail.base);
@@ -196,7 +210,7 @@ export class Targets {
 	/**
 	 * Resolves a search to a filename. Basically a special blob
 	 */
-	public resolveLocalObjectQuery(name: string, baseName?: string): string {
+	public resolveLocalObjectQuery(name: string, baseName?: string): string|undefined {
 		name = name.toUpperCase();
 
 		if (this.resolvedPaths[name]) return this.resolvedPaths[name];
@@ -226,9 +240,12 @@ export class Targets {
 			cache: this.pathCache
 		});
 
-		this.resolvedPaths[name] = results[0];
-
-		return results[0];
+		if (results[0]) {
+			// To local path is required because glob returns posix paths
+			const localPath = toLocalPath(results[0])
+			this.resolvedPaths[name] = localPath;
+			return localPath;
+		}
 	}
 
 	private getObjectType(relativePath: string, ext: string): ObjectType {
@@ -288,7 +305,7 @@ export class Targets {
 		if (pathDetail.ext.length > 1) {
 			if (!this.suggestions.renames) {
 				// Don't clear the logs if we're suggestion renames.
-				this.logger.flush();
+				this.logger.flush(relative);
 			}
 
 			const ext = pathDetail.ext.substring(1).toLowerCase();
@@ -305,10 +322,10 @@ export class Targets {
 					[textMatch] = content.match(TextRegex);
 					if (textMatch) {
 						if (textMatch.startsWith(`%TEXT`)) textMatch = textMatch.substring(5);
-						if (textMatch.endsWith(`*`)) textMatch = textMatch.substring(0, textMatch.length-1);
+						if (textMatch.endsWith(`*`)) textMatch = textMatch.substring(0, textMatch.length - 1);
 						textMatch = textMatch.trim();
 					}
-				} catch (e) {}
+				} catch (e) { }
 
 				const options: FileOptions = {
 					isFree,
@@ -667,7 +684,7 @@ export class Targets {
 
 		if (createCount > 1) {
 			this.logger.fileLog(relativePath, {
-				message: `includes multiple create statements. They should be in individual sources. This file will not be parsed.`,
+				message: `Includes multiple create statements. They should be in individual sources. This file will not be parsed.`,
 				type: `warning`,
 			});
 
@@ -741,35 +758,40 @@ export class Targets {
 
 						// Creates should be in their own unique file
 						case StatementType.Create:
-							let objectName = trimQuotes(mainDef.object.name, `"`);
+							let objectName = mainDef.object.system || trimQuotes(mainDef.object.name, `"`);
+
+							const extension = pathDetail.ext.substring(1);
 
 							let ileObject: ILEObject = {
-								name: objectName,
+								name: objectName.toUpperCase(),
 								type: this.getObjectType(relativePath, mainDef.createType),
 								text: options.text,
 								relativePath,
+								extension
 							}
 
 							// TODO: better support for 'for system name' in SQL
 
-							const fileObjName = pathDetail.name.toUpperCase();
+							let suggestRename = false;
+							const sqlFileName = pathDetail.name.toUpperCase();
 
-							if (ileObject.name.length > 10) {
-								this.logger.fileLog(ileObject.relativePath, {
-									message: `${ileObject.name} (${ileObject.type}) name is longer than 10 characters. Assuming system name (object name) is '${fileObjName}'`,
-									type: `warning`,
-									range: {
-										start: tokens[0].range.start,
-										end: tokens[tokens.length - 1].range.end
-									},
-								});
+							if (ileObject.name.length <= 10) {
+								if (sqlFileName.length > 10) {
+									suggestRename = true;
+								}
 
-								ileObject.name = fileObjName;
+								if (ileObject.name.toUpperCase() !== sqlFileName) {
+									suggestRename = true;
+								}
 							}
-							else if (fileObjName.length <= 10 && ileObject.name !== fileObjName) {
-								// We must do this because we resolve objects by file name!
+
+							if (extension.toUpperCase() === `SQL` && mainDef.createType) {
+								suggestRename = true;
+							}
+
+							if (ileObject.name.length > 10 && mainDef.object.system === undefined) {
 								this.logger.fileLog(ileObject.relativePath, {
-									message: `${ileObject.name} does not match file basename. Assuming system name (object name) is '${fileObjName}'`,
+									message: `${ileObject.name} (${ileObject.type}) name is longer than 10 characters. Consider using 'FOR SYSTEM NAME' in the CREATE statement.`,
 									type: `warning`,
 									range: {
 										start: tokens[0].range.start,
@@ -777,7 +799,7 @@ export class Targets {
 									},
 								});
 
-								ileObject.name = fileObjName;
+								suggestRename = false;
 							}
 
 							let newTarget: ILEObjectTarget = {
@@ -814,6 +836,42 @@ export class Targets {
 							this.storeResolved(localPath, ileObject);
 
 							this.pushDep(newTarget);
+
+							// If the extension is SQL, let's make better suggestions
+							// based on the create type in the CREATE statement
+							if (suggestRename) {
+								const newExtension = sqlTypeExtension[mainDef.createType.toUpperCase()];
+
+								if (newExtension) {
+									const possibleName = ileObject.name.toLowerCase() + `.` + newExtension;
+
+									if (this.suggestions.renames) {
+										const renameLogPath = relativePath;
+
+										// We need to make sure the .rpgleinc rename is most important
+										if (this.logger.exists(renameLogPath, `rename`)) {
+											this.logger.flush(renameLogPath);
+										}
+
+										this.logger.fileLog(renameLogPath, {
+											message: `Rename suggestion`,
+											type: `rename`,
+											change: {
+												rename: {
+													path: localPath,
+													newName: possibleName
+												}
+											}
+										});
+									} else {
+										this.logger.fileLog(relativePath, {
+											message: `Extension should be based on type. Suggested name is '${possibleName}'`,
+											type: `warning`,
+										});
+									}
+								}
+							}
+
 							break;
 					}
 
@@ -834,6 +892,10 @@ export class Targets {
 		infoOut(`${ileObject.name}.${ileObject.type}: ${ileObject.relativePath}`);
 
 		cache.includes.forEach((include: IncludeStatement) => {
+			// RPGLE includes are always returned as posix paths
+			// even on Windows. We need to do some magic to convert here for Windows systems
+			include.toPath = toLocalPath(include.toPath);
+
 			const includeDetail = path.parse(include.toPath);
 
 			if (includeDetail.ext !== `.rpgleinc`) {
@@ -871,8 +933,14 @@ export class Targets {
 					type: `includeFix`,
 					line: include.line,
 					change: {
-						lineContent: (options.isFree ? `` : ``.padEnd(6)) + `/copy '${this.getRelative(include.toPath)}'`
+						lineContent: (options.isFree ? `` : ``.padEnd(6)) + `/copy '${asPosix(this.getRelative(include.toPath))}'`
 					}
+				});
+			} else {
+				this.logger.fileLog(ileObject.relativePath, {
+					message: `Include at line ${include.line} found, to path '${asPosix(this.getRelative(include.toPath))}'`,
+					type: `info`,
+					line: include.line,
 				});
 			}
 		});
@@ -901,6 +969,7 @@ export class Targets {
 		}
 
 		// This usually means it's source name is a module (no .pgm) but doesn't have NOMAIN.
+		// We need to do this for other language too down the line
 		if (ileObject.type === `MODULE` && !cache.keyword[`NOMAIN`]) {
 			if (this.suggestions.renames) {
 				this.logger.fileLog(ileObject.relativePath, {
@@ -1129,11 +1198,18 @@ export class Targets {
 			.map(ref => {
 				const keyword = ref.keyword;
 				let importName: string = ref.name;
-				const extproc = keyword[`EXTPROC`];
+				const extproc: string | boolean = keyword[`EXTPROC`];
 				if (extproc) {
 					if (extproc === true) importName = ref.name;
-					else importName = trimQuotes(extproc);
+					else importName = extproc;
 				}
+
+				if (importName.includes(`:`)) {
+					const parmParms = importName.split(`:`);
+					importName = parmParms.filter(p => !p.startsWith(`*`)).join(``);
+				}
+
+				importName = trimQuotes(importName);
 
 				return importName;
 			});
@@ -1215,40 +1291,6 @@ export class Targets {
 			}
 		}
 
-		// Next, we loop through all the modules we know of and if that module
-		// is not a dependency on any service program, then we assume it's a
-		// service program object with EXPORT(*ALL)
-		const allServicePrograms = this.getParentObjects("SRVPGM");
-		for (const module of allModules) {
-			const isBoundSomewhere = allServicePrograms.some(srvpgm => srvpgm.deps.some(dep => dep.name === module.name && dep.type === `MODULE`));
-			if (!isBoundSomewhere) {
-				infoOut(`Assuming ${module.name}.${module.type} is a service program (SRVPGM)`);
-
-				const newServiceProgramTarget: ILEObject = {
-					...module,
-					type: `SRVPGM`,
-					relativePath: undefined,
-					extension: undefined,
-					exports: module.exports
-				};
-
-				// This creates the service program target if it does not exist.
-				const serviceProgramTarget = this.createOrAppend(newServiceProgramTarget, module);
-
-				// Add this new service program to the project binding directory
-				this.createOrAppend(bindingDirectoryTarget, serviceProgramTarget);
-
-				// Resolve the exports to this new service program
-				if (serviceProgramTarget.exports) {
-					serviceProgramTarget.exports.forEach(e => {
-						this.resolvedExports[e.toUpperCase()] = serviceProgramTarget;
-					});
-				}
-
-				infoOut(``);
-			}
-		}
-
 		// We loop through all programs and service programs and study their imports.
 		// We do this in case they depend on another service programs based on import
 		for (let target of deps) {
@@ -1260,12 +1302,24 @@ export class Targets {
 
 				target.imports.forEach(importName => {
 					// Find if this import resolves to another object
-					const possibleDep = this.resolvedExports[importName.toUpperCase()];
+					const possibleSrvPgmDep = this.resolvedExports[importName.toUpperCase()];
 					// We can't add a module as a dependency at this step.
-					if (possibleDep && possibleDep.type === `SRVPGM`) {
+					if (possibleSrvPgmDep && possibleSrvPgmDep.type === `SRVPGM`) {
 						// Make sure we haven't imported it before!
-						if (!newImports.some(i => i.name === possibleDep.name && i.type === possibleDep.type)) {
-							newImports.push(possibleDep);
+						if (!newImports.some(i => i.name === possibleSrvPgmDep.name && i.type === possibleSrvPgmDep.type)) {
+							newImports.push(possibleSrvPgmDep);
+						}
+
+					} else if (target.type === `PGM`) {
+						// Perhaps we're looking at a program object, which actually should be a multi
+						// module program, so we do a lookup for additional modules.
+						const possibleModuleDep = allModules.find(mod => mod.exports.includes(importName.toUpperCase()))
+						if (possibleModuleDep) {
+							if (!newImports.some(i => i.name === possibleModuleDep.name && i.type === possibleModuleDep.type)) {
+								newImports.push(possibleModuleDep);
+
+								// TODO: consider other IMPORTS that `possibleModuleDep` needs.
+							}
 						}
 					}
 				});
@@ -1273,6 +1327,14 @@ export class Targets {
 				if (newImports.length > 0) {
 					infoOut(`${target.name}.${target.type} has additional dependencies: ${newImports.map(i => `${i.name}.${i.type}`)}`);
 					target.deps.push(...newImports);
+
+					if (target.type === `PGM`) {
+						// If this program has MODULE dependecies, that means we need to change the way it's compiled
+						// to be a program made up of many modules, usually done with CRTPGM
+						if (target.deps.some(d => d.type === `MODULE`)) {
+							this.convertBoundProgramToMultiModuleProgram(target);
+						}
+					}
 				}
 			}
 		}
@@ -1298,6 +1360,32 @@ export class Targets {
 				});
 			}
 		}
+	}
+
+	private convertBoundProgramToMultiModuleProgram(currentTarget: ILEObjectTarget) {
+		const basePath = currentTarget.relativePath;
+
+		// First, let's change this current target to be solely a program
+		// Change the extension so it's picked up correctly during the build process.
+		currentTarget.extension = `pgm`;
+		currentTarget.relativePath = undefined;
+
+		// Store new resolved path for this object
+		this.storeResolved(path.join(this.cwd, `${currentTarget.name}.PGM`), currentTarget);
+
+		// Then we can resolve the same path again
+		const newModule = this.resolveObject(path.join(this.cwd, basePath));
+		// Force it as a module
+		newModule.type = `MODULE`;
+
+		// Create a new target for the module
+		const newModTarget = this.createOrAppend(newModule);
+
+		// Clean up imports for module and program
+		newModTarget.imports = currentTarget.imports;
+		currentTarget.imports = undefined;
+
+		this.createOrAppend(currentTarget, newModule);
 	}
 
 	public createOrAppend(parentObject: ILEObject, newDep?: ILEObject) {
@@ -1340,19 +1428,27 @@ export class Targets {
 		return this.resolvedObjects[fullPath];
 	}
 
+	/**
+	 * This API is a little trick.
+	 * You can pass in a valid file extension, or if you pass
+	 * solely just `pgm`, it will return all programs that
+	 * have multiple modules.
+	 */
 	public getObjectsByExtension(ext: string): ILEObject[] {
-		const upperExt = ext.toUpperCase();
-		return Object.
-			keys(this.resolvedObjects).
-			filter(filePath => {
-				const basename = path.basename(filePath);
-				const dotIndex = basename.indexOf(`.`);
-				if (dotIndex >= 0) {
-					const lastPart = basename.substring(dotIndex + 1);
-					return (lastPart.toUpperCase() === upperExt);
-				}
-			}).
-			map(filePath => this.resolvedObjects[filePath]);
+		const extensionParts = ext.split(`.`);
+		let extension = ext.toUpperCase(), shouldBeProgram = false, anyPrograms = false;
+
+		if (extensionParts.length === 2 && extensionParts[0].toUpperCase() === `PGM`) {
+			extension = extensionParts[1].toUpperCase();
+			shouldBeProgram = true;
+		} else if (extension === `PGM`) {
+			anyPrograms = true;
+		}
+
+		return Object.values(this.resolvedObjects).filter(obj =>
+			(obj.extension?.toUpperCase() === extension && (obj.type === `PGM`) === shouldBeProgram) ||
+			(anyPrograms === true && obj.type === `PGM` && obj.extension.toUpperCase() === extension)
+		);
 	}
 
 	public getExports() {

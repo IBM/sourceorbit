@@ -7,3 +7,4 @@ export const srvPgmExtensions = [`binder`, `bnd`];
 export const cmdExtensions = [`cmd`];
 
 export const allExtensions = [...rpgExtensions, ...clExtensions, ...ddsExtension, ...sqlExtensions, ...srvPgmExtensions, ...cmdExtensions];
+export const scanGlob = `**/*.{${allExtensions.join(`,`)},${allExtensions.map(e => e.toUpperCase()).join(`,`)}}`;

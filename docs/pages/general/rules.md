@@ -44,11 +44,10 @@ Source Orbit does not care about project structure, but does enforce these rules
 
 * if your source includes `.pgm`, then it will become a program.
    * `mypgm.pgm.rpgle` becomes a `MYPGM.PGM` object
-   * Source Orbit only supports single module programs
+   * If you want to use multi-module programs, go ahead and add the prototypes to export functions/procedures in other modules and Source Orbit will automatically take care of the binding.
 * if your source does not include `.pgm`, then it will become a module, cmd, dtaara, etc.
-   * `mysrvpgm.rpgle` becomes `MYSRVPGM.MODULE` and then `MYSRVPGM.PGM`
-   * though this is only if this module is not automatically resolved via binder source.
-* assumes binder sources (`.bnd`/`.binder`) is a service program. Source Orbit will scan the binder source to find the modules for the service program automatically.
+* assumes binder source (`.bnd`/`.binder`) is a service program. 
+   * Source Orbit will scan the binder source to find the exported functions/procedures from modules inside the project.
 * Source Orbit does not yet support SQL long name references. (Coming soon)
 
 ### SQL sources
@@ -63,7 +62,7 @@ CREATE OR REPLACE TABLE CUSORD (...)
 
 ### Embedded SQL in RPGLE C specs
 
-Source Orbit does not support embedded SQL (`exec sql`) used in a C spec. - no problem with mixed-format or free-format. We recommend 
+Source Orbit does not support embedded SQL (`exec sql`) used in a C spec. - no problem with mixed-format or free-format. We recommend:
 
 1. converting the embedded SQL statements (`exec sql`) to not have C specs, or
 2. you use user-open (`USROPN`) file definitions for those files, which you would never open.

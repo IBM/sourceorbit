@@ -32,65 +32,66 @@ export function reloadUi(fileUris: string[]) {
 	connection.sendRequest(`reloadUi`, [unique]);
 }
 
-export function reloadLog(fileUri: string) {
-	const target = TargetsManager.getTargetsForFile(fileUri);
+export function reloadLog(_fileUri: string) {
+	// const target = TargetsManager.getTargetsForFile(fileUri);
 
-	if (target) {
-		const fullPath = target.getRelative(URI.parse(fileUri).fsPath);
-		const specificLogs = target.logger.getLogsFor(fullPath);
+	// if (target) {
+	// 	const fullPath = target.getRelative(URI.parse(fileUri).fsPath);
+	// 	const specificLogs = target.logger.getLogsFor(fullPath);
 
-		if (specificLogs) {
-			const logs = specificLogs.filter(log => [`warning`, `info`].includes(log.type));
+	// 	if (specificLogs) {
+	// 		const logs = specificLogs.filter(log => [`warning`, `info`].includes(log.type));
 
-			sendLogs(fileUri, logs);
-		} else {
-			sendLogs(fileUri, []);
-		}
-	}
+	// 		sendLogs(fileUri, logs);
+	// 	} else {
+	// 		sendLogs(fileUri, []);
+	// 	}
+	// }
 }
 
-export function reloadLogs(target: Targets) {
-	const cwd = target.getCwd();
-	const allLogs = target.logger.getAllLogs();
+export function reloadLogs(_target: Targets) {
+	// const cwd = target.getCwd();
+	// const allLogs = target.logger.getAllLogs();
 
-	for (const relativePath in allLogs) {
-		const logs = allLogs[relativePath].filter(log => [`warning`, `info`].includes(log.type));
+	// for (const relativePath in allLogs) {
+	// 	const logs = allLogs[relativePath].filter(log => [`warning`, `info`].includes(log.type));
 
-		sendLogs(URI.file(path.join(cwd, relativePath)).toString(), logs);
-	}
+	// 	sendLogs(URI.file(path.join(cwd, relativePath)).toString(), logs);
+	// }
 }
 
-function sendLogs(fileUri: string, logs: FileLog[]) {
-	const diags: Diagnostic[] = [];
+// TODO: do we really want to have diags sent to the user?
+// function sendLogs(fileUri: string, logs: FileLog[]) {
+// 	const diags: Diagnostic[] = [];
 
-	for (const log of logs) {
-		let range: Range;
+// 	for (const log of logs) {
+// 		let range: Range;
 
-		if (log.range) {
-			// No idea how to support start/end range yet
-			range = Range.create(0, 0, 0, 0);
+// 		if (log.range) {
+// 			// No idea how to support start/end range yet
+// 			range = Range.create(0, 0, 0, 0);
 
-		} else
+// 		} else
 
-			if (log.line && log.line >= 0) {
-				range = Range.create(log.line, 0, log.line, 200);
-			} else {
-				range = Range.create(0, 0, 0, 0);
-			}
+// 			if (log.line && log.line >= 0) {
+// 				range = Range.create(log.line, 0, log.line, 200);
+// 			} else {
+// 				range = Range.create(0, 0, 0, 0);
+// 			}
 
-		if (range) {
-			diags.push(Diagnostic.create(
-				range,
-				log.message,
-				log.type === `warning` ? DiagnosticSeverity.Warning : DiagnosticSeverity.Information,
-				undefined,
-				`Source Orbit`
-			));
-		}
-	}
+// 		if (range) {
+// 			diags.push(Diagnostic.create(
+// 				range,
+// 				log.message,
+// 				log.type === `warning` ? DiagnosticSeverity.Warning : DiagnosticSeverity.Information,
+// 				undefined,
+// 				`Source Orbit`
+// 			));
+// 		}
+// 	}
 
-	connection.sendDiagnostics({ uri: fileUri, diagnostics: diags });
-}
+// 	connection.sendDiagnostics({ uri: fileUri, diagnostics: diags });
+// }
 
 export function clearLogs(fileUri: string) {
 	connection.sendDiagnostics({ uri: fileUri, diagnostics: [] });

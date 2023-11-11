@@ -1,16 +1,16 @@
 
 
-import glob from "glob";
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 
 import { ILEObject, Targets } from './targets';
 import { MakeProject } from './builders/make';
 import path from 'path';
-import { BuildFiles, cliSettings, error, infoOut, renameFiles, replaceIncludes, warningOut } from './cli';
+import { BuildFiles, cliSettings, error, infoOut, warningOut } from './cli';
 import { BobProject } from "./builders/bob";
 import { ImpactMarkdown } from "./builders/imd";
 import { allExtensions } from "./extensions";
 import { getBranchLibraryName } from "./builders/environment";
+import { getFiles, renameFiles, replaceIncludes } from './utils';
 
 const isCli = process.argv.length >= 2 && process.argv[1].endsWith(`so`);
 
@@ -224,14 +224,6 @@ async function main() {
 	}
 }
 
-function getFiles(cwd: string, globPath: string): string[] {
-	return glob.sync(globPath, {
-		cwd,
-		absolute: true,
-		nocase: true,
-	});
-}
-
 function initProject(cwd) {
 	console.log(`Initialising in ${cwd}`);
 
@@ -304,3 +296,4 @@ export { Targets } from './targets';
 export { MakeProject } from './builders/make';
 export { BobProject } from "./builders/bob";
 export { allExtensions } from "./extensions";
+export * as Utils from './utils';

@@ -46,6 +46,6 @@ export function setupRequestHandler(connection: Connection) {
 
 		suggestions[params[1]] = true;
 
-		fixProject(params[0], suggestions);
+		return fixProject(params[0], suggestions);
 	});
 }

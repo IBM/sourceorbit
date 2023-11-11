@@ -1,19 +1,19 @@
 import { assert, beforeAll, describe, expect, test } from 'vitest';
 
-import glob from "glob";
 import { Targets } from '../src/targets'
 import path from 'path';
-import { allExtensions } from '../src/extensions';
 import { MakeProject } from '../src/builders/make';
+import { getFiles } from '../src/utils';
+import { setupCompanySystem } from './fixtures/projects';
+import { scanGlob } from '../src/extensions';
 
-const cwd = path.join(__dirname, `..`, `..`, `ibmi-company_system-rmake`);
-const scanGlob = `**/*.{${allExtensions.join(`,`)},${allExtensions.map(e => e.toUpperCase()).join(`,`)}}`;
+const cwd = setupCompanySystem();
 
 const makeDefaults = MakeProject.getDefaultSettings();
 
 let files = getFiles(cwd, scanGlob);
 
-describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
+describe.skipIf(files.length === 0)(`company_system tests`, () => {
   const targets = new Targets(cwd);
   
   beforeAll(async () => {
@@ -25,7 +25,8 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
   });
 
   test(`Check objects are generated`, async () => {
-    expect(targets.getResolvedObjects().length).toBe(10);
+    console.log(targets.getResolvedObjects());
+    expect(targets.getResolvedObjects().length).toBe(11);
     expect(targets.getDeps().length).toBe(12);
     expect(targets.getParentObjects(`FILE`).length).toBe(4);
     expect(targets.getParentObjects(`PGM`).length).toBe(3);
@@ -35,30 +36,30 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
 
   test(`Check mypgm`, async () => {
     const myPgm = targets.getDep({name: `MYPGM`, type: `PGM`});
-    expect(myPgm.relativePath).toBe(`qrpglesrc/mypgm.pgm.rpgle`);
+    expect(myPgm.relativePath).toBe(path.join(`qrpglesrc`, `mypgm.pgm.rpgle`));
     expect(myPgm.deps.length).toBe(0);
   });
 
   test(`Check employees`, async () => {
     const myPgm = targets.getDep({name: `EMPLOYEES`, type: `PGM`});
-    expect(myPgm.relativePath).toBe(`qrpglesrc/employees.pgm.sqlrpgle`);
+    expect(myPgm.relativePath).toBe(path.join(`qrpglesrc`, `employees.pgm.sqlrpgle`));
 
     expect(myPgm.deps.length).toBe(2);
 
     const empTable = myPgm.deps[0];
     expect(empTable.name).toBe(`EMPLOYEE`);
     expect(empTable.type).toBe(`FILE`);
-    expect(empTable.relativePath).toBe(`qddssrc/employee.table`);
+    expect(empTable.relativePath).toBe(path.join(`qddssrc`, `employee.table`));
 
     const empDisplay = myPgm.deps[1];
     expect(empDisplay.name).toBe(`EMPS`);
     expect(empDisplay.type).toBe(`FILE`);
-    expect(empDisplay.relativePath).toBe(`qddssrc/emps.dspf`);
+    expect(empDisplay.relativePath).toBe(path.join(`qddssrc`, `emps.dspf`));
   });
 
   test(`Check depts`, async () => {
     const myPgm = targets.getDep({name: `DEPTS`, type: `PGM`});
-    expect(myPgm.relativePath).toBe(`qrpglesrc/depts.pgm.sqlrpgle`);
+    expect(myPgm.relativePath).toBe(path.join(`qrpglesrc`, `depts.pgm.sqlrpgle`));
     expect(myPgm.text).toBe(`This is the text for this program`);
 
     expect(myPgm.deps.length).toBe(4);
@@ -66,34 +67,34 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
     const empPgm = myPgm.deps[0];
     expect(empPgm.name).toBe(`EMPLOYEES`);
     expect(empPgm.type).toBe(`PGM`);
-    expect(empPgm.relativePath).toBe(`qrpglesrc/employees.pgm.sqlrpgle`);
+    expect(empPgm.relativePath).toBe(path.join(`qrpglesrc`, `employees.pgm.sqlrpgle`));
 
     const deptTable = myPgm.deps[1];
     expect(deptTable.name).toBe(`DEPARTMENT`);
     expect(deptTable.type).toBe(`FILE`);
-    expect(deptTable.relativePath).toBe(`qddssrc/department.table`);
+    expect(deptTable.relativePath).toBe(path.join(`qddssrc`, `department.table`));
 
     const deptFile = myPgm.deps[2];
     expect(deptFile.name).toBe(`DEPTS`);
     expect(deptFile.type).toBe(`FILE`);
-    expect(deptFile.relativePath).toBe(`qddssrc/depts.dspf`);
+    expect(deptFile.relativePath).toBe(path.join(`qddssrc`, `depts.dspf`));
 
     const utilsSrvPgm = myPgm.deps[3];
     expect(utilsSrvPgm.name).toBe(`UTILS`);
     expect(utilsSrvPgm.type).toBe(`SRVPGM`);
-    expect(utilsSrvPgm.relativePath).toBe(`qsrvsrc/utils.bnd`);
+    expect(utilsSrvPgm.relativePath).toBe(path.join(`qsrvsrc`, `utils.bnd`));
   });
 
   test(`Check utils`, async () => {
     const myPgm = targets.getDep({name: `UTILS`, type: `SRVPGM`});
-    expect(myPgm.relativePath).toBe(`qsrvsrc/utils.bnd`);
+    expect(myPgm.relativePath).toBe(path.join(`qsrvsrc`, `utils.bnd`));
 
     expect(myPgm.deps.length).toBe(1);
 
     const empPgm = myPgm.deps[0];
     expect(empPgm.name).toBe(`UTILS`);
     expect(empPgm.type).toBe(`MODULE`);
-    expect(empPgm.relativePath).toBe(`qrpglesrc/utils.sqlrpgle`);
+    expect(empPgm.relativePath).toBe(path.join(`qrpglesrc`, `utils.sqlrpgle`));
   });
 
   test(`Check binding directory`, async () => {
@@ -102,21 +103,20 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
 
     expect(myBinder.deps.length).toBe(2);
 
-    const utilsSrvpgm = myBinder.deps[0];
-    expect(utilsSrvpgm.name).toBe(`UTILS`);
-    expect(utilsSrvpgm.type).toBe(`SRVPGM`);
-    expect(utilsSrvpgm.relativePath).toBe(`qsrvsrc/utils.bnd`);
-
-    const bankingSrvpgm = myBinder.deps[1];
+    const bankingSrvpgm = myBinder.deps.find(d => d.name === `BANKING`);
     expect(bankingSrvpgm.name).toBe(`BANKING`);
     expect(bankingSrvpgm.type).toBe(`SRVPGM`);
-    // Because no binder source
-    expect(bankingSrvpgm.relativePath).toBeUndefined();
+    expect(bankingSrvpgm.relativePath).toBe(path.join(`qsrvsrc`, `banking.bnd`));
+
+    const utilsSrvpgm = myBinder.deps.find(d => d.name === `UTILS`);
+    expect(utilsSrvpgm.name).toBe(`UTILS`);
+    expect(utilsSrvpgm.type).toBe(`SRVPGM`);
+    expect(utilsSrvpgm.relativePath).toBe(path.join(`qsrvsrc`, `utils.bnd`));
   });
 
   test(`Check employee table`, async () => {
     const empTable = targets.getDep({name: `EMPLOYEE`, type: `FILE`});
-    expect(empTable.relativePath).toBe(`qddssrc/employee.table`);
+    expect(empTable.relativePath).toBe(path.join(`qddssrc`, `employee.table`));
     expect(empTable.text).toBe(`Employee File`);
     
   });
@@ -138,8 +138,10 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
     expect(impacted[0].type).toBe(`PGM`);
     
     const logs = targets.logger.getLogsFor(deptsPgm.relativePath);
-    expect(logs.length).toBe(1);
-    expect(logs[0].message).toBe(`This object depended on DEPTS.FILE before it was deleted.`);
+    expect(logs.length).toBe(3);
+    expect(logs[0].message).toBe(`Include at line 14 found, to path 'qrpgleref/utils.rpgleinc'`);
+    expect(logs[1].message).toBe(`Include at line 13 found, to path 'qrpgleref/constants.rpgleinc'`);
+    expect(logs[2].message).toBe(`This object depended on DEPTS.FILE before it was deleted.`);
 
     expect(targets.getDep({name: `DEPTS`, type: `FILE`})).toBeUndefined();
 
@@ -224,7 +226,6 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
       '\tliblist -c $(BIN_LIB);\\',
       `\tsystem "CRTSRVPGM SRVPGM($(BIN_LIB)/UTILS) MODULE(UTILS) SRCSTMF('qsrvsrc/utils.bnd') BNDDIR($(BNDDIR))" > .logs/utils.splf`,
       '\t-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/UTILS *SRVPGM *IMMED))"',
-      `\tsystem "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/UTILS.MBR\') TOSTMF(\'.evfevent/utils.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
     ].join());
   });
 
@@ -233,20 +234,30 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
     const lines = MakeProject.generateSpecificTarget(makeDefaults.compiles[`srvpgm`], myPgm);
 
     expect(lines.join()).toBe([
-      '$(PREPATH)/BANKING.SRVPGM: ',
+      '$(PREPATH)/BANKING.SRVPGM: qsrvsrc/banking.bnd',
       '\t-system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/$(APP_BNDDIR))"',
       '\t-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/BANKING))"',
       '\t-system "DLTOBJ OBJ($(BIN_LIB)/BANKING) OBJTYPE(*SRVPGM)"',
       '\tliblist -c $(BIN_LIB);\\',
-      '\tsystem "CRTSRVPGM SRVPGM($(BIN_LIB)/BANKING) MODULE(*SRVPGM) EXPORT(*ALL) BNDDIR($(BNDDIR))" > .logs/banking.splf',
+      '\tsystem "CRTSRVPGM SRVPGM($(BIN_LIB)/BANKING) MODULE(BANKING) SRCSTMF(\'qsrvsrc/banking.bnd\') BNDDIR($(BNDDIR))" > .logs/banking.splf',
       '\t-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/BANKING *SRVPGM *IMMED))"',
-      `\tsystem "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/BANKING.MBR\') TOSTMF(\'.evfevent/banking.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
     ].join());
+  });
+
+  test(`Checking makefile rule generation`, async () => {
+    const project = new MakeProject(cwd, targets);
+
+    const headerContent = project.generateGenericRules();
+
+    expect(headerContent.find(l => l === `$(PREPATH)/DEPTS.PGM: qrpglesrc/depts.pgm.sqlrpgle`)).toBeDefined();
+    expect(headerContent.find(l => l === `$(PREPATH)/BANKING.MODULE: qrpglesrc/banking.sqlrpgle`)).toBeDefined();
+    expect(headerContent.find(l => l === `$(PREPATH)/BANKING.SRVPGM: qsrvsrc/banking.bnd`)).toBeDefined();
+    expect(headerContent.find(l => l === `$(PREPATH)/DEPARTMENT.FILE: qddssrc/department.table`)).toBeDefined();
   });
 
   test(`Impact of EMPLOYEES`, () => {
     const empPgm = targets.getDep({name: `EMPLOYEES`, type: `PGM`});
-    expect(empPgm.relativePath).toBe(`qrpglesrc/employees.pgm.sqlrpgle`);
+    expect(empPgm.relativePath).toBe(path.join(`qrpglesrc`, `employees.pgm.sqlrpgle`));
 
     const impactTree = targets.getImpactFor(empPgm);
     expect(impactTree.ileObject.name).toBe(`EMPLOYEES`);
@@ -258,7 +269,7 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
 
   test(`Impact of UTILS`, () => {
     const utilsModule = targets.getDep({name: `UTILS`, type: `MODULE`});
-    expect(utilsModule.relativePath).toBe(`qrpglesrc/utils.sqlrpgle`);
+    expect(utilsModule.relativePath).toBe(path.join(`qrpglesrc`, `utils.sqlrpgle`));
 
     const impactTree = targets.getImpactFor(utilsModule);
     expect(impactTree.ileObject.name).toBe(`UTILS`);
@@ -290,11 +301,3 @@ describe.skipIf(files.length === 0)(`ibmi-company_system tests`, () => {
     expect(resolvedObject.type).toBe(`FILE`);
   })
 });
-
-function getFiles(cwd: string, globPath: string): string[] {
-	return glob.sync(globPath, {
-		cwd,
-		absolute: true,
-		nocase: true,
-	});
-}

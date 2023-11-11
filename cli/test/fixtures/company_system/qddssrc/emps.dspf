@@ -1,0 +1,37 @@
+     A                                      INDARA
+     A                                      CA12(12)
+     A          R SFLDTA                    SFL
+     A            RRN            4Y 0H
+     A* DISPLAY DTA
+     A            XSEL           1A  B  7  8
+     A            XID            6A  O  7 12
+     A            XNAME         30A  O  7 20
+     A            XJOB           8A  O  7 52
+     A* COLOR                  HELLO
+     A          R SFLCTL                    SFLCTL(SFLDTA)
+     A                                      SFLPAG(0014)
+     A                                      SFLSIZ(9999)
+     A                                      OVERLAY
+     A  85                                  SFLDSPCTL
+     A  95                                  SFLDSP
+     A N85                                  SFLCLR
+     A            SFLRRN         4S 0H      SFLRCDNBR(CURSOR)
+     A*
+     A                                  6  6'Opt'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  6 12'ID'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  6 20'Name'
+     A                                      DSPATR(UL)
+     A                                      COLOR(WHT)
+     A                                  6 52'Job'
+     A                                      DSPATR(UL)
+     A                                      COLOR(WHT)
+     A          R FOOTER_FMT
+     A                                      OVERLAY
+     A                                  3 06'F12=Back'
+     A                                      COLOR(BLU)
+     A                                  2 35'Employees'
+     A                                      DSPATR(UL)

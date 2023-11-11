@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { ILEObject, ILEObjectTarget, ObjectType, Targets } from '../targets';
+import { asPosix } from '../utils';
 
 interface CompileData {
 	/** indicates what type of object will be built from this source */
@@ -41,6 +42,10 @@ export class MakeProject {
 			binders: [],
 			includePaths: [],
 			compiles: {
+				"pgm": {
+					becomes: `PGM`,
+					command: `CRTPGM PGM($(BIN_LIB)/$*) ENTRY($*) MODULES(*MODULES) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)` // TODO: fix this
+				},
 				"pgm.rpgle": {
 					becomes: `PGM`,
 					command: `CRTBNDRPG PGM($(BIN_LIB)/$*) SRCSTMF('$<') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)`
@@ -51,6 +56,10 @@ export class MakeProject {
 						`system -s "CHGATR OBJ('$<') ATR(*CCSID) VALUE(1252)"`
 					],
 					command: `CRTSQLRPGI OBJ($(BIN_LIB)/$*) SRCSTMF('$<') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) COMPILEOPT('BNDDIR($(BNDDIR)) DFTACTGRP(*no)')`
+				},
+				"rpgle": {
+					becomes: `MODULE`,
+					command: `CRTRPGMOD MODULE($(BIN_LIB)/$*) SRCSTMF('$<') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB)`
 				},
 				"sqlrpgle": {
 					becomes: "MODULE",
@@ -89,14 +98,13 @@ export class MakeProject {
 				binder: binderSourceCompile,
 				bnd: binderSourceCompile,
 				srvpgm: {
-					sourceOptional: true,
 					becomes: `SRVPGM`,
 					preCommands: [
 						`-system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/$(APP_BNDDIR))"`,
 						`-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/$*))"`,
 						`-system "DLTOBJ OBJ($(BIN_LIB)/$*) OBJTYPE(*SRVPGM)"`
 					],
-					command: `CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE(*SRVPGM) EXPORT(*ALL) BNDDIR($(BNDDIR))`,
+					command: `CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE(*MODULES) SRCSTMF('$<') BNDDIR($(BNDDIR))`,
 					postCommands: [
 						`-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/$* *SRVPGM *IMMED))"`
 					]
@@ -141,6 +149,10 @@ export class MakeProject {
 		} catch (e) {
 			// console.log(`Failed to read 'iproj.json'.`);
 		}
+	}
+
+	public getSettings() {
+		return this.settings;
 	}
 
 	public applySettings(input: iProject) {
@@ -191,8 +203,7 @@ export class MakeProject {
 			`PREPATH=/QSYS.LIB/$(BIN_LIB).LIB`,
 			`SHELL=/QOpenSys/usr/bin/qsh`,
 			``,
-			`mkdir .evfevent`,
-			`mkdir .logs`
+			`CHEAT_ARG := $(mkdir .logs .evfevent)`,
 		];
 	}
 
@@ -245,7 +256,7 @@ export class MakeProject {
 								const commands = content.split(eol).filter(l => !l.startsWith(`/*`)); // Remove comments
 
 								lines.push(
-									`$(PREPATH)/${ileObject.name}.${data.becomes}: ${ileObject.relativePath}`,
+									`$(PREPATH)/${ileObject.name}.${data.becomes}: ${asPosix(ileObject.relativePath)}`,
 									...(commands.map(l => `\t-system -q "${l}"`)),
 								);
 
@@ -274,7 +285,7 @@ export class MakeProject {
 				if (data.sourceOptional) {
 					// This is usually used as a generic target.
 					lines.push(
-						`$(PREPATH)/%.${data.becomes}: ${data.targetSource || ``}`,
+						`$(PREPATH)/%.${data.becomes}: ${data.targetSource ? asPosix(data.targetSource) : ``}`,
 						...(data.preCommands ? data.preCommands.map(cmd => `\t${cmd}`) : []),
 						...(data.command ?
 							[
@@ -304,7 +315,7 @@ export class MakeProject {
 		const resolve = (command: string) => {
 			command = command.replace(new RegExp(`\\*CURLIB`, `g`), `$(BIN_LIB)`);
 			command = command.replace(new RegExp(`\\$\\*`, `g`), ileObject.name);
-			command = command.replace(new RegExp(`\\$<`, `g`), ileObject.relativePath);
+			command = command.replace(new RegExp(`\\$<`, `g`), asPosix(ileObject.relativePath));
 			command = command.replace(new RegExp(`\\$\\(SRCPF\\)`, `g`), qsysTempName);
 
 			if (ileObject.deps && ileObject.deps.length > 0) {
@@ -320,23 +331,25 @@ export class MakeProject {
 			return command;
 		}
 
+		const resolvedCommand = resolve(data.command);
+
 		lines.push(
-			`$(PREPATH)/${ileObject.name}.${ileObject.type}: ${ileObject.relativePath || ``}`,
+			`$(PREPATH)/${ileObject.name}.${ileObject.type}: ${asPosix(ileObject.relativePath)}`,
 			...(qsysTempName && data.member ?
 				[
 					`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/${qsysTempName}) RCDLEN(112)"`,
-					`\tsystem "CPYFRMSTMF FROMSTMF('${ileObject.relativePath}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${ileObject.name}.MBR') MBROPT(*REPLACE)"`
+					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${ileObject.name}.MBR') MBROPT(*REPLACE)"`
 				] : []),
 			...(data.preCommands ? data.preCommands.map(cmd => `\t${resolve(cmd)}`) : []),
 			...(data.command ?
 				[
 					`\tliblist -c $(BIN_LIB);\\`,
-					`\tsystem "${resolve(data.command)}" > .logs/${ileObject.name.toLowerCase()}.splf` // TODO: write the spool file somewhere?
+					`\tsystem "${resolvedCommand}" > .logs/${ileObject.name.toLowerCase()}.splf` // TODO: write the spool file somewhere?
 				]
 				: []
 			),
 			...(data.postCommands ? data.postCommands.map(cmd => `\t${resolve(cmd)}`) : []),
-			`\tsystem "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/${ileObject.name}.MBR') TOSTMF('.evfevent/${ileObject.name.toLowerCase()}.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
+			...(resolvedCommand.includes(`*EVENTF`) ? [`\tsystem "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/${ileObject.name}.MBR') TOSTMF('.evfevent/${ileObject.name.toLowerCase()}.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`] : []),
 		);
 
 		return lines;
