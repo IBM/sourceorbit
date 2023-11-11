@@ -1,4 +1,4 @@
-import { ImpactedObject } from '@ibm/source-orbit/dist/src/targets';
+import { ImpactedObject } from '@ibm/sourceorbit/dist/src/targets';
 import { EventEmitter, Uri, WorkspaceFolder, workspace } from "vscode";
 import { Event, ThemeIcon, TreeDataProvider, TreeItem, TreeItemCollapsibleState } from "vscode";
 import { TypeIcons } from './utils';

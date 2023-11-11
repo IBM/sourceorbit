@@ -1,7 +1,7 @@
 import { Connection } from 'vscode-languageserver';
 import { TargetsManager } from './TargetsManager';
 
-import { ILEObject, TargetSuggestions, Targets } from "@ibm/source-orbit/dist/src/targets";
+import { ILEObject, TargetSuggestions, Targets } from "@ibm/sourceorbit/dist/src/targets";
 import { URI } from 'vscode-uri';
 import { fixProject, initAndRefresh } from './setup';
 import { reResolve } from './ui';

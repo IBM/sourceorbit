@@ -1,8 +1,8 @@
 import { URI } from 'vscode-uri';
 import { SupportedGlob, TargetsManager, getFiles } from './TargetsManager';
-import { Targets } from '@ibm/source-orbit';
-import { TargetSuggestions } from '@ibm/source-orbit/dist/src/targets';
-import { Logger } from '@ibm/source-orbit/dist/src/logger';
+import { Targets } from '@ibm/sourceorbit';
+import { TargetSuggestions } from '@ibm/sourceorbit/dist/src/targets';
+import { Logger } from '@ibm/sourceorbit/dist/src/logger';
 import path from 'path';
 import fs from 'fs';
 import { connection } from './server';

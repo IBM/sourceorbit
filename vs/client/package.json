@@ -12,7 +12,7 @@
 		"vscode-languageclient": "^8.1.0"
 	},
 	"devDependencies": {
-		"@ibm/source-orbit": "file:../../cli",
+		"@ibm/sourceorbit": "file:../../cli",
 		"@ibm/vscode-ibmi-projectexplorer-types": "^1.1.0",
 		"@types/node": "^20.5.1",
 		"@types/vscode": "^1.75.1",

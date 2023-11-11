@@ -8,7 +8,7 @@
 		"node": "*"
 	},
 	"dependencies": {
-		"@ibm/source-orbit": "file:../../cli",
+		"@ibm/sourceorbit": "file:../../cli",
 		"glob": "^7.2.0",
 		"vscode-languageserver": "^8.1.0",
 		"vscode-languageserver-textdocument": "^1.0.8",

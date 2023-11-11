@@ -26,7 +26,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
         
-    - run: npm i -g @IBM/source-orbit
+    - run: npm i -g @IBM/sourceorbit
     - run: so -bf imd -l `git diff --name-only origin/main origin/${GITHUB_HEAD_REF}`
     - name: Adding markdown
       run: cat impact.md >> $GITHUB_STEP_SUMMARY

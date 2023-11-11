@@ -65,7 +65,7 @@ We recommend Node.js 18+.
 
 ### Most platforms
 
-1. `npm i -g @IBM/source-orbit`
+1. `npm i -g @IBM/sourceorbit`
 2. Use `so`
 
 ### IBM i
@@ -74,7 +74,7 @@ We recommend Node.js 18+.
    * `yum install nodejsxx`
    * `update-alternatives --set node /QOpenSys/pkgs/lib/nodejs18/bin/node`
 2. Install Source Orbit globally onto the IBM i
-   * `npm i -g @IBM/source-orbit`
+   * `npm i -g @IBM/sourceorbit`
 3. Find where global CLI tools get installed
    * Start with `npm list -g --depth 0` to find globally installed packages
 4. Update the `PATH` environment variable to include the `npm` binary directory for installed CLI packages
