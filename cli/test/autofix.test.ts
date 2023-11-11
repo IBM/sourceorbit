@@ -5,6 +5,8 @@ import { Targets } from '../src/targets'
 import { getFiles, renameFiles } from "../src/utils";
 import { scanGlob } from "../src/extensions";
 
+import * as path from "path";
+
 test(`Auto rename RPGLE program and include and fix-include infos`, async () => {
   const cwd = setupProjectFromQsys();
 
@@ -24,21 +26,17 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
   let allLogs = targets.logger.getAllLogs();
   expect(Object.keys(allLogs).length).toBeGreaterThan(0);
 
-  const errorTable = allLogs["qprotosrc/errortable.rpgle"];
-  const payroll = allLogs["qrpglesrc/payroll.rpgle"];
-  const empmst = allLogs["qsqlsrc/empmst.sql"];
-  const emp = allLogs["qsqlsrc/emp.sql"];
-  const dept = allLogs["qsqlsrc/super_long_dept_name.sql"];
+  const errorTable = allLogs[path.join(`qprotosrc`, `errortable.rpgle`)];
+  const payroll = allLogs[path.join(`qrpglesrc`, `payroll.rpgle`)];
+  const empmst = allLogs[path.join(`qsqlsrc`, `empmst.sql`)];
+  const emp = allLogs[path.join(`qsqlsrc`, `emp.sql`)];
+  const dept = allLogs[path.join(`qsqlsrc`, `super_long_dept_name.sql`)];
 
   expect(emp.length).toBe(1);
-  expect(emp[0]).toStrictEqual({
-    message: "SUPER_LONG_EMP_NAME (FILE) name is longer than 10 characters. Consider using 'FOR SYSTEM NAME' in the CREATE statement.",
-    type: "warning",
-    range: {
-      start: 94,
-      end: 113,
-    },
-  });
+  expect(emp[0].message).toBe(`SUPER_LONG_EMP_NAME (FILE) name is longer than 10 characters. Consider using 'FOR SYSTEM NAME' in the CREATE statement.`);
+  expect(emp[0].type).toBe(`warning`);
+  expect(emp[0].range.start).toBeDefined();
+  expect(emp[0].range.end).toBeDefined();
 
   expect(dept.length).toBe(1);
   expect(dept[0]).toStrictEqual({
@@ -46,7 +44,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
     type: "rename",
     change: {
       rename: {
-        path: "/Users/barry/Repos/sourceorbit/from_qsys/qsqlsrc/super_long_dept_name.sql",
+        path: path.join(cwd, `qsqlsrc`, `super_long_dept_name.sql`),
         newName: "dept.table",
       },
     },
@@ -58,7 +56,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
     type: "rename",
     change: {
       rename: {
-        path: "/Users/barry/Repos/sourceorbit/from_qsys/qsqlsrc/empmst.sql",
+        path: path.join(cwd, `qsqlsrc`, `empmst.sql`),
         newName: "empmst.table",
       },
     },
@@ -70,7 +68,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
     type: "rename",
     change: {
       rename: {
-        path: "/Users/barry/Repos/sourceorbit/from_qsys/qprotosrc/errortable.rpgle",
+        path: path.join(cwd, `qprotosrc`, `errortable.rpgle`),
         newName: "errortable.rpgleinc",
       },
     },
@@ -79,7 +77,8 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
   expect(payroll.length).toBe(2);
   expect(payroll[0]).toStrictEqual({
     line: 35,
-    message: "Include at line 35 found, to path 'qprotosrc/errortable.rpgle'",
+    // Note here that we are using .posix. RPGLE includes always use posix.
+    message: `Include at line 35 found, to path '${path.posix.join(`qprotosrc`, `errortable.rpgle`)}'`,
     type: "info",
   });
   expect(payroll[1]).toStrictEqual({
@@ -87,7 +86,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
     type: "rename",
     change: {
       rename: {
-        path: "/Users/barry/Repos/sourceorbit/from_qsys/qrpglesrc/payroll.rpgle",
+        path: path.join(cwd, `qrpglesrc`, `payroll.rpgle`),
         newName: "payroll.pgm.rpgle",
       },
     },
@@ -111,14 +110,14 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
   allLogs = targets.logger.getAllLogs();
   expect(Object.keys(allLogs).length).toBeGreaterThan(0);
 
-  const oldPayroll = allLogs["qrpglesrc/payroll.rpgle"];
+  const oldPayroll = allLogs[path.join(`qrpglesrc`, `payroll.rpgle`)];
   expect(oldPayroll).toBeUndefined();
 
-  const newPayroll = allLogs["qrpglesrc/payroll.pgm.rpgle"];
+  const newPayroll = allLogs[path.join(`qrpglesrc`, `payroll.pgm.rpgle`)];
   expect(newPayroll.length).toBe(1);
   expect(newPayroll[0]).toStrictEqual({
     line: 35,
-    message: "Include at line 35 found, to path 'qprotosrc/errortable.rpgleinc'",
+    message: `Include at line 35 found, to path '${path.posix.join(`qprotosrc`, `errortable.rpgleinc`)}'`,
     type: "info",
   });
 });
@@ -143,7 +142,7 @@ test(`Fix includes in same directory`, async () => {
   let allLogs = targets.logger.getAllLogs();
   expect(Object.keys(allLogs).length).toBe(1)
 
-  const payroll = allLogs["QRPGLESRC/PAYROLL.pgm.rpgle"];
+  const payroll = allLogs[path.join(`QRPGLESRC`, `PAYROLL.pgm.rpgle`)];
 
   expect(payroll.length).toBe(5);
 

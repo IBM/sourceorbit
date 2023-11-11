@@ -1,6 +1,8 @@
 import {  expect, test } from 'vitest'
 import { baseTargets, multiModuleObjects } from './fixtures/targets';
 
+import * as path from "path";
+
 test('resolveObject', () => {
   baseTargets();
 });
@@ -92,12 +94,12 @@ test('getObjectsByExtension', () => {
 
   const rpglePrograms = targets.getObjectsByExtension(`pgm.rpgle`);
   expect(rpglePrograms.length).toBe(1);
-  expect(rpglePrograms[0].relativePath).toBe(`qrpglesrc/programA.pgm.rpgle`);
+  expect(rpglePrograms[0].relativePath).toBe(path.join(`qrpglesrc`, `programA.pgm.rpgle`));
 
   const rpgleModules = targets.getObjectsByExtension(`rpgle`);
   expect(rpgleModules.length).toBe(2);
-  expect(rpgleModules[0].relativePath).toBe(`qrpglesrc/moduleA.rpgle`);
-  expect(rpgleModules[1].relativePath).toBe(`qrpglesrc/ordentmod.rpgle`);
+  expect(rpgleModules[0].relativePath).toBe(path.join(`qrpglesrc`, `moduleA.rpgle`));
+  expect(rpgleModules[1].relativePath).toBe(path.join(`qrpglesrc`, `ordentmod.rpgle`));
 })
 
 test(`Multi-module program and service programs`, () => {

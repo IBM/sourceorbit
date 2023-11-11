@@ -4,15 +4,30 @@ import { infoOut, warningOut } from "./cli";
 
 import * as fs from "fs";
 import * as path from "path";
+import * as os from "os"
 
 export function getFiles(cwd: string, globPath: string): string[] {
-	return glob.sync(globPath, {
+	let paths: string[] = glob.sync(globPath, {
 		cwd,
 		absolute: true,
 		nocase: true,
 	});
+
+	if (os.platform() === `win32`) {
+		paths = paths.map(p => p.split(path.posix.sep).join(path.sep))
+	}
+
+	return paths;
 }
 
+export function asPosix(inPath?: string) {
+	return inPath ? inPath.split(path.sep).join(path.posix.sep) : ``;
+}
+
+export function toLocalPath(inPath: string) {
+	if (os.platform() === `win32`) return inPath.split(path.posix.sep).join(path.sep);
+	else return inPath.split(path.win32.sep).join(path.sep);
+}
 
 export function replaceIncludes(logger: Logger) {
 	warningOut(`Starting include fix process. Do not end process.`);

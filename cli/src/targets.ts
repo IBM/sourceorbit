@@ -12,6 +12,7 @@ import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensi
 import Parser from "vscode-rpgle/language/parser";
 import { setupParser } from './parser';
 import { Logger } from './logger';
+import { asPosix, toLocalPath } from './utils';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -104,11 +105,14 @@ export class Targets {
 	}
 
 	private storeResolved(localPath: string, ileObject: ILEObject) {
-		const detail = path.parse(localPath);
 		this.resolvedObjects[localPath] = ileObject;
 
+		// Path cache stores everything as unix, but localPath might be Windows
 		if (this.pathCache) {
-			this.pathCache[localPath] = true;
+			const posixPath = asPosix(localPath);
+			const detail = path.parse(posixPath);
+
+			this.pathCache[posixPath] = true;
 			if (Array.isArray(this.pathCache[detail.dir])) {
 				const paths = this.pathCache[detail.dir] as string[];
 				const parentIndex = paths.findIndex(p => p === detail.base);
@@ -206,7 +210,7 @@ export class Targets {
 	/**
 	 * Resolves a search to a filename. Basically a special blob
 	 */
-	public resolveLocalObjectQuery(name: string, baseName?: string): string {
+	public resolveLocalObjectQuery(name: string, baseName?: string): string|undefined {
 		name = name.toUpperCase();
 
 		if (this.resolvedPaths[name]) return this.resolvedPaths[name];
@@ -236,9 +240,12 @@ export class Targets {
 			cache: this.pathCache
 		});
 
-		this.resolvedPaths[name] = results[0];
-
-		return results[0];
+		if (results[0]) {
+			// To local path is required because glob returns posix paths
+			const localPath = toLocalPath(results[0])
+			this.resolvedPaths[name] = localPath;
+			return localPath;
+		}
 	}
 
 	private getObjectType(relativePath: string, ext: string): ObjectType {
@@ -885,6 +892,10 @@ export class Targets {
 		infoOut(`${ileObject.name}.${ileObject.type}: ${ileObject.relativePath}`);
 
 		cache.includes.forEach((include: IncludeStatement) => {
+			// RPGLE includes are always returned as posix paths
+			// even on Windows. We need to do some magic to convert here for Windows systems
+			include.toPath = toLocalPath(include.toPath);
+
 			const includeDetail = path.parse(include.toPath);
 
 			if (includeDetail.ext !== `.rpgleinc`) {
@@ -922,12 +933,12 @@ export class Targets {
 					type: `includeFix`,
 					line: include.line,
 					change: {
-						lineContent: (options.isFree ? `` : ``.padEnd(6)) + `/copy '${this.getRelative(include.toPath)}'`
+						lineContent: (options.isFree ? `` : ``.padEnd(6)) + `/copy '${asPosix(this.getRelative(include.toPath))}'`
 					}
 				});
 			} else {
 				this.logger.fileLog(ileObject.relativePath, {
-					message: `Include at line ${include.line} found, to path '${this.getRelative(include.toPath)}'`,
+					message: `Include at line ${include.line} found, to path '${asPosix(this.getRelative(include.toPath))}'`,
 					type: `info`,
 					line: include.line,
 				});
@@ -958,6 +969,7 @@ export class Targets {
 		}
 
 		// This usually means it's source name is a module (no .pgm) but doesn't have NOMAIN.
+		// We need to do this for other language too down the line
 		if (ileObject.type === `MODULE` && !cache.keyword[`NOMAIN`]) {
 			if (this.suggestions.renames) {
 				this.logger.fileLog(ileObject.relativePath, {

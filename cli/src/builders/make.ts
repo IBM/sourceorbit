@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { ILEObject, ILEObjectTarget, ObjectType, Targets } from '../targets';
+import { asPosix } from '../utils';
 
 interface CompileData {
 	/** indicates what type of object will be built from this source */
@@ -255,7 +256,7 @@ export class MakeProject {
 								const commands = content.split(eol).filter(l => !l.startsWith(`/*`)); // Remove comments
 
 								lines.push(
-									`$(PREPATH)/${ileObject.name}.${data.becomes}: ${ileObject.relativePath}`,
+									`$(PREPATH)/${ileObject.name}.${data.becomes}: ${asPosix(ileObject.relativePath)}`,
 									...(commands.map(l => `\t-system -q "${l}"`)),
 								);
 
@@ -284,7 +285,7 @@ export class MakeProject {
 				if (data.sourceOptional) {
 					// This is usually used as a generic target.
 					lines.push(
-						`$(PREPATH)/%.${data.becomes}: ${data.targetSource || ``}`,
+						`$(PREPATH)/%.${data.becomes}: ${data.targetSource ? asPosix(data.targetSource) : ``}`,
 						...(data.preCommands ? data.preCommands.map(cmd => `\t${cmd}`) : []),
 						...(data.command ?
 							[
@@ -314,7 +315,7 @@ export class MakeProject {
 		const resolve = (command: string) => {
 			command = command.replace(new RegExp(`\\*CURLIB`, `g`), `$(BIN_LIB)`);
 			command = command.replace(new RegExp(`\\$\\*`, `g`), ileObject.name);
-			command = command.replace(new RegExp(`\\$<`, `g`), ileObject.relativePath);
+			command = command.replace(new RegExp(`\\$<`, `g`), asPosix(ileObject.relativePath));
 			command = command.replace(new RegExp(`\\$\\(SRCPF\\)`, `g`), qsysTempName);
 
 			if (ileObject.deps && ileObject.deps.length > 0) {
@@ -333,11 +334,11 @@ export class MakeProject {
 		const resolvedCommand = resolve(data.command);
 
 		lines.push(
-			`$(PREPATH)/${ileObject.name}.${ileObject.type}: ${ileObject.relativePath || ``}`,
+			`$(PREPATH)/${ileObject.name}.${ileObject.type}: ${asPosix(ileObject.relativePath)}`,
 			...(qsysTempName && data.member ?
 				[
 					`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/${qsysTempName}) RCDLEN(112)"`,
-					`\tsystem "CPYFRMSTMF FROMSTMF('${ileObject.relativePath}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${ileObject.name}.MBR') MBROPT(*REPLACE)"`
+					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${ileObject.name}.MBR') MBROPT(*REPLACE)"`
 				] : []),
 			...(data.preCommands ? data.preCommands.map(cmd => `\t${resolve(cmd)}`) : []),
 			...(data.command ?
