@@ -12,7 +12,7 @@ import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensi
 import Parser from "vscode-rpgle/language/parser";
 import { setupParser } from './parser';
 import { Logger } from './logger';
-import { asPosix } from './utils';
+import { asPosix, toLocalPath } from './utils';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -886,6 +886,10 @@ export class Targets {
 		infoOut(`${ileObject.name}.${ileObject.type}: ${ileObject.relativePath}`);
 
 		cache.includes.forEach((include: IncludeStatement) => {
+			// RPGLE includes are always returned as posix paths
+			// even on Windows. We need to do some magic to convert here for Windows systems
+			include.toPath = toLocalPath(include.toPath);
+
 			const includeDetail = path.parse(include.toPath);
 
 			if (includeDetail.ext !== `.rpgleinc`) {

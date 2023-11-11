@@ -24,6 +24,12 @@ export function asPosix(inPath?: string) {
 	return inPath ? inPath.split(path.sep).join(path.posix.sep) : ``;
 }
 
+export function toLocalPath(inPath: string) {
+	if (os.platform() === `win32`) return inPath.split(path.posix.sep).join(path.sep);
+	
+	return inPath;
+}
+
 export function replaceIncludes(logger: Logger) {
 	warningOut(`Starting include fix process. Do not end process.`);
 	const allLogs = logger.getAllLogs();
