@@ -1,6 +1,9 @@
 name: Node.js Package
 
 on:
+  workflow_run:
+    types:
+      - completed
   release:
     types: [created]
 
@@ -22,6 +25,8 @@ jobs:
       - run: |
           npm ci
           npm run test
+          ls
+          npm pack
           npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
