@@ -25,7 +25,6 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Check objects are generated`, async () => {
-    console.log(targets.getResolvedObjects());
     expect(targets.getResolvedObjects().length).toBe(11);
     expect(targets.getDeps().length).toBe(12);
     expect(targets.getParentObjects(`FILE`).length).toBe(4);

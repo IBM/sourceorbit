@@ -197,6 +197,7 @@ export class MakeProject {
 		return [
 			`BIN_LIB=DEV`,
 			`APP_BNDDIR=APP`,
+			`LIBL=$(BIN_LIB)`,
 			``,
 			`INCDIR="${this.settings.includePaths ? this.settings.includePaths.join(`:`) : `.`}"`,
 			`BNDDIR=${baseBinders.join(` `)}`,
@@ -290,6 +291,7 @@ export class MakeProject {
 						...(data.command ?
 							[
 								`\tliblist -c $(BIN_LIB);\\`,
+								`\tliblist -a $(LIBL);\\`,
 								`\tsystem "${data.command}"` // TODO: write the spool file somewhere?
 							]
 							: []
