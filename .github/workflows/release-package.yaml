@@ -13,9 +13,9 @@ jobs:
         with:
           node-version: 18
       - run: |
-          cd cli
           npm ci
           npm run test
+        working-directory: ./cli
 
   publish-gpr:
     needs: build
@@ -30,8 +30,8 @@ jobs:
           node-version: 18
           registry-url: https://npm.pkg.github.com/
       - run: |
-          cd cli
           npm ci
           npm publish
+        working-directory: ./cli
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
