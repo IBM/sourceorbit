@@ -12,6 +12,7 @@ import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensi
 import Parser from "vscode-rpgle/language/parser";
 import { setupParser } from './parser';
 import { Logger } from './logger';
+import { asPosix } from './utils';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -922,12 +923,12 @@ export class Targets {
 					type: `includeFix`,
 					line: include.line,
 					change: {
-						lineContent: (options.isFree ? `` : ``.padEnd(6)) + `/copy '${this.getRelative(include.toPath)}'`
+						lineContent: (options.isFree ? `` : ``.padEnd(6)) + `/copy '${asPosix(this.getRelative(include.toPath))}'`
 					}
 				});
 			} else {
 				this.logger.fileLog(ileObject.relativePath, {
-					message: `Include at line ${include.line} found, to path '${this.getRelative(include.toPath)}'`,
+					message: `Include at line ${include.line} found, to path '${asPosix(this.getRelative(include.toPath))}'`,
 					type: `info`,
 					line: include.line,
 				});

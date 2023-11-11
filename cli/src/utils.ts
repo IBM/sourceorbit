@@ -20,6 +20,9 @@ export function getFiles(cwd: string, globPath: string): string[] {
 	return paths;
 }
 
+export function asPosix(inPath?: string) {
+	return inPath ? inPath.split(path.sep).join(path.posix.sep) : ``;
+}
 
 export function replaceIncludes(logger: Logger) {
 	warningOut(`Starting include fix process. Do not end process.`);
