@@ -959,6 +959,7 @@ export class Targets {
 		}
 
 		// This usually means it's source name is a module (no .pgm) but doesn't have NOMAIN.
+		// We need to do this for other language too down the line
 		if (ileObject.type === `MODULE` && !cache.keyword[`NOMAIN`]) {
 			if (this.suggestions.renames) {
 				this.logger.fileLog(ileObject.relativePath, {
