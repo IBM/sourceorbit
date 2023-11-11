@@ -58,7 +58,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
   test(`Check depts`, async () => {
     const myPgm = targets.getDep({name: `DEPTS`, type: `PGM`});
-    expect(myPgm.relativePath).toBe(`qrpglesrc/depts.pgm.sqlrpgle`);
+    expect(myPgm.relativePath).toBe(path.join(`qrpglesrc`, `depts.pgm.sqlrpgle`));
     expect(myPgm.text).toBe(`This is the text for this program`);
 
     expect(myPgm.deps.length).toBe(4);
