@@ -117,7 +117,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
   expect(newPayroll.length).toBe(1);
   expect(newPayroll[0]).toStrictEqual({
     line: 35,
-    message: `Include at line 35 found, to path '${path.join(`qprotosrc`, `errortable.rpgleinc`)}'`,
+    message: `Include at line 35 found, to path '${path.posix.join(`qprotosrc`, `errortable.rpgleinc`)}'`,
     type: "info",
   });
 });
