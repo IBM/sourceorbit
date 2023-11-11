@@ -105,11 +105,14 @@ export class Targets {
 	}
 
 	private storeResolved(localPath: string, ileObject: ILEObject) {
-		const detail = path.parse(localPath);
 		this.resolvedObjects[localPath] = ileObject;
 
+		// Path cache stores everything as unix, but localPath might be Windows
 		if (this.pathCache) {
-			this.pathCache[localPath] = true;
+			const posixPath = asPosix(localPath);
+			const detail = path.parse(posixPath);
+
+			this.pathCache[posixPath] = true;
 			if (Array.isArray(this.pathCache[detail.dir])) {
 				const paths = this.pathCache[detail.dir] as string[];
 				const parentIndex = paths.findIndex(p => p === detail.base);
@@ -207,7 +210,7 @@ export class Targets {
 	/**
 	 * Resolves a search to a filename. Basically a special blob
 	 */
-	public resolveLocalObjectQuery(name: string, baseName?: string): string {
+	public resolveLocalObjectQuery(name: string, baseName?: string): string|undefined {
 		name = name.toUpperCase();
 
 		if (this.resolvedPaths[name]) return this.resolvedPaths[name];
@@ -237,9 +240,12 @@ export class Targets {
 			cache: this.pathCache
 		});
 
-		this.resolvedPaths[name] = results[0];
-
-		return results[0];
+		if (results[0]) {
+			// To local path is required because glob returns posix paths
+			const localPath = toLocalPath(results[0])
+			this.resolvedPaths[name] = localPath;
+			return localPath;
+		}
 	}
 
 	private getObjectType(relativePath: string, ext: string): ObjectType {

@@ -26,8 +26,7 @@ export function asPosix(inPath?: string) {
 
 export function toLocalPath(inPath: string) {
 	if (os.platform() === `win32`) return inPath.split(path.posix.sep).join(path.sep);
-	
-	return inPath;
+	else return inPath.split(path.win32.sep).join(path.sep);
 }
 
 export function replaceIncludes(logger: Logger) {
