@@ -36,4 +36,6 @@ jobs:
         run: npm run test
 
       - name: Pack
-        run: npm pack
+        run: |
+          npm run webpack
+          npm pack
