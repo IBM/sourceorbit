@@ -17,7 +17,9 @@ jobs:
         node-version: [18.x]
 
     runs-on: ${{ matrix.os }}
-
+    defaults:
+      run:
+        working-directory: ./cli
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -28,11 +30,10 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Install NPM Dependencies
-        run: |
-          cd cli
-          npm install
+        run: npm install
 
       - name: Run Test
-        run: |
-          cd cli
-          npm run test
+        run: npm run test
+
+      - name: Pack
+        run: npm pack
