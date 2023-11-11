@@ -102,8 +102,8 @@ async function main() {
 				console.log(`\t-bf make|bob|imd|json\tCreate build files of a specific format`);
 				console.log(`\t\t\tExample: -bf make`);
 				console.log(``);
-				console.log(`\t-bl <name>\tSet the BIN_LIB environment variable`);
-				console.log(`\t\t\tbased on a user provided branch na,e`);
+				console.log(`\t-bl <name>\tSet the BRANCHLIB environment variable`);
+				console.log(`\t\t\tbased on a user provided branch name`);
 				console.log(`\t\t\tExample: -bl feature/123-cool-idea`);
 				console.log(`\t\t\t\t -bl bug/123-bad-move`);
 				console.log(``);
@@ -145,9 +145,9 @@ async function main() {
 
 	if (cliSettings.userBranch) {
 		const branchLibrary = getBranchLibraryName(cliSettings.userBranch);
-		console.log(`Setting BIN_LIB to ${branchLibrary}.`);
+		console.log(`Setting BRANCHLIB to ${branchLibrary}.`);
 		
-		process.env.BIN_LIB = branchLibrary;
+		process.env.BRANCHLIB = branchLibrary;
 	}
 
 	try {
