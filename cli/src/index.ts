@@ -215,7 +215,8 @@ async function main() {
 			const outJson = {
 				targets: targets.getDeps(),
 				resolved: targets.getResolvedObjects(),
-				exports: targets.getExports()
+				exports: targets.getExports(),
+				messages: targets.logger.getAllLogs()
 			};
 
 			writeFileSync(path.join(cwd, `sourceorbit.json`), JSON.stringify(outJson, null, 2));
