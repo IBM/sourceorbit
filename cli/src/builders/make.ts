@@ -176,11 +176,11 @@ export class MakeProject {
 		}
 	}
 
-	public getMakefile() {
+	public getMakefile(specificObjects?: ILEObject[]) {
 		return [
 			...this.generateHeader(),
 			``,
-			...this.generateTargets(),
+			...this.generateTargets(specificObjects),
 			``,
 			...this.generateGenericRules()
 		];
@@ -206,10 +206,10 @@ export class MakeProject {
 		];
 	}
 
-	public generateTargets(): string[] {
+	public generateTargets(specificObjects?: ILEObject[]): string[] {
 		let lines = [];
 
-		const all = [
+		const all = specificObjects || [
 			...(this.targets.binderRequired() ? [this.targets.getBinderTarget()] : []),
 			...this.targets.getParentObjects(`PGM`),
 			...this.targets.getParentObjects(`CMD`)

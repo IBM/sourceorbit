@@ -24,8 +24,6 @@ async function main() {
 	let cwd = process.cwd();
 	let scanGlob = `**/*.{${allExtensions.join(`,`)},${allExtensions.map(e => e.toUpperCase()).join(`,`)}}`;
 
-	let files: string[] = [];
-
 	for (let i = 0; i < parms.length; i++) {
 		switch (parms[i]) {
 			case `-g`:
@@ -75,7 +73,6 @@ async function main() {
 				break;
 
 			case `-l`:
-				cliSettings.lookupMode = true;
 				cliSettings.lookupFiles = [];
 				break;
 
@@ -91,16 +88,16 @@ async function main() {
 				console.log(`\t--cwd <dir>\tTo see the directory of where source code lives.`);
 				console.log(`\t\t\tThe default is the current working directory.`);
 				console.log(``);
-				console.log(`\t-f <relativePath>`)
-				console.log(`\t--files <relativePath>\tTo only index specific files.`);
-				console.log(`\t\t\tThis option should be used to avoid re-indexing entire projects.`);
-				console.log(``);
 				console.log(`\t-l <obj>\tPrint an object and what depends on it.`);
 				console.log(`\t\t\tExample: -l EMPS.FILE`);
 				console.log(`\t\t\tExample: -l qddssrc/emps.dspf`);
 				console.log(``);
 				console.log(`\t-bf make|bob|imd|json\tCreate build files of a specific format`);
 				console.log(`\t\t\tExample: -bf make`);
+				console.log(``);
+				console.log(`\t-f <relativePath>`)
+				console.log(`\t--files <relativePath>\tFor when using makefile,`);
+				console.log(`\t\t\t\tthis option will only build a makefile to build these files.`);
 				console.log(``);
 				console.log(`\t-bl <name>\tSet the BRANCHLIB environment variable`);
 				console.log(`\t\t\tbased on a user provided branch name`);
@@ -122,16 +119,9 @@ async function main() {
 				break;
 
 			default:
-				if (cliSettings.lookupMode) {
+				if (cliSettings.fileList) {
 					cliSettings.lookupFiles.push(parms[i]);
-				} else
-					if (cliSettings.fileList) {
-						files.push(path.join(cwd, parms[i]));
-
-					} else {
-						console.log(`Unknown parameter: ${parms[i]}`);
-						process.exit(1);
-					}
+				}
 				break;
 		}
 	}
@@ -151,14 +141,10 @@ async function main() {
 		renames: cliSettings.autoRename
 	});
 
+	let files: string[];
+
 	try {
-		if (files.length === 0) {
-			files = getFiles(cwd, scanGlob);
-			infoOut(`Found ${files.length} file${files.length === 1 ? `` : `s`} with '${scanGlob}'.`);
-		} else {
-			infoOut(`Using ${files.length} file${files.length === 1 ? `` : `s`} provided by parameter.`);
-		}
-		infoOut(``);
+		files = getFiles(cwd, scanGlob);
 	} catch (e) {
 		error(e.message || e);
 		process.exit(1);
@@ -189,7 +175,7 @@ async function main() {
 
 	targets.resolveBinder();
 	
-	if (cliSettings.lookupMode && cliSettings.buildFile === `none`) {
+	if (cliSettings.lookupFiles && cliSettings.buildFile === `none`) {
 		for (const value of cliSettings.lookupFiles) {
 			listDeps(cwd, targets, value);
 		}
@@ -207,7 +193,9 @@ async function main() {
 			break;
 		case `make`:
 			const makeProj = new MakeProject(cwd, targets);
-			writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile().join(`\n`));
+			console.log(cliSettings);
+			let specificObjects: ILEObject[] | undefined = cliSettings.fileList ? cliSettings.lookupFiles.map(f => targets.getResolvedObject(path.join(cwd, f))).filter(o => o) : undefined;
+			writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile(specificObjects).join(`\n`));
 			break;
 		case `imd`:
 			const markdown = new ImpactMarkdown(cwd, targets, cliSettings.lookupFiles);
