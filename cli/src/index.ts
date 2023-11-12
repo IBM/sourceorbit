@@ -48,11 +48,6 @@ async function main() {
 				initProject(cwd);
 				process.exit(0);
 
-			case `-f`:
-			case `--files`:
-				cliSettings.fileList = true;
-				break;
-
 			case `-ar`:
 				warningOut(`Auto rename enabled. No makefile will be generated.`)
 				cliSettings.autoRename = true;
@@ -77,6 +72,8 @@ async function main() {
 				i++;
 				break;
 
+			case `-f`:
+			case `--files`:
 			case `-l`:
 				cliSettings.fileList = true;
 				break;
@@ -97,18 +94,15 @@ async function main() {
 				console.log(`\t\t\tSource Orbit will only scan a specific file and.`);
 				console.log(`\t\t\tit's dependents useful when building a specific source.`);
 				console.log(``);
-				console.log(`\t-l <obj>\tPrint an object and what depends on it.`);
-				console.log(`\t\t\tExample: -l EMPS.FILE`);
-				console.log(`\t\t\tExample: -l qddssrc/emps.dspf`);
-				console.log(``);
 				console.log(`\t-bf make|bob|imd|json\tCreate build files of a specific format`);
 				console.log(`\t\t\t\tExample: -bf make`);
 				console.log(``);
 				console.log(`\t-f <relative paths>`)
 				console.log(`\t--files <relative paths>`);
-				console.log(`\t\t\tUsed alongside -bf and -l, this option will still`);
+				console.log(`\t\t\tUsed alongside -bf, this option will still`);
 				console.log(`\t\t\tscan the entire working directory, but will single`);
 				console.log(`\t\t\tout these specific files when generating other files.`);
+				console.log(`\t\t\tIf no build file is specified, dependencies will be printed.`);
 				console.log(``);
 				console.log(`\t-bl <name>\tSet the BRANCHLIB environment variable based on `);
 				console.log(`\t\t\ta user provided branch name, and will write it out.`);
