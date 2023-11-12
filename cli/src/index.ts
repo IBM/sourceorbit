@@ -78,7 +78,7 @@ async function main() {
 				break;
 
 			case `-l`:
-				cliSettings.lookupFiles = [];
+				cliSettings.fileList = true;
 				break;
 
 			case `-h`:
