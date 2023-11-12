@@ -193,7 +193,6 @@ async function main() {
 			break;
 		case `make`:
 			const makeProj = new MakeProject(cwd, targets);
-			console.log(cliSettings);
 			let specificObjects: ILEObject[] | undefined = cliSettings.fileList ? cliSettings.lookupFiles.map(f => targets.getResolvedObject(path.join(cwd, f))).filter(o => o) : undefined;
 			writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile(specificObjects).join(`\n`));
 			break;
