@@ -65,19 +65,30 @@ We recommend Node.js 18+.
 
 ### Most platforms
 
-1. `npm i -g @IBM/sourceorbit`
-2. Use `so`
+1. Setup a Personal Access Token to a GitHub account for your system
+   * This is required since we host SO on the GitHub Registry
+   * You can use the `.npmrc` in your home directory, but you [can use others](https://docs.npmjs.com/cli/v10/configuring-npm/npmrc) too.
+   * See about generating a [PAT here](https://docs.github.com/en/packages/learn-github-packages/introduction-to-github-packages#authenticating-to-github-packages).
+   * `echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > ~/.npmrc`
+2. Install Source Orbit globally onto the IBM i
+   * `npm i -g @ibm/sourceorbit --registry=https://npm.pkg.github.com`
+3. Use `so`
 
 ### IBM i
 
 1. Install Node.js via `yum` and/or use `update-alternatives` to set the Node.js version.
    * `yum install nodejsxx`
    * `update-alternatives --set node /QOpenSys/pkgs/lib/nodejs18/bin/node`
-2. Install Source Orbit globally onto the IBM i
-   * `npm i -g @IBM/sourceorbit`
-3. Find where global CLI tools get installed
+2. Setup a Personal Access Token to a GitHub account for your IBM i
+   * This is required since we host SO on the GitHub Registry
+   * You can use the `.npmrc` in your home directory, but you [can use others](https://docs.npmjs.com/cli/v10/configuring-npm/npmrc) too.
+   * See about generating a [PAT here](https://docs.github.com/en/packages/learn-github-packages/introduction-to-github-packages#authenticating-to-github-packages).
+   * `echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > ~/.npmrc`
+3. Install Source Orbit globally onto the IBM i
+   * `npm i -g @ibm/sourceorbit --registry=https://npm.pkg.github.com`
+4. Find where global CLI tools get installed
    * Start with `npm list -g --depth 0` to find globally installed packages
-4. Update the `PATH` environment variable to include the `npm` binary directory for installed CLI packages
+5. Update the `PATH` environment variable to include the `npm` binary directory for installed CLI packages
    * `PATH=/QOpenSys/pkgs/lib/nodejs18/bin:$PATH`
 	 * put in `.bash_profile` for CLI usage, put in `.bashrc` for Code for IBM i usage 
-5. Use `so`
+6. Use `so`
