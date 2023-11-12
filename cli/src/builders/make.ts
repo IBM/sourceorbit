@@ -233,11 +233,11 @@ export class MakeProject {
 		lines.push(
 			``,
 			`.logs:`,
-			`  mkdir .logs`,
+			`\tmkdir .logs`,
 			`.evfevent:`,
-			`  mkdir .evfevent`,
+			`\tmkdir .evfevent`,
 			`library: $(PREPATH)`,
-			`  mkdir -system -q "CRTLIB LIB($(BIN_LIB))"`
+			`\tmkdir -system -q "CRTLIB LIB($(BIN_LIB))"`
 		);
 
 		return lines;
