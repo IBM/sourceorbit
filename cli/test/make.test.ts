@@ -18,11 +18,11 @@ test('generateTargets (pre-resolve)', () => {
       '$(PREPATH)/MODULEB.MODULE: $(PREPATH)/FILEB.FILE',
       ``,
       `.logs:`,
-			`  mkdir .logs`,
+			`\tmkdir .logs`,
 			`.evfevent:`,
-			`  mkdir .evfevent`,
+			`\tmkdir .evfevent`,
 			`library: $(PREPATH)`,
-			`  mkdir -system -q "CRTLIB LIB($(BIN_LIB))"`,
+			`\tmkdir -system -q "CRTLIB LIB($(BIN_LIB))"`,
     ]
   );
 });
@@ -50,11 +50,11 @@ test('generateTargets (post-resolve)', () => {
       '$(PREPATH)/$(APP_BNDDIR).BNDDIR: $(PREPATH)/SRVPGMA.SRVPGM $(PREPATH)/ORDENTSRV.SRVPGM',
       ``,
       `.logs:`,
-			`  mkdir .logs`,
+			`\tmkdir .logs`,
 			`.evfevent:`,
-			`  mkdir .evfevent`,
+			`\tmkdir .evfevent`,
 			`library: $(PREPATH)`,
-			`  mkdir -system -q "CRTLIB LIB($(BIN_LIB))"`,
+			`\tmkdir -system -q "CRTLIB LIB($(BIN_LIB))"`,
     ]
   );
 });
@@ -120,11 +120,11 @@ test(`Multi-module program and service program`, () => {
     '$(PREPATH)/$(APP_BNDDIR).BNDDIR: $(PREPATH)/UTILS.SRVPGM',
     ``,
     `.logs:`,
-    `  mkdir .logs`,
+    `\tmkdir .logs`,
     `.evfevent:`,
-    `  mkdir .evfevent`,
+    `\tmkdir .evfevent`,
     `library: $(PREPATH)`,
-    `  mkdir -system -q "CRTLIB LIB($(BIN_LIB))"`,
+    `\tmkdir -system -q "CRTLIB LIB($(BIN_LIB))"`,
   ].join());
 
   const webappPgm = targets.getDep({name: `MYWEBAPP`, type: `PGM`});
