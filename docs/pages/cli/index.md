@@ -8,7 +8,8 @@ Source Orbit will scan the sources in the current working directory (CWD) and ca
 * Generate a different file formats based on the dependency tree to build the project
 * Rename files easily (`.rpgle`/`.clle`/`.clp` -> `.pgm.rpgle`/`.pgm.clle`/`.clle`) with `-ar`
 * Fix RPGLE includes if the source is found locally (useful for converting from member include style) with `-fi`
-* List all project objects with `--verbose`
+* List detailed information with `--verbose`
+* Want to only scan a specific source? Use the `-s` option: `so -s qrpglesrc/employees.pgm.sqlrpgle`
 
 ```sh
 cd myibmiproject
@@ -31,7 +32,7 @@ Types available:
    * See about [GitHub Actions](./pages/cli/gha.md) here.
 
 ```sh
-so -bf imd -l `git diff --name-only origin/main origin/${GITHUB_HEAD_REF}`
+so -bf imd -f `git diff --name-only origin/main origin/${GITHUB_HEAD_REF}`
 ```
 
 ## Cleanup capabilities
