@@ -38,6 +38,11 @@ async function main() {
 				i++;
 				break;
 
+			case `-s`:
+				cliSettings.specificFile = parms[i+1];
+				i++;
+				break;
+
 			case `-i`:
 			case `--init`:
 				initProject(cwd);
@@ -88,19 +93,25 @@ async function main() {
 				console.log(`\t--cwd <dir>\tTo see the directory of where source code lives.`);
 				console.log(`\t\t\tThe default is the current working directory.`);
 				console.log(``);
+				console.log(`\t-s <relativePath>`)
+				console.log(`\t\t\tSource Orbit will only scan a specific file and.`);
+				console.log(`\t\t\tit's dependents useful when building a specific source.`);
+				console.log(``);
 				console.log(`\t-l <obj>\tPrint an object and what depends on it.`);
 				console.log(`\t\t\tExample: -l EMPS.FILE`);
 				console.log(`\t\t\tExample: -l qddssrc/emps.dspf`);
 				console.log(``);
 				console.log(`\t-bf make|bob|imd|json\tCreate build files of a specific format`);
-				console.log(`\t\t\tExample: -bf make`);
+				console.log(`\t\t\t\tExample: -bf make`);
 				console.log(``);
-				console.log(`\t-f <relativePath>`)
-				console.log(`\t--files <relativePath>\tFor when using makefile,`);
-				console.log(`\t\t\t\tthis option will only build a makefile to build these files.`);
+				console.log(`\t-f <relative paths>`)
+				console.log(`\t--files <relative paths>`);
+				console.log(`\t\t\tUsed alongside -bf and -l, this option will still`);
+				console.log(`\t\t\tscan the entire working directory, but will single`);
+				console.log(`\t\t\tout these specific files when generating other files.`);
 				console.log(``);
-				console.log(`\t-bl <name>\tSet the BRANCHLIB environment variable`);
-				console.log(`\t\t\tbased on a user provided branch name`);
+				console.log(`\t-bl <name>\tSet the BRANCHLIB environment variable based on `);
+				console.log(`\t\t\ta user provided branch name, and will write it out.`);
 				console.log(`\t\t\tExample: -bl feature/123-cool-idea`);
 				console.log(`\t\t\t\t -bl bug/123-bad-move`);
 				console.log(``);
@@ -144,7 +155,13 @@ async function main() {
 	let files: string[];
 
 	try {
-		files = getFiles(cwd, scanGlob);
+		if (cliSettings.specificFile) {
+			files = [path.join(cwd, cliSettings.specificFile)];
+			cliSettings.fileList = true;
+			cliSettings.lookupFiles = [cliSettings.specificFile];
+		} else {
+			files = getFiles(cwd, scanGlob);
+		}
 	} catch (e) {
 		error(e.message || e);
 		process.exit(1);
