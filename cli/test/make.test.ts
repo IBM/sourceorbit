@@ -21,7 +21,7 @@ test('generateTargets (pre-resolve)', () => {
 			`\tmkdir .logs`,
 			`.evfevent:`,
 			`\tmkdir .evfevent`,
-			`library: $(PREPATH)`,
+			`library:`,
 			`\t-system -q "CRTLIB LIB($(BIN_LIB))"`,
     ]
   );
@@ -53,7 +53,7 @@ test('generateTargets (post-resolve)', () => {
 			`\tmkdir .logs`,
 			`.evfevent:`,
 			`\tmkdir .evfevent`,
-			`library: $(PREPATH)`,
+			`library:`,
 			`\t-system -q "CRTLIB LIB($(BIN_LIB))"`,
     ]
   );
@@ -123,7 +123,7 @@ test(`Multi-module program and service program`, () => {
     `\tmkdir .logs`,
     `.evfevent:`,
     `\tmkdir .evfevent`,
-    `library: $(PREPATH)`,
+    `library:`,
     `\t-system -q "CRTLIB LIB($(BIN_LIB))"`,
   ].join());
 

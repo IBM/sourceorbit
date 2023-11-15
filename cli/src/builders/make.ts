@@ -236,7 +236,7 @@ export class MakeProject {
 			`\tmkdir .logs`,
 			`.evfevent:`,
 			`\tmkdir .evfevent`,
-			`library: $(PREPATH)`,
+			`library:`,
 			`\t-system -q "CRTLIB LIB($(BIN_LIB))"`
 		);
 
