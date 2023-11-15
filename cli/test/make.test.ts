@@ -11,7 +11,7 @@ test('generateTargets (pre-resolve)', () => {
   expect(targetContent.length).toBe(12);
   expect(targetContent).toEqual(
     [
-      'all: .logs .evfevent $(PREPATH)/PROGRAMA.PGM $(PREPATH)/PROGRAMB.PGM $(PREPATH)/PROGRAMA.CMD $(PREPATH)/UNUSED.CMD',
+      'all: .logs .evfevent library $(PREPATH)/PROGRAMA.PGM $(PREPATH)/PROGRAMB.PGM $(PREPATH)/PROGRAMA.CMD $(PREPATH)/UNUSED.CMD',
       '',
       '$(PREPATH)/PROGRAMA.PGM: $(PREPATH)/FILEA.FILE $(PREPATH)/PROGRAMB.PGM',
       '$(PREPATH)/MODULEA.MODULE: $(PREPATH)/FILEA.FILE $(PREPATH)/FILEB.FILE',
@@ -22,7 +22,7 @@ test('generateTargets (pre-resolve)', () => {
 			`.evfevent:`,
 			`\tmkdir .evfevent`,
 			`library: $(PREPATH)`,
-			`\tmkdir -system -q "CRTLIB LIB($(BIN_LIB))"`,
+			`\t-system -q "CRTLIB LIB($(BIN_LIB))"`,
     ]
   );
 });
@@ -38,7 +38,7 @@ test('generateTargets (post-resolve)', () => {
 
   expect(targetContent).toEqual(
     [
-      'all: .logs .evfevent $(PREPATH)/$(APP_BNDDIR).BNDDIR $(PREPATH)/PROGRAMA.PGM $(PREPATH)/PROGRAMB.PGM $(PREPATH)/PROGRAMA.CMD',
+      'all: .logs .evfevent library $(PREPATH)/$(APP_BNDDIR).BNDDIR $(PREPATH)/PROGRAMA.PGM $(PREPATH)/PROGRAMB.PGM $(PREPATH)/PROGRAMA.CMD',
       '',
       '$(PREPATH)/PROGRAMA.PGM: $(PREPATH)/FILEA.FILE $(PREPATH)/PROGRAMB.PGM',
       '$(PREPATH)/PROGRAMB.PGM: $(PREPATH)/SRVPGMA.SRVPGM',
@@ -54,7 +54,7 @@ test('generateTargets (post-resolve)', () => {
 			`.evfevent:`,
 			`\tmkdir .evfevent`,
 			`library: $(PREPATH)`,
-			`\tmkdir -system -q "CRTLIB LIB($(BIN_LIB))"`,
+			`\t-system -q "CRTLIB LIB($(BIN_LIB))"`,
     ]
   );
 });
@@ -112,7 +112,7 @@ test(`Multi-module program and service program`, () => {
   const headerContent = project.generateTargets();
 
   expect(headerContent.join()).toBe([
-    'all: .logs .evfevent $(PREPATH)/$(APP_BNDDIR).BNDDIR $(PREPATH)/MYWEBAPP.PGM',
+    'all: .logs .evfevent library $(PREPATH)/$(APP_BNDDIR).BNDDIR $(PREPATH)/MYWEBAPP.PGM',
     '',
     '$(PREPATH)/MYWEBAPP.PGM: $(PREPATH)/HANDLERA.MODULE $(PREPATH)/HANDLERB.MODULE $(PREPATH)/UTILS.SRVPGM $(PREPATH)/MYWEBAPP.MODULE',
     '$(PREPATH)/HANDLERB.MODULE: $(PREPATH)/UTILS.SRVPGM',
@@ -124,7 +124,7 @@ test(`Multi-module program and service program`, () => {
     `.evfevent:`,
     `\tmkdir .evfevent`,
     `library: $(PREPATH)`,
-    `\tmkdir -system -q "CRTLIB LIB($(BIN_LIB))"`,
+    `\t-system -q "CRTLIB LIB($(BIN_LIB))"`,
   ].join());
 
   const webappPgm = targets.getDep({name: `MYWEBAPP`, type: `PGM`});

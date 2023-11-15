@@ -217,7 +217,7 @@ export class MakeProject {
 
 		if (all.length > 0) {
 			lines.push(
-				`all: .logs .evfevent ${all.map(dep => `$(PREPATH)/${dep.name}.${dep.type}`).join(` `)}`,
+				`all: .logs .evfevent library ${all.map(dep => `$(PREPATH)/${dep.name}.${dep.type}`).join(` `)}`,
 				``
 			)
 		}
@@ -237,7 +237,7 @@ export class MakeProject {
 			`.evfevent:`,
 			`\tmkdir .evfevent`,
 			`library: $(PREPATH)`,
-			`\tmkdir -system -q "CRTLIB LIB($(BIN_LIB))"`
+			`\t-system -q "CRTLIB LIB($(BIN_LIB))"`
 		);
 
 		return lines;
