@@ -248,7 +248,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     ].join());
   });
 
-  test(`Checking makefile rule generation`, async () => {
+  test(`Checking makefile rule generation`, () => {
     const project = new MakeProject(cwd, targets);
 
     const headerContent = project.generateGenericRules();
@@ -258,6 +258,52 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     expect(headerContent.find(l => l === `$(PREPATH)/BANKING.SRVPGM: qsrvsrc/banking.bnd`)).toBeDefined();
     expect(headerContent.find(l => l === `$(PREPATH)/DEPARTMENT.FILE: qddssrc/department.table`)).toBeDefined();
   });
+
+  test(`Makefile targets for all`, () => {
+    const project = new MakeProject(cwd, targets);
+
+    // Generate targets on it's own will have BNDDIR, PGM, etc
+    const headerContent = project.generateTargets();
+
+    const allTarget = headerContent.find(l => l.startsWith(`all:`));
+    expect(allTarget).toBeDefined();
+
+    expect(allTarget).toContain(`all: .logs .evfevent library`);
+    // The order cannot be guaranteed, so we just check for the presence of the targets
+    expect(allTarget).toContain(`$(PREPATH)/$(APP_BNDDIR).BNDDIR`);
+    expect(allTarget).toContain(`$(PREPATH)/MYPGM.PGM`);
+    expect(allTarget).toContain(`$(PREPATH)/DEPTS.PGM`);
+    expect(allTarget).toContain(`$(PREPATH)/EMPLOYEES.PGM`);
+  });
+
+  test(`Makefile targets for specific object (DEPTS display file)`, () => {
+    const project = new MakeProject(cwd, targets);
+
+    const deptsFile = targets.getDep({name: `DEPTS`, type: `FILE`});
+
+    // Generate targets on it's own will have BNDDIR, PGM, etc
+    const headerContent = project.generateTargets([deptsFile]);
+
+    const allTarget = headerContent.find(l => l.startsWith(`all:`));
+    expect(allTarget).toBeDefined();
+
+    expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/DEPTS.FILE $(PREPATH)/DEPTS.PGM`);
+  });
+
+  test(`Makefile targets for specific object (EMPLOYEE table)`, () => {
+    const project = new MakeProject(cwd, targets);
+
+    const deptsFile = targets.getDep({name: `EMPLOYEE`, type: `FILE`});
+
+    // Generate targets on it's own will have BNDDIR, PGM, etc
+    const headerContent = project.generateTargets([deptsFile]);
+
+    const allTarget = headerContent.find(l => l.startsWith(`all:`));
+    expect(allTarget).toBeDefined();
+
+    expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/EMPLOYEES.PGM $(PREPATH)/DEPTS.PGM`);
+  });
+
 
   test(`Impact of EMPLOYEES`, () => {
     const empPgm = targets.getDep({name: `EMPLOYEES`, type: `PGM`});

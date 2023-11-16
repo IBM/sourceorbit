@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
-import { ILEObject, ILEObjectTarget, ObjectType, Targets } from '../targets';
+import { ILEObject, ILEObjectTarget, ImpactedObject, ObjectType, Targets } from '../targets';
 import { asPosix } from '../utils';
 
 interface CompileData {
@@ -208,6 +208,24 @@ export class MakeProject {
 
 	public generateTargets(specificObjects?: ILEObject[]): string[] {
 		let lines = [];
+
+		if (specificObjects) {
+			const impacts = specificObjects.map(o => this.targets.getImpactFor(o));
+
+			let allAffected: ILEObject[] = [];
+
+			const addImpact = (impactedObj: ImpactedObject) => {
+				if (!allAffected.some(o => o.name === impactedObj.ileObject.name && o.type === impactedObj.ileObject.type)) {
+					allAffected.push(impactedObj.ileObject);
+				}
+
+				impactedObj.children.forEach(child => addImpact(child));
+			}
+
+			impacts.forEach(impact => addImpact(impact));
+
+			specificObjects = allAffected;
+		}
 
 		const all = specificObjects || [
 			...(this.targets.binderRequired() ? [this.targets.getBinderTarget()] : []),
