@@ -223,11 +223,9 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     expect(lines.join()).toBe([
       '$(PREPATH)/UTILS.SRVPGM: qsrvsrc/utils.bnd',
       '\t-system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/$(APP_BNDDIR))"',
-      '\t-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/UTILS))"',
-      '\t-system "DLTOBJ OBJ($(BIN_LIB)/UTILS) OBJTYPE(*SRVPGM)"',
       '\tliblist -c $(BIN_LIB);\\',
       '\tliblist -a $(LIBL);\\',
-      `\tsystem "CRTSRVPGM SRVPGM($(BIN_LIB)/UTILS) MODULE(UTILS) SRCSTMF('qsrvsrc/utils.bnd') BNDDIR($(BNDDIR))" > .logs/utils.splf`,
+      `\tsystem "CRTSRVPGM SRVPGM($(BIN_LIB)/UTILS) MODULE(UTILS) SRCSTMF('qsrvsrc/utils.bnd') BNDDIR($(BNDDIR)) REPLACE(*YES)" > .logs/utils.splf`,
       '\t-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/UTILS *SRVPGM *IMMED))"',
     ].join());
   });
