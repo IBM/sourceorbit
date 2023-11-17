@@ -15,9 +15,11 @@ jobs:
         working-directory: ./cli
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
+          registry-url: 'https://registry.npmjs.org'
+          
       - run: |
           npm ci
           npm run test
