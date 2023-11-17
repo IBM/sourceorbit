@@ -5,6 +5,7 @@
   "bin": {
     "so": "./dist/index.js"
   },
+  "publisher": "IBM",
   "main": "./dist/index.js",
   "types": "./dist/src/index.d.ts",
   "scripts": {
