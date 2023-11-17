@@ -1,6 +1,6 @@
 {
   "name": "@ibm/sourceorbit",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "description": "IBM i dependency management tool",
   "bin": {
     "so": "./dist/index.js"
@@ -17,9 +17,6 @@
   "keywords": [
     "ibmi"
   ],
-  "publishConfig": {
-    "@ibm:registry": "https://npm.pkg.github.com"
-  },
   "author": "IBM",
   "license": "Apache 2",
   "bugs": {
