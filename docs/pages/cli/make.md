@@ -2,6 +2,26 @@ This page describes information about the `makefile` that is generated for a pro
 
 This section only applies if you use `-bf make`.
 
+## Entire builds vs Partial builds
+
+Using `so -bf make` will generate a makefile to rebuild the entire project. This is fine when deploying to new systems. It is also possible to do partial builds.
+
+A partial build means building a specific targets, their parents and optionally their children. Let's assume this is our dependency tree:
+
+```
+--> ORD500.PGM (qrpglesrc/ord500.pgm.rpgle)
+--^---> ORD501.PGM (qrpglesrc/ord500.pgm.rpgle)
+------^---> DEPARTMENT.FILE (qsqlsrc/department.sql)
+------^---> DEPTS.FILE (qddssrc/depts.dspf)
+```
+
+Next, assume that we want to do a partial build of `ORD501.PGM`, which has
+
+* one parent: `ORD500.PGM`
+* two children: `DEPARTMENT.FILE` and `DEPTS.FILE`
+
+So that means that 4 objects are going to be rebuilt. Usually, parents always need to be rebuilt to ensure level checking happens. Sometimes, we don't want to rebuild the children because they haven't changed (and can depend on the library list to find the existing objects). **You can use option `--nc` to ensure no target children get built** as part of the make file.
+
 ## `iproj.json` properties
 
 Source Orbit makes use of a few properties that you can put inside your `iproj.json` file.

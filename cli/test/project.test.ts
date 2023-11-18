@@ -274,7 +274,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     expect(allTarget).toContain(`$(PREPATH)/EMPLOYEES.PGM`);
   });
 
-  test(`Makefile targets for specific object (DEPTS display file)`, () => {
+  test(`Makefile targets for partial build (DEPTS display file)`, () => {
     const project = new MakeProject(cwd, targets);
 
     const deptsFile = targets.getDep({name: `DEPTS`, type: `FILE`});
@@ -288,7 +288,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/DEPTS.FILE $(PREPATH)/DEPTS.PGM`);
   });
 
-  test(`Makefile targets for specific object (EMPLOYEE table)`, () => {
+  test(`Makefile targets for partial build (EMPLOYEE table)`, () => {
     const project = new MakeProject(cwd, targets);
 
     const deptsFile = targets.getDep({name: `EMPLOYEE`, type: `FILE`});
@@ -300,8 +300,30 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     expect(allTarget).toBeDefined();
 
     expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/EMPLOYEES.PGM $(PREPATH)/DEPTS.PGM`);
+    
+    const deptsTargetDeps = headerContent.find(l => l.startsWith(`$(PREPATH)/DEPTS.PGM:`));
+    expect(deptsTargetDeps).toBeDefined();
+
+    expect(deptsTargetDeps).toContain(`$(PREPATH)/DEPARTMENT.FILE`);
   });
 
+  test(`Makefile targets for partial build (EMPLOYEE table) without children`, () => {
+    const project = new MakeProject(cwd, targets);
+    project.setNoChildrenInBuild(true);
+
+    const deptsFile = targets.getDep({name: `EMPLOYEE`, type: `FILE`});
+
+    // Generate targets on it's own will have BNDDIR, PGM, etc
+    const headerContent = project.generateTargets([deptsFile]);
+
+    const allTarget = headerContent.find(l => l.startsWith(`all:`));
+    expect(allTarget).toBeDefined();
+
+    expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/EMPLOYEES.PGM $(PREPATH)/DEPTS.PGM`);
+    
+    const deptsTargetDeps = headerContent.find(l => l.startsWith(`$(PREPATH)/DEPTS.PGM:`));
+    expect(deptsTargetDeps).toBeUndefined();
+  });
 
   test(`Impact of EMPLOYEES`, () => {
     const empPgm = targets.getDep({name: `EMPLOYEES`, type: `PGM`});

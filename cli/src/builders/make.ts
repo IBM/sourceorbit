@@ -29,12 +29,17 @@ interface iProject {
 }
 
 export class MakeProject {
+	private noChildren: boolean = false;
 	private settings: iProject;
 
 	constructor(private cwd: string, private targets: Targets) {
 		this.settings = MakeProject.getDefaultSettings();
 
 		this.setupSettings();
+	}
+
+	public setNoChildrenInBuild(noChildren: boolean) {
+		this.noChildren = noChildren;
 	}
 
 	public static getDefaultSettings(): iProject {
@@ -206,11 +211,14 @@ export class MakeProject {
 		];
 	}
 
-	public generateTargets(specificObjects?: ILEObject[]): string[] {
+	public generateTargets(partialBuild?: ILEObject[]): string[] {
 		let lines = [];
 
-		if (specificObjects) {
-			const impacts = specificObjects.map(o => this.targets.getImpactFor(o));
+		// A 'partial build' means we only want to build specific objects
+		// and we also want to build their parents too. We update `partialBuild`
+		// to include all the parents of the specific objects.
+		if (partialBuild) {
+			const impacts = partialBuild.map(o => this.targets.getImpactFor(o));
 
 			let allAffected: ILEObject[] = [];
 
@@ -224,10 +232,10 @@ export class MakeProject {
 
 			impacts.forEach(impact => addImpact(impact));
 
-			specificObjects = allAffected;
+			partialBuild = allAffected;
 		}
 
-		const all = specificObjects || [
+		const all = partialBuild || [
 			...(this.targets.binderRequired() ? [this.targets.getBinderTarget()] : []),
 			...this.targets.getParentObjects(`PGM`),
 			...this.targets.getParentObjects(`CMD`)
@@ -240,13 +248,16 @@ export class MakeProject {
 			)
 		}
 
-		for (const target of this.targets.getDeps()) {
-			if (target && target.deps.length > 0) {
-				lines.push(
-					`$(PREPATH)/${target.name}.${target.type}: ${target.deps.map(dep => `$(PREPATH)/${dep.name}.${dep.type}`).join(` `)}`
-				)
-			}
-		};
+		if (!this.noChildren) {
+			// If we don't want the children to get built, we don't generate the dependency targets
+			for (const target of this.targets.getDeps()) {
+				if (target && target.deps.length > 0) {
+					lines.push(
+						`$(PREPATH)/${target.name}.${target.type}: ${target.deps.map(dep => `$(PREPATH)/${dep.name}.${dep.type}`).join(` `)}`
+					)
+				}
+			};
+		}
 
 		lines.push(
 			``,

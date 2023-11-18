@@ -67,6 +67,11 @@ async function main() {
 				i++;
 				break;
 
+			case '-nc':
+			case '--no-children':
+				cliSettings.makeFileNoChildren = true;
+				break;
+
 			case `-bl`:
 				cliSettings.userBranch = parms[i+1];
 				i++;
@@ -94,9 +99,6 @@ async function main() {
 				console.log(`\t\t\tSource Orbit will only scan a specific file and.`);
 				console.log(`\t\t\tit's dependents useful when building a specific source.`);
 				console.log(``);
-				console.log(`\t-bf make|bob|imd|json\tCreate build files of a specific format`);
-				console.log(`\t\t\t\tExample: -bf make`);
-				console.log(``);
 				console.log(`\t-f <relative paths>`)
 				console.log(`\t--files <relative paths>`);
 				console.log(`\t\t\tUsed alongside -bf, this option will still`);
@@ -108,6 +110,13 @@ async function main() {
 				console.log(`\t\t\ta user provided branch name, and will write it out.`);
 				console.log(`\t\t\tExample: -bl feature/123-cool-idea`);
 				console.log(`\t\t\t\t -bl bug/123-bad-move`);
+				console.log(``);
+				console.log(`\t-bf make|bob|imd|json\tCreate build files of a specific format`);
+				console.log(`\t\t\t\tExample: -bf make`);
+				console.log(``);
+				console.log(`\t-nc`);
+				console.log(`\t--no-children\tUsed with '-bf make' and won't include children of`);
+				console.log(`\t\t\tobjects in the makefile. Useful in conjuction with '-f'.`);
 				console.log(``);
 				console.log(`\t-ar\t\tRun the auto-rename process after scanning all code`);
 				console.log(`\t\t\tEnsure it is run inside of source control.`);
@@ -204,8 +213,11 @@ async function main() {
 			break;
 		case `make`:
 			const makeProj = new MakeProject(cwd, targets);
+			makeProj.setNoChildrenInBuild(cliSettings.makeFileNoChildren);
+
 			let specificObjects: ILEObject[] | undefined = cliSettings.fileList ? cliSettings.lookupFiles.map(f => targets.getResolvedObject(path.join(cwd, f))).filter(o => o) : undefined;
 			writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile(specificObjects).join(`\n`));
+			
 			break;
 		case `imd`:
 			const markdown = new ImpactMarkdown(cwd, targets, cliSettings.lookupFiles);

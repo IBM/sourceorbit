@@ -10,7 +10,8 @@ export let cliSettings = {
 	autoRename: false,
 	fileList: false,
 	lookupFiles: [] as string[],
-	userBranch: ``
+	userBranch: ``,
+	makeFileNoChildren: false
 };
 
 export function infoOut(message: string) {
