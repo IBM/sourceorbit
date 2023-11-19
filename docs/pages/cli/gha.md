@@ -4,9 +4,6 @@ Both workflows the library with the full build / latest objects is `CMPSYS`.
 
 ## Main branch change
 
-<details>
-  <summary>Expand</summary>
-  
 ```yaml
 name: Source Orbit Impact Report and Deploy
 
@@ -51,17 +48,12 @@ jobs:
           IBMI_SSH_PORT: ${{ secrets.IBMI_SSH_PORT }}
 ```
 
-</details>
-
 ## PR creation
 
 This workflow also shows an example of creating an impact report for a PR and posting a comment to the PR with a link to it.
 
 It is also using `so -bl ${GITHUB_HEAD_REF}` (`&BRANCHLIB` inside of Code for IBM i `.env`) to deploy to a library unique to this branch.
 
-<details>
-  <summary>Expand</summary>
-  
 ```yaml
 name: Source Orbit Impact Report
 
@@ -122,5 +114,3 @@ jobs:
           IBMI_PASSWORD: ${{ secrets.IBMI_PASSWORD }}
           IBMI_SSH_PORT: ${{ secrets.IBMI_SSH_PORT }}
 ```
-
-</details>
