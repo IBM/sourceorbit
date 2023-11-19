@@ -57,10 +57,7 @@ export class MakeProject {
 				},
 				"pgm.sqlrpgle": {
 					becomes: "PGM",
-					preCommands: [
-						`system -s "CHGATR OBJ('$<') ATR(*CCSID) VALUE(1252)"`
-					],
-					command: `CRTSQLRPGI OBJ($(BIN_LIB)/$*) SRCSTMF('$<') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) COMPILEOPT('BNDDIR($(BNDDIR)) DFTACTGRP(*no)')`
+					command: `CRTSQLRPGI OBJ($(BIN_LIB)/$*) SRCSTMF('$<') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)')`
 				},
 				"rpgle": {
 					becomes: `MODULE`,
@@ -68,10 +65,7 @@ export class MakeProject {
 				},
 				"sqlrpgle": {
 					becomes: "MODULE",
-					preCommands: [
-						`system -s "CHGATR OBJ('$<') ATR(*CCSID) VALUE(1252)"`
-					],
-					command: `CRTSQLRPGI OBJ($(BIN_LIB)/$*) SRCSTMF('$<') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) OBJTYPE(*MODULE)`
+					command: `CRTSQLRPGI OBJ($(BIN_LIB)/$*) SRCSTMF('$<') COMMIT(*NONE) DBGVIEW(*SOURCE) COMPILEOPT('TGTCCSID(*JOB)') RPGPPOPT(*LVL2) OPTION(*EVENTF) OBJTYPE(*MODULE)`
 				},
 				"pgm.clle": {
 					becomes: `PGM`,
