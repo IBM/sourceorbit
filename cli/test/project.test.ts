@@ -193,10 +193,9 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
     expect(lines.join()).toBe([
       '$(PREPATH)/DEPTS.PGM: qrpglesrc/depts.pgm.sqlrpgle',
-      `\tsystem -s "CHGATR OBJ('qrpglesrc/depts.pgm.sqlrpgle') ATR(*CCSID) VALUE(1252)"`,
       '\tliblist -c $(BIN_LIB);\\',
       '\tliblist -a $(LIBL);\\',
-      `\tsystem "CRTSQLRPGI OBJ($(BIN_LIB)/DEPTS) SRCSTMF('qrpglesrc/depts.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) COMPILEOPT('BNDDIR($(BNDDIR)) DFTACTGRP(*no)')" > .logs/depts.splf`,
+      `\tsystem "CRTSQLRPGI OBJ($(BIN_LIB)/DEPTS) SRCSTMF('qrpglesrc/depts.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)')" > .logs/depts.splf`,
       `\tsystem "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/DEPTS.MBR\') TOSTMF(\'.evfevent/depts.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
     ].join());
   });
