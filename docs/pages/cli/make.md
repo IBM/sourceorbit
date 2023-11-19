@@ -20,7 +20,11 @@ Next, assume that we want to do a partial build of `ORD501.PGM`, which has
 * one parent: `ORD500.PGM`
 * two children: `DEPARTMENT.FILE` and `DEPTS.FILE`
 
-So that means that 4 objects are going to be rebuilt. Usually, parents always need to be rebuilt to ensure level checking happens. Sometimes, we don't want to rebuild the children because they haven't changed (and can depend on the library list to find the existing objects). **You can use option `--nc` to ensure no target children get built** as part of the make file.
+So that means that 4 objects are going to be rebuilt. Usually, parents always need to be rebuilt to ensure level checking happens. Sometimes, we don't want to rebuild the children because they haven't changed (and can depend on the library list to find the existing objects). **You can use option `-nc` to ensure no target children get built** as part of the make file.
+
+### When is a partial build right?
+
+It is always recommended to do a partial build when working in a new branch. Ensure that you have a library of objects from a previous full build on the library list!
 
 ## `iproj.json` properties
 
