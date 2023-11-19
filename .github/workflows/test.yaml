@@ -5,9 +5,13 @@ on:
 
   push:
     branches: ["main"]
+    paths:
+      - 'cli/**'
 
   pull_request:
     branches: ["main"]
+    paths:
+      - 'cli/**'
 
 jobs:
   build:
