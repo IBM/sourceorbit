@@ -127,7 +127,7 @@ test(`Multi-module program and service program`, () => {
     `\t-system -q "CRTLIB LIB($(BIN_LIB))"`,
   ].join());
 
-  const webappPgm = targets.getDep({name: `MYWEBAPP`, type: `PGM`});
+  const webappPgm = targets.getTarget({systemName: `MYWEBAPP`, type: `PGM`});
   const webPgmTarget = MakeProject.generateSpecificTarget(settings.compiles[`pgm`], webappPgm);
   expect(webPgmTarget.join()).toBe([
     '$(PREPATH)/MYWEBAPP.PGM: ',
@@ -136,7 +136,7 @@ test(`Multi-module program and service program`, () => {
     '\tsystem "CRTPGM PGM($(BIN_LIB)/MYWEBAPP) ENTRY(MYWEBAPP) MODULES(HANDLERA HANDLERB MYWEBAPP) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)" > .logs/mywebapp.splf'
   ].join());
 
-  const webappMod = targets.getDep({name: `MYWEBAPP`, type: `MODULE`});
+  const webappMod = targets.getTarget({systemName: `MYWEBAPP`, type: `MODULE`});
   const webModTarget = MakeProject.generateSpecificTarget(settings.compiles[`rpgle`], webappMod);
   expect(webModTarget.join()).toBe([
     '$(PREPATH)/MYWEBAPP.MODULE: qrpglesrc/mywebapp.pgm.rpgle',
@@ -146,7 +146,7 @@ test(`Multi-module program and service program`, () => {
     `\tsystem "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/MYWEBAPP.MBR') TOSTMF('.evfevent/mywebapp.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
   ].join());
 
-  const utilsSrvpgm = targets.getDep({name: `UTILS`, type: `SRVPGM`});
+  const utilsSrvpgm = targets.getTarget({systemName: `UTILS`, type: `SRVPGM`});
   const utilsTarget = MakeProject.generateSpecificTarget(settings.compiles[`srvpgm`], utilsSrvpgm);
 
   expect(utilsTarget.join()).toBe([

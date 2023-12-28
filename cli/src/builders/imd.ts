@@ -28,7 +28,7 @@ export class ImpactMarkdown {
 
     lines.push(
       `Touched objects: `, ``, 
-      ...possibleObjects.map(ileObject => `* ${TypeEmoji[ileObject.type] || `:question:`} \`${ileObject.name}.${ileObject.type}\`: \`${ileObject.relativePath}\``), 
+      ...possibleObjects.map(ileObject => `* ${TypeEmoji[ileObject.type] || `:question:`} \`${ileObject.systemName}.${ileObject.type}\`: \`${ileObject.relativePath}\``), 
       ``,
       `---`,
       ``
@@ -38,7 +38,7 @@ export class ImpactMarkdown {
       const newLines = this.getImpactFor(ileObject);
 
       lines.push(
-        `#### \`${ileObject.name}.${ileObject.type}\``,
+        `#### \`${ileObject.systemName}.${ileObject.type}\``,
         ``,
         ...newLines,
         ``
@@ -76,17 +76,17 @@ export class ImpactMarkdown {
   getImpactFor(theObject: ILEObject) {
     let lines: string[] = [];
 
-    const allDeps = this.targets.getDeps();
+    const allDeps = this.targets.getTargets();
     let currentTree: ILEObject[] = [];
   
     function lookupObject(ileObject: ILEObject) {
-      lines.push(`${''.padEnd(currentTree.length, `\t`)}* ${TypeEmoji[ileObject.type] || `:question:`} \`${ileObject.name}.${ileObject.type}\` (${ileObject.relativePath ? `\`${ileObject.relativePath}\`` : `no source`})`);
+      lines.push(`${''.padEnd(currentTree.length, `\t`)}* ${TypeEmoji[ileObject.type] || `:question:`} \`${ileObject.systemName}.${ileObject.type}\` (${ileObject.relativePath ? `\`${ileObject.relativePath}\`` : `no source`})`);
   
       currentTree.push(ileObject);
   
       for (const target of allDeps) {
-        const containsLookup = target.deps.some(d => d.name === ileObject.name && d.type === ileObject.type);
-        const circular = currentTree.some(d => d.name === target.name && d.type === target.type);
+        const containsLookup = target.deps.some(d => d.systemName === ileObject.systemName && d.type === ileObject.type);
+        const circular = currentTree.some(d => d.systemName === target.systemName && d.type === target.type);
   
         if (containsLookup && !circular) {
           lookupObject(target);

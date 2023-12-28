@@ -217,7 +217,7 @@ export class MakeProject {
 			let allAffected: ILEObject[] = [];
 
 			const addImpact = (impactedObj: ImpactedObject) => {
-				if (!allAffected.some(o => o.name === impactedObj.ileObject.name && o.type === impactedObj.ileObject.type)) {
+				if (!allAffected.some(o => o.systemName === impactedObj.ileObject.systemName && o.type === impactedObj.ileObject.type)) {
 					allAffected.push(impactedObj.ileObject);
 				}
 
@@ -231,23 +231,23 @@ export class MakeProject {
 
 		const all = partialBuild || [
 			...(this.targets.binderRequired() ? [this.targets.getBinderTarget()] : []),
-			...this.targets.getParentObjects(`PGM`),
-			...this.targets.getParentObjects(`CMD`)
+			...this.targets.getTargetsOfType(`PGM`),
+			...this.targets.getTargetsOfType(`CMD`)
 		];
 
 		if (all.length > 0) {
 			lines.push(
-				`all: .logs .evfevent library ${all.map(dep => `$(PREPATH)/${dep.name}.${dep.type}`).join(` `)}`,
+				`all: .logs .evfevent library ${all.map(dep => `$(PREPATH)/${dep.systemName}.${dep.type}`).join(` `)}`,
 				``
 			)
 		}
 
 		if (!this.noChildren) {
 			// If we don't want the children to get built, we don't generate the dependency targets
-			for (const target of this.targets.getDeps()) {
+			for (const target of this.targets.getTargets()) {
 				if (target && target.deps.length > 0) {
 					lines.push(
-						`$(PREPATH)/${target.name}.${target.type}: ${target.deps.map(dep => `$(PREPATH)/${dep.name}.${dep.type}`).join(` `)}`
+						`$(PREPATH)/${target.systemName}.${target.type}: ${target.deps.map(dep => `$(PREPATH)/${dep.systemName}.${dep.type}`).join(` `)}`
 					)
 				}
 			};
@@ -288,7 +288,7 @@ export class MakeProject {
 								const commands = content.split(eol).filter(l => !l.startsWith(`/*`)); // Remove comments
 
 								lines.push(
-									`$(PREPATH)/${ileObject.name}.${data.becomes}: ${asPosix(ileObject.relativePath)}`,
+									`$(PREPATH)/${ileObject.systemName}.${data.becomes}: ${asPosix(ileObject.relativePath)}`,
 									...(commands.map(l => `\t-system -q "${l}"`)),
 								);
 
@@ -302,13 +302,13 @@ export class MakeProject {
 
 			} else {
 				// Only used for member copies
-				const objects = this.targets.getObjectsByExtension(type);
+				const objects = this.targets.getResolvedObjectsByFileExtension(type);
 
 				if (objects.length > 0) {
 					for (const ileObject of objects) {
 						// This is used when your object really has source
 
-						const possibleTarget: ILEObjectTarget = this.targets.getDep(ileObject) || (ileObject as ILEObjectTarget);
+						const possibleTarget: ILEObjectTarget = this.targets.getTarget(ileObject) || (ileObject as ILEObjectTarget);
 						
 						lines.push(...MakeProject.generateSpecificTarget(data, possibleTarget));
 					}
@@ -347,7 +347,7 @@ export class MakeProject {
 
 		const resolve = (command: string) => {
 			command = command.replace(new RegExp(`\\*CURLIB`, `g`), `$(BIN_LIB)`);
-			command = command.replace(new RegExp(`\\$\\*`, `g`), ileObject.name);
+			command = command.replace(new RegExp(`\\$\\*`, `g`), ileObject.systemName);
 			command = command.replace(new RegExp(`\\$<`, `g`), asPosix(ileObject.relativePath));
 			command = command.replace(new RegExp(`\\$\\(SRCPF\\)`, `g`), qsysTempName);
 
@@ -357,7 +357,7 @@ export class MakeProject {
 
 				for (const objType of uniqueObjectTypes) {
 					const specificDeps = ileObject.deps.filter(d => d.type === objType);
-					command = command.replace(new RegExp(`\\*${objType}S`, `g`), specificDeps.map(d => d.name).join(` `));
+					command = command.replace(new RegExp(`\\*${objType}S`, `g`), specificDeps.map(d => d.systemName).join(` `));
 				}
 			}
 
@@ -367,23 +367,23 @@ export class MakeProject {
 		const resolvedCommand = resolve(data.command);
 
 		lines.push(
-			`$(PREPATH)/${ileObject.name}.${ileObject.type}: ${asPosix(ileObject.relativePath)}`,
+			`$(PREPATH)/${ileObject.systemName}.${ileObject.type}: ${asPosix(ileObject.relativePath)}`,
 			...(qsysTempName && data.member ?
 				[
 					`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/${qsysTempName}) RCDLEN(112)"`,
-					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${ileObject.name}.MBR') MBROPT(*REPLACE)"`
+					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${ileObject.systemName}.MBR') MBROPT(*REPLACE)"`
 				] : []),
 			...(data.preCommands ? data.preCommands.map(cmd => `\t${resolve(cmd)}`) : []),
 			...(data.command ?
 				[
 					`\tliblist -c $(BIN_LIB);\\`,
 					`\tliblist -a $(LIBL);\\`,
-					`\tsystem "${resolvedCommand}" > .logs/${ileObject.name.toLowerCase()}.splf` // TODO: write the spool file somewhere?
+					`\tsystem "${resolvedCommand}" > .logs/${ileObject.systemName.toLowerCase()}.splf` // TODO: write the spool file somewhere?
 				]
 				: []
 			),
 			...(data.postCommands ? data.postCommands.map(cmd => `\t${resolve(cmd)}`) : []),
-			...(resolvedCommand.includes(`*EVENTF`) ? [`\tsystem "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/${ileObject.name}.MBR') TOSTMF('.evfevent/${ileObject.name.toLowerCase()}.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`] : []),
+			...(resolvedCommand.includes(`*EVENTF`) ? [`\tsystem "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/${ileObject.systemName}.MBR') TOSTMF('.evfevent/${ileObject.systemName.toLowerCase()}.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`] : []),
 		);
 
 		return lines;

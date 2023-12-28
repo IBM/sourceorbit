@@ -171,7 +171,7 @@ async function main() {
 	}
 
 	for (const filePath of files) {
-		const result = await targets.handlePath(filePath);
+		const result = await targets.parseFile(filePath);
 		if (!result) {
 			error(`Report this issue to us with an example: github.com/halcyon-tech/vscode-rpgle/issues`);
 		}
@@ -225,7 +225,7 @@ async function main() {
 			break;
 		case `json`:
 			const outJson = {
-				targets: targets.getDeps(),
+				targets: targets.getTargets(),
 				resolved: targets.getResolvedObjects(),
 				exports: targets.getExports(),
 				messages: targets.logger.getAllLogs()
@@ -275,23 +275,23 @@ function listDeps(cwd: string, targets: Targets, query: string) {
 	if (name) name = name.toUpperCase();
 	if (type) type = type.toUpperCase();
 
-	let theObject = targets.getResolvedObjects().find(o => o.name === name && o.type === type);
+	let theObject = targets.getResolvedObjects().find(o => o.systemName === name && o.type === type);
 
 	if (!theObject) {
-		theObject = targets.resolveObject(fullPath);
+		theObject = targets.resolvePathToObject(fullPath);
 	}
 
-	const allDeps = targets.getDeps();
+	const allDeps = targets.getTargets();
 	let currentTree: ILEObject[] = [];
 
 	function lookupObject(ileObject: ILEObject) {
-		console.log(`${''.padEnd(currentTree.length, `\t`)}${ileObject.name}.${ileObject.type} (${ileObject.relativePath || `no source`})`);
+		console.log(`${''.padEnd(currentTree.length, `\t`)}${ileObject.systemName}.${ileObject.type} (${ileObject.relativePath || `no source`})`);
 
 		currentTree.push(ileObject);
 
 		for (const target of allDeps) {
-			const containsLookup = target.deps.some(d => d.name === ileObject.name && d.type === ileObject.type);
-			const circular = currentTree.some(d => d.name === target.name && d.type === target.type);
+			const containsLookup = target.deps.some(d => d.systemName === ileObject.systemName && d.type === ileObject.type);
+			const circular = currentTree.some(d => d.systemName === target.systemName && d.type === target.type);
 
 			if (containsLookup && !circular) {
 				lookupObject(target);

@@ -16,11 +16,11 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
 	targets.setSuggestions({renames: true});
 
   const initialFiles = getFiles(cwd, scanGlob);
-	await Promise.allSettled(initialFiles.map(f => targets.handlePath(f)));
+	await Promise.allSettled(initialFiles.map(f => targets.parseFile(f)));
 
 	targets.resolveBinder();
 
-  const oldPrograms = targets.getParentObjects(`PGM`);
+  const oldPrograms = targets.getTargetsOfType(`PGM`);
   expect(oldPrograms.length).toBe(0); //Because the initial project extension is wrong
 
   let allLogs = targets.logger.getAllLogs();
@@ -100,11 +100,11 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
 	targets.setSuggestions({renames: true});
 
   const newFiles = getFiles(cwd, scanGlob);
-	await Promise.allSettled(newFiles.map(f => targets.handlePath(f)));
+	await Promise.allSettled(newFiles.map(f => targets.parseFile(f)));
 
 	targets.resolveBinder();
 
-  const newPrograms = targets.getParentObjects(`PGM`);
+  const newPrograms = targets.getTargetsOfType(`PGM`);
   expect(newPrograms.length).toBe(1); //Because the extension was fixed
 
   allLogs = targets.logger.getAllLogs();
@@ -132,11 +132,11 @@ test(`Fix includes in same directory`, async () => {
 	targets.setSuggestions({includes: true});
 
   const initialFiles = getFiles(cwd, scanGlob);
-	await Promise.allSettled(initialFiles.map(f => targets.handlePath(f)));
+	await Promise.allSettled(initialFiles.map(f => targets.parseFile(f)));
 
 	targets.resolveBinder();
 
-  const programs = targets.getParentObjects(`PGM`);
+  const programs = targets.getTargetsOfType(`PGM`);
   expect(programs.length).toBe(1);
 
   let allLogs = targets.logger.getAllLogs();

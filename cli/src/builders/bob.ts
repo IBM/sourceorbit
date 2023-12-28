@@ -14,7 +14,7 @@ export class BobProject {
 	private static buildDirTargets(targets: Targets) {
 		let list: DirectoryTargets = {};
 
-		for (let target of targets.getDeps()) {
+		for (let target of targets.getTargets()) {
 			if (target.relativePath) {
 				const dirname = path.dirname(target.relativePath);
 				if (list[dirname] === undefined) list[dirname] = [];
@@ -37,7 +37,7 @@ export class BobProject {
 			let lines: string[] = [];
 
 			for (let target of targets) {
-				lines.push(`${target.name}.${target.type}: ${path.relative(subdir, target.relativePath)} ${target.deps.map(d => `${d.name}.${d.type}`).join(` `)}`);
+				lines.push(`${target.systemName}.${target.type}: ${path.relative(subdir, target.relativePath)} ${target.deps.map(d => `${d.systemName}.${d.type}`).join(` `)}`);
 			}
 
 			output[path.join(subdir, `Rules.mk`)] = lines.join(`\n`);

@@ -28,12 +28,13 @@ const sqlTypeExtension = {
 	'SEQUENCE': `sqlseq`
 };
 
-const bindingDirectoryTarget: ILEObject = { name: `$(APP_BNDDIR)`, type: `BNDDIR` };
+const bindingDirectoryTarget: ILEObject = { systemName: `$(APP_BNDDIR)`, type: `BNDDIR` };
 
 const TextRegex = /\%TEXT.*(?=\n|\*)/gm
 
 export interface ILEObject {
-	name: string;
+	systemName: string;
+	longName?: string;
 	type: ObjectType;
 	text?: string,
 	relativePath?: string;
@@ -73,10 +74,10 @@ export class Targets {
 	private rpgParser: Parser;
 
 	private pathCache: { [path: string]: true | string[] } | undefined;
-	private resolvedPaths: { [query: string]: string } = {};
+	private resolvedSearches: { [query: string]: string } = {};
 	private resolvedObjects: { [localPath: string]: ILEObject } = {};
 	private resolvedExports: { [name: string]: ILEObject } = {};
-	private deps: { [name: string]: ILEObjectTarget } = {};
+	private targets: { [name: string]: ILEObjectTarget } = {};
 	private needsBinder = false;
 
 	private suggestions: TargetSuggestions = {};
@@ -123,7 +124,7 @@ export class Targets {
 		}
 	}
 
-	public resolveObject(localPath: string, text?: string) {
+	public resolvePathToObject(localPath: string, text?: string) {
 		if (this.resolvedObjects[localPath]) return this.resolvedObjects[localPath];
 
 		const detail = path.parse(localPath);
@@ -135,7 +136,7 @@ export class Targets {
 		const type: ObjectType = (isProgram ? "PGM" : this.getObjectType(relativePath, extension));
 
 		const theObject: ILEObject = {
-			name: name.toUpperCase(),
+			systemName: name.toUpperCase(),
 			type: type,
 			text,
 			relativePath,
@@ -175,11 +176,11 @@ export class Targets {
 	public removeObject(resolvedObject: ILEObject) {
 		let impactedTargets: ILEObject[] = [];
 
-		for (const targetId in this.deps) {
-			const target = this.deps[targetId];
+		for (const targetId in this.targets) {
+			const target = this.targets[targetId];
 
 			if (target) {
-				const depIndex = target.deps.findIndex(d => (d.name === resolvedObject.name && d.type === resolvedObject.type) || d.relativePath === resolvedObject.relativePath);
+				const depIndex = target.deps.findIndex(d => (d.systemName === resolvedObject.systemName && d.type === resolvedObject.type) || d.relativePath === resolvedObject.relativePath);
 
 				if (depIndex >= 0) {
 					impactedTargets.push(target);
@@ -188,7 +189,7 @@ export class Targets {
 					if (target.relativePath) {
 						this.logger.fileLog(target.relativePath, {
 							type: `info`,
-							message: `This object depended on ${resolvedObject.name}.${resolvedObject.type} before it was deleted.`
+							message: `This object depended on ${resolvedObject.systemName}.${resolvedObject.type} before it was deleted.`
 						})
 					}
 				}
@@ -196,8 +197,8 @@ export class Targets {
 		}
 
 		// Remove it as a global target
-		this.deps[`${resolvedObject.name}.${resolvedObject.type}`] = undefined;
-		this.resolvedPaths[`${resolvedObject.name}.${resolvedObject.type}`] = undefined;
+		this.targets[`${resolvedObject.systemName}.${resolvedObject.type}`] = undefined;
+		this.resolvedSearches[`${resolvedObject.systemName}.${resolvedObject.type}`] = undefined;
 
 		// Remove possible logs
 		if (resolvedObject.relativePath) {
@@ -210,10 +211,10 @@ export class Targets {
 	/**
 	 * Resolves a search to a filename. Basically a special blob
 	 */
-	public resolveLocalObjectQuery(name: string, baseName?: string): string|undefined {
+	public searchForFile(name: string, baseFile?: string): string|undefined {
 		name = name.toUpperCase();
 
-		if (this.resolvedPaths[name]) return this.resolvedPaths[name];
+		if (this.resolvedSearches[name]) return this.resolvedSearches[name];
 
 		if (!this.pathCache) {
 			// We don't really want to spam the FS
@@ -236,14 +237,14 @@ export class Targets {
 			cwd: this.cwd,
 			absolute: true,
 			nocase: true,
-			ignore: baseName ? `**/${baseName}` : undefined,
+			ignore: baseFile ? `**/${baseFile}` : undefined,
 			cache: this.pathCache
 		});
 
 		if (results[0]) {
 			// To local path is required because glob returns posix paths
 			const localPath = toLocalPath(results[0])
-			this.resolvedPaths[name] = localPath;
+			this.resolvedSearches[name] = localPath;
 			return localPath;
 		}
 	}
@@ -296,7 +297,7 @@ export class Targets {
 		}
 	}
 
-	public async handlePath(filePath: string) {
+	public async parseFile(filePath: string) {
 		const pathDetail = path.parse(filePath);
 		const relative = this.getRelative(filePath);
 
@@ -400,13 +401,13 @@ export class Targets {
 	}
 
 	private createCmdTarget(localPath, options: FileOptions = {}) {
-		this.resolveObject(localPath, options.text);
+		this.resolvePathToObject(localPath, options.text);
 
 		// Since cmd source doesn't explicity contains deps, we resolve later on
 	}
 
 	private createSrvPgmTarget(localPath: string, module: Module, options: FileOptions = {}) {
-		const ileObject = this.resolveObject(localPath, options.text);
+		const ileObject = this.resolvePathToObject(localPath, options.text);
 		const target: ILEObjectTarget = {
 			...ileObject,
 			deps: [],
@@ -469,7 +470,7 @@ export class Targets {
 				}
 		}
 
-		this.pushDep(target);
+		this.addNewTarget(target);
 	}
 
 	/**
@@ -477,13 +478,13 @@ export class Targets {
 	 */
 	private createDdsFileTarget(localPath: string, dds: dds, options: FileOptions = {}) {
 		const sourceName = path.basename(localPath);
-		const ileObject = this.resolveObject(localPath, options.text);
+		const ileObject = this.resolvePathToObject(localPath, options.text);
 		const target: ILEObjectTarget = {
 			...ileObject,
 			deps: []
 		};
 
-		infoOut(`${ileObject.name}.${ileObject.type}: ${ileObject.relativePath}`);
+		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
 
 		const ddsRefKeywords = [`PFILE`, `REF`, `JFILE`];
 
@@ -505,8 +506,8 @@ export class Targets {
 						}
 
 						if (objectName) {
-							const resolvedPath = this.resolveLocalObjectQuery(objectName, sourceName);
-							if (resolvedPath) target.deps.push(this.resolveObject(resolvedPath))
+							const resolvedPath = this.searchForFile(objectName, sourceName);
+							if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath))
 							else {
 								this.logger.fileLog(ileObject.relativePath, {
 									message: `no object found for reference '${objectName}'`,
@@ -527,21 +528,21 @@ export class Targets {
 		}
 
 		if (target.deps.length > 0)
-			infoOut(`Depends on: ${target.deps.map(d => `${d.name}.${d.type}`).join(` `)}`);
+			infoOut(`Depends on: ${target.deps.map(d => `${d.systemName}.${d.type}`).join(` `)}`);
 
-		this.pushDep(target);
+		this.addNewTarget(target);
 	}
 
 	private createClTarget(localPath: string, module: Module, options: FileOptions = {}) {
 		const pathDetail = path.parse(localPath);
 		const sourceName = pathDetail.base;
-		const ileObject = this.resolveObject(localPath);
+		const ileObject = this.resolvePathToObject(localPath);
 		const target: ILEObjectTarget = {
 			...ileObject,
 			deps: []
 		};
 
-		infoOut(`${ileObject.name}.${ileObject.type}: ${ileObject.relativePath}`);
+		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
 
 		if (ileObject.extension?.toLowerCase() === `clp`) {
 			if (this.suggestions.renames) {
@@ -602,8 +603,8 @@ export class Targets {
 			} else {
 				if (ignoredObjects.includes(possibleObject.name.toUpperCase())) return;
 
-				const resolvedPath = this.resolveLocalObjectQuery(possibleObject.name, sourceName);
-				if (resolvedPath) target.deps.push(this.resolveObject(resolvedPath));
+				const resolvedPath = this.searchForFile(possibleObject.name, sourceName);
+				if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath));
 				else {
 					this.logger.fileLog(ileObject.relativePath, {
 						message: `no object found for reference '${possibleObject.name}'`,
@@ -632,8 +633,8 @@ export class Targets {
 
 					if (ignoredObjects.includes(name.toUpperCase())) return;
 
-					const resolvedPath = this.resolveLocalObjectQuery(name + `.pgm`, sourceName);
-					if (resolvedPath) target.deps.push(this.resolveObject(resolvedPath))
+					const resolvedPath = this.searchForFile(name + `.pgm`, sourceName);
+					if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath))
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
 							message: `no object found for reference '${name}'`,
@@ -658,16 +659,16 @@ export class Targets {
 		});
 
 		// We also look to see if there is a `.cmd` object with the same name
-		const possibleCommandPath = this.resolveLocalObjectQuery(`${ileObject.name}.cmd`, sourceName);
+		const possibleCommandPath = this.searchForFile(`${ileObject.systemName}.cmd`, sourceName);
 		if (possibleCommandPath) {
-			const resolvedObject = this.resolveObject(possibleCommandPath);
+			const resolvedObject = this.resolvePathToObject(possibleCommandPath);
 			if (resolvedObject) this.createOrAppend(resolvedObject, target);
 		}
 
 		if (target.deps.length > 0)
-			infoOut(`Depends on: ${target.deps.map(d => `${d.name}.${d.type}`).join(` `)}`);
+			infoOut(`Depends on: ${target.deps.map(d => `${d.systemName}.${d.type}`).join(` `)}`);
 
-		this.pushDep(target);
+		this.addNewTarget(target);
 	}
 
 	private createSqlTargets(localPath: string, document: Document, options: FileOptions = {}) {
@@ -763,7 +764,7 @@ export class Targets {
 							const extension = pathDetail.ext.substring(1);
 
 							let ileObject: ILEObject = {
-								name: objectName.toUpperCase(),
+								systemName: objectName.toUpperCase(),
 								type: this.getObjectType(relativePath, mainDef.createType),
 								text: options.text,
 								relativePath,
@@ -775,12 +776,12 @@ export class Targets {
 							let suggestRename = false;
 							const sqlFileName = pathDetail.name.toUpperCase();
 
-							if (ileObject.name.length <= 10) {
+							if (ileObject.systemName.length <= 10) {
 								if (sqlFileName.length > 10) {
 									suggestRename = true;
 								}
 
-								if (ileObject.name.toUpperCase() !== sqlFileName) {
+								if (ileObject.systemName.toUpperCase() !== sqlFileName) {
 									suggestRename = true;
 								}
 							}
@@ -789,9 +790,9 @@ export class Targets {
 								suggestRename = true;
 							}
 
-							if (ileObject.name.length > 10 && mainDef.object.system === undefined) {
+							if (ileObject.systemName.length > 10 && mainDef.object.system === undefined) {
 								this.logger.fileLog(ileObject.relativePath, {
-									message: `${ileObject.name} (${ileObject.type}) name is longer than 10 characters. Consider using 'FOR SYSTEM NAME' in the CREATE statement.`,
+									message: `${ileObject.systemName} (${ileObject.type}) name is longer than 10 characters. Consider using 'FOR SYSTEM NAME' in the CREATE statement.`,
 									type: `warning`,
 									range: {
 										start: tokens[0].range.start,
@@ -807,14 +808,14 @@ export class Targets {
 								deps: []
 							};
 
-							infoOut(`${newTarget.name}.${newTarget.type}: ${newTarget.relativePath}`);
+							infoOut(`${newTarget.systemName}.${newTarget.type}: ${newTarget.relativePath}`);
 
 							if (defs.length > 1) {
 								for (const def of defs.slice(1)) {
 									const refTokens = def.tokens;
 									const simpleName = trimQuotes(def.object.name, `"`);
-									const resolvedPath = this.resolveLocalObjectQuery(simpleName + `.*`, pathDetail.base);
-									if (resolvedPath) newTarget.deps.push(this.resolveObject(resolvedPath))
+									const resolvedPath = this.searchForFile(simpleName + `.*`, pathDetail.base);
+									if (resolvedPath) newTarget.deps.push(this.resolvePathToObject(resolvedPath))
 									else {
 										this.logger.fileLog(newTarget.relativePath, {
 											message: `No object found for reference '${def.object.name}'`,
@@ -829,13 +830,13 @@ export class Targets {
 							}
 
 							if (newTarget.deps.length > 0) {
-								infoOut(`Depends on: ${newTarget.deps.map(d => `${d.name}.${d.type}`).join(` `)}`);
+								infoOut(`Depends on: ${newTarget.deps.map(d => `${d.systemName}.${d.type}`).join(` `)}`);
 							}
 
 							// So we can later resolve the path to the created object
 							this.storeResolved(localPath, ileObject);
 
-							this.pushDep(newTarget);
+							this.addNewTarget(newTarget);
 
 							// If the extension is SQL, let's make better suggestions
 							// based on the create type in the CREATE statement
@@ -843,7 +844,7 @@ export class Targets {
 								const newExtension = sqlTypeExtension[mainDef.createType.toUpperCase()];
 
 								if (newExtension) {
-									const possibleName = ileObject.name.toLowerCase() + `.` + newExtension;
+									const possibleName = ileObject.systemName.toLowerCase() + `.` + newExtension;
 
 									if (this.suggestions.renames) {
 										const renameLogPath = relativePath;
@@ -883,13 +884,13 @@ export class Targets {
 	private createRpgTarget(localPath: string, cache: Cache, options: FileOptions = {}) {
 		const pathDetail = path.parse(localPath);
 		const sourceName = pathDetail.base;
-		const ileObject = this.resolveObject(localPath, options.text);
+		const ileObject = this.resolvePathToObject(localPath, options.text);
 		const target: ILEObjectTarget = {
 			...ileObject,
 			deps: []
 		};
 
-		infoOut(`${ileObject.name}.${ileObject.type}: ${ileObject.relativePath}`);
+		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
 
 		cache.includes.forEach((include: IncludeStatement) => {
 			// RPGLE includes are always returned as posix paths
@@ -1017,14 +1018,14 @@ export class Targets {
 			})
 			.forEach((ref: RpgLookup) => {
 				if (ignoredObjects.includes(ref.lookup.toUpperCase())) return;
-				if (path.basename(ref.lookup, `.pgm`).toUpperCase() === ileObject.name) return;
+				if (path.basename(ref.lookup, `.pgm`).toUpperCase() === ileObject.systemName) return;
 
-				const resolvedPath = this.resolveLocalObjectQuery(ref.lookup, sourceName);
+				const resolvedPath = this.searchForFile(ref.lookup, sourceName);
 				if (resolvedPath) {
-					const resolvedObject = this.resolveObject(resolvedPath);
+					const resolvedObject = this.resolvePathToObject(resolvedPath);
 
 					// because of legacy fixed CALL, there can be dupliicate EXTPGMs with the same name :(
-					if (!target.deps.some(d => d.name === resolvedObject.name && d.type && resolvedObject.type)) {
+					if (!target.deps.some(d => d.systemName === resolvedObject.systemName && d.type && resolvedObject.type)) {
 						target.deps.push(resolvedObject)
 					}
 				}
@@ -1051,8 +1052,8 @@ export class Targets {
 				};
 			})
 			.forEach((ref: RpgLookup) => {
-				const resolvedPath = this.resolveLocalObjectQuery(ref.lookup, sourceName);
-				if (resolvedPath) target.deps.push(this.resolveObject(resolvedPath))
+				const resolvedPath = this.searchForFile(ref.lookup, sourceName);
+				if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath))
 				else {
 					this.logger.fileLog(ileObject.relativePath, {
 						message: `No object found for reference '${ref.lookup}'`,
@@ -1095,8 +1096,8 @@ export class Targets {
 			.forEach((ref: RpgLookup) => {
 				if (ignoredObjects.includes(ref.lookup.toUpperCase())) return;
 
-				const resolvedPath = this.resolveLocalObjectQuery(ref.lookup, sourceName);
-				if (resolvedPath) target.deps.push(this.resolveObject(resolvedPath))
+				const resolvedPath = this.searchForFile(ref.lookup, sourceName);
+				if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath))
 				else {
 					this.logger.fileLog(ileObject.relativePath, {
 						message: `No object found for reference '${ref.lookup}'`,
@@ -1114,8 +1115,8 @@ export class Targets {
 				line: ref.position ? ref.position.line : undefined
 			}))
 			.forEach((ref: RpgLookup) => {
-				const resolvedPath = this.resolveLocalObjectQuery(ref.lookup, sourceName);
-				if (resolvedPath) target.deps.push(this.resolveObject(resolvedPath))
+				const resolvedPath = this.searchForFile(ref.lookup, sourceName);
+				if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath))
 				else {
 					this.logger.fileLog(ileObject.relativePath, {
 						message: `No object found for reference '${ref.lookup}'`,
@@ -1145,8 +1146,8 @@ export class Targets {
 			.forEach((ref: RpgLookup) => {
 				if (ignoredObjects.includes(ref.lookup.toUpperCase())) return;
 
-				const resolvedPath = this.resolveLocalObjectQuery(ref.lookup, sourceName);
-				if (resolvedPath) target.deps.push(this.resolveObject(resolvedPath))
+				const resolvedPath = this.searchForFile(ref.lookup, sourceName);
+				if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath))
 				else {
 					this.logger.fileLog(ileObject.relativePath, {
 						message: `No object found for reference '${ref.lookup}'`,
@@ -1173,8 +1174,8 @@ export class Targets {
 				};
 			})
 			.forEach((ref: RpgLookup) => {
-				const resolvedPath = this.resolveLocalObjectQuery(ref.lookup, sourceName);
-				if (resolvedPath) target.deps.push(this.resolveObject(resolvedPath))
+				const resolvedPath = this.searchForFile(ref.lookup, sourceName);
+				if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath))
 				else {
 					this.logger.fileLog(ileObject.relativePath, {
 						message: `No object found for reference '${ref.lookup}'`,
@@ -1186,9 +1187,9 @@ export class Targets {
 
 		// TODO: did we duplicate this?
 		// We also look to see if there is a `.cmd` object with the same name
-		const possibleCommandPath = this.resolveLocalObjectQuery(`${ileObject.name}.cmd`, sourceName);
+		const possibleCommandPath = this.searchForFile(`${ileObject.systemName}.cmd`, sourceName);
 		if (possibleCommandPath) {
-			const resolvedObject = this.resolveObject(possibleCommandPath);
+			const resolvedObject = this.resolvePathToObject(possibleCommandPath);
 			if (resolvedObject) this.createOrAppend(resolvedObject, target);
 		}
 
@@ -1222,24 +1223,24 @@ export class Targets {
 		}
 
 		if (target.deps.length > 0)
-			infoOut(`Depends on: ${target.deps.map(d => `${d.name}.${d.type}`).join(` `)}`);
+			infoOut(`Depends on: ${target.deps.map(d => `${d.systemName}.${d.type}`).join(` `)}`);
 
-		this.pushDep(target);
+		this.addNewTarget(target);
 	}
 
-	getDep(object: ILEObject): ILEObjectTarget | undefined {
-		return this.deps[`${object.name}.${object.type}`];
+	getTarget(object: ILEObject): ILEObjectTarget | undefined {
+		return this.targets[`${object.systemName}.${object.type}`];
 	}
 
-	getDeps(): ILEObjectTarget[] {
-		return Object.values(this.deps).filter(x => x);
+	getTargets(): ILEObjectTarget[] {
+		return Object.values(this.targets).filter(x => x);
 	}
 
 	// Generates targets for service programs and binding directories
 	public resolveBinder() {
 		// Right now, we really only support single module programs and service programs
 
-		const deps = this.getDeps();
+		const deps = this.getTargets();
 
 		// We can simply check for any modules since we turn them into service programs
 		this.needsBinder = deps.some(d => d.type === `MODULE`);
@@ -1248,20 +1249,20 @@ export class Targets {
 
 		// We need to loop through all the user-defined server programs (binder source)
 		// And resolve the service program program exports to module exports to bind them together nicely
-		const allModules = this.getParentObjects("MODULE");
+		const allModules = this.getTargetsOfType("MODULE");
 
 		for (const target of deps) {
 			if (target.type === `SRVPGM` && target.exports) {
-				infoOut(`Resolving modules for ${target.name}.${target.type}`);
+				infoOut(`Resolving modules for ${target.systemName}.${target.type}`);
 
 				target.deps = [];
 
 				for (const exportName of target.exports) {
 					const foundModule = allModules.find(mod => mod.exports && mod.exports.includes(exportName));
 					if (foundModule) {
-						const alreadyBound = target.deps.some(dep => dep.name === foundModule.name && dep.type === `MODULE`);
+						const alreadyBound = target.deps.some(dep => dep.systemName === foundModule.systemName && dep.type === `MODULE`);
 						if (!alreadyBound) {
-							infoOut(`Adding module ${foundModule.name}.${foundModule.type}`);
+							infoOut(`Adding module ${foundModule.systemName}.${foundModule.type}`);
 							target.deps.push(foundModule);
 						}
 					}
@@ -1306,7 +1307,7 @@ export class Targets {
 					// We can't add a module as a dependency at this step.
 					if (possibleSrvPgmDep && possibleSrvPgmDep.type === `SRVPGM`) {
 						// Make sure we haven't imported it before!
-						if (!newImports.some(i => i.name === possibleSrvPgmDep.name && i.type === possibleSrvPgmDep.type)) {
+						if (!newImports.some(i => i.systemName === possibleSrvPgmDep.systemName && i.type === possibleSrvPgmDep.type)) {
 							newImports.push(possibleSrvPgmDep);
 						}
 
@@ -1315,7 +1316,7 @@ export class Targets {
 						// module program, so we do a lookup for additional modules.
 						const possibleModuleDep = allModules.find(mod => mod.exports.includes(importName.toUpperCase()))
 						if (possibleModuleDep) {
-							if (!newImports.some(i => i.name === possibleModuleDep.name && i.type === possibleModuleDep.type)) {
+							if (!newImports.some(i => i.systemName === possibleModuleDep.systemName && i.type === possibleModuleDep.type)) {
 								newImports.push(possibleModuleDep);
 
 								// TODO: consider other IMPORTS that `possibleModuleDep` needs.
@@ -1325,7 +1326,7 @@ export class Targets {
 				});
 
 				if (newImports.length > 0) {
-					infoOut(`${target.name}.${target.type} has additional dependencies: ${newImports.map(i => `${i.name}.${i.type}`)}`);
+					infoOut(`${target.systemName}.${target.type} has additional dependencies: ${newImports.map(i => `${i.systemName}.${i.type}`)}`);
 					target.deps.push(...newImports);
 
 					if (target.type === `PGM`) {
@@ -1343,14 +1344,14 @@ export class Targets {
 
 		for (let cmdObject of commandObjects) {
 			// Check if a program exists with the same name.
-			const programObject = this.getDep({ name: cmdObject.name, type: `PGM` });
+			const programObject = this.getTarget({ systemName: cmdObject.systemName, type: `PGM` });
 			if (programObject) {
 				const newTarget = {
 					...cmdObject,
 					deps: [programObject]
 				}
 
-				this.pushDep(newTarget);
+				this.addNewTarget(newTarget);
 			} else {
 
 				this.removeObject(cmdObject);
@@ -1371,10 +1372,10 @@ export class Targets {
 		currentTarget.relativePath = undefined;
 
 		// Store new resolved path for this object
-		this.storeResolved(path.join(this.cwd, `${currentTarget.name}.PGM`), currentTarget);
+		this.storeResolved(path.join(this.cwd, `${currentTarget.systemName}.PGM`), currentTarget);
 
 		// Then we can resolve the same path again
-		const newModule = this.resolveObject(path.join(this.cwd, basePath));
+		const newModule = this.resolvePathToObject(path.join(this.cwd, basePath));
 		// Force it as a module
 		newModule.type = `MODULE`;
 
@@ -1389,7 +1390,7 @@ export class Targets {
 	}
 
 	public createOrAppend(parentObject: ILEObject, newDep?: ILEObject) {
-		let existingTarget = this.deps[`${parentObject.name}.${parentObject.type}`];
+		let existingTarget = this.targets[`${parentObject.systemName}.${parentObject.type}`];
 
 		if (!existingTarget) {
 			existingTarget = {
@@ -1397,7 +1398,7 @@ export class Targets {
 				deps: []
 			};
 
-			this.pushDep(existingTarget);
+			this.addNewTarget(existingTarget);
 		}
 
 		if (newDep)
@@ -1406,16 +1407,16 @@ export class Targets {
 		return existingTarget;
 	}
 
-	private pushDep(dep: ILEObjectTarget) {
-		this.deps[`${dep.name}.${dep.type}`] = dep;
+	private addNewTarget(dep: ILEObjectTarget) {
+		this.targets[`${dep.systemName}.${dep.type}`] = dep;
 	}
 
 	public binderRequired() {
 		return this.needsBinder;
 	}
 
-	public getParentObjects(type: ObjectType): ILEObjectTarget[] {
-		return this.getDeps().filter(d => d && d.type === type);
+	public getTargetsOfType(type: ObjectType): ILEObjectTarget[] {
+		return this.getTargets().filter(d => d && d.type === type);
 	}
 
 	public getResolvedObjects(type?: ObjectType): ILEObject[] {
@@ -1434,7 +1435,7 @@ export class Targets {
 	 * solely just `pgm`, it will return all programs that
 	 * have multiple modules.
 	 */
-	public getObjectsByExtension(ext: string): ILEObject[] {
+	public getResolvedObjectsByFileExtension(ext: string): ILEObject[] {
 		const extensionParts = ext.split(`.`);
 		let extension = ext.toUpperCase(), shouldBeProgram = false, anyPrograms = false;
 
@@ -1456,9 +1457,7 @@ export class Targets {
 	}
 
 	public getImpactFor(theObject: ILEObject) {
-		let lines: string[] = [];
-
-		const allDeps = this.getDeps();
+		const allDeps = this.getTargets();
 		let currentTree: ILEObject[] = [];
 
 		let currentItem: ImpactedObject = { ileObject: theObject, children: [] };
@@ -1467,8 +1466,8 @@ export class Targets {
 			currentTree.push(currentItem.ileObject);
 
 			for (const target of allDeps) {
-				const containsLookup = target.deps.some(d => d.name === currentItem.ileObject.name && d.type === currentItem.ileObject.type);
-				const circular = currentTree.some(d => d.name === target.name && d.type === target.type);
+				const containsLookup = target.deps.some(d => d.systemName === currentItem.ileObject.systemName && d.type === currentItem.ileObject.type);
+				const circular = currentTree.some(d => d.systemName === target.systemName && d.type === target.type);
 
 				if (containsLookup && !circular) {
 					let newDependant: ImpactedObject = { ileObject: target, children: [] };
