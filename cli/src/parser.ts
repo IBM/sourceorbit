@@ -18,7 +18,7 @@ export function setupParser(targets: Targets): Parser {
 			includeFile = includeFile.split(`,`)[1] + `.*`;
 		}
 
-		const file = targets.searchForFile(includeFile);
+		const file = targets.searchForObject(includeFile);
 
 		if (file) {
 			if (includeFileCache[file]) {

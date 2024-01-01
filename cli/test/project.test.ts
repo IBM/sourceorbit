@@ -17,6 +17,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   const targets = new Targets(cwd);
   
   beforeAll(async () => {
+    targets.loadObjectsFromPaths(files);
     const parsePromises = files.map(f => targets.parseFile(f));
     await Promise.all(parsePromises);
 
