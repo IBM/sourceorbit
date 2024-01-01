@@ -741,12 +741,14 @@ export class Targets {
 
 						// Creates should be in their own unique file
 						case StatementType.Create:
+							let hasLongName = mainDef.object.name && mainDef.object.system;
 							let objectName = mainDef.object.system || trimQuotes(mainDef.object.name, `"`);
 
 							const extension = pathDetail.ext.substring(1);
 
 							let ileObject: ILEObject = {
 								systemName: objectName.toUpperCase(),
+								longName: hasLongName,
 								type: this.getObjectType(relativePath, mainDef.createType),
 								text: options.text,
 								relativePath,
