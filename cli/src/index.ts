@@ -170,6 +170,8 @@ async function main() {
 		process.exit(1);
 	}
 
+	targets.loadObjectsFromPaths(files);
+
 	for (const filePath of files) {
 		const result = await targets.parseFile(filePath);
 		if (!result) {
