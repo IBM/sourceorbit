@@ -73,6 +73,7 @@ interface FileOptions {
 export class Targets {
 	private rpgParser: Parser;
 
+	private pathCache: { [path: string]: true | string[] } | undefined;
 	private resolvedSearches: { [query: string]: string } = {};
 	private resolvedObjects: { [localPath: string]: ILEObject } = {};
 	private resolvedExports: { [name: string]: ILEObject } = {};
@@ -108,8 +109,11 @@ export class Targets {
 		this.resolvedObjects[localPath] = ileObject;
 	}
 
-	public resolvePathToObject(localPath: string, text?: string) {
-		if (this.resolvedObjects[localPath]) return this.resolvedObjects[localPath];
+	public resolvePathToObject(localPath: string, newText?: string) {
+		if (this.resolvedObjects[localPath]) {
+			if (newText) this.resolvedObjects[localPath].text = newText;
+			return this.resolvedObjects[localPath];
+		}
 
 		const detail = path.parse(localPath);
 		const relativePath = this.getRelative(localPath);
@@ -122,7 +126,7 @@ export class Targets {
 		const theObject: ILEObject = {
 			systemName: name.toUpperCase(),
 			type: type,
-			text,
+			text: newText,
 			relativePath,
 			extension
 		};
@@ -185,7 +189,45 @@ export class Targets {
 	 * Resolves a search to a filename. Basically a special blob
 	 */
 	public searchForObject(lookFor: ILEObject, currentObject: ILEObject) {
-		return this.getResolvedObjects().find(o => o.systemName === lookFor.systemName && o.type === lookFor.type && o.systemName !== currentObject.systemName && o.type !== currentObject.type);
+		return this.getResolvedObjects().find(o => o.systemName === lookFor.systemName && o.type === lookFor.type);
+	}
+
+	public resolveLocalFile(name: string, baseFile?: string): string|undefined {
+		name = name.toUpperCase();
+
+		if (this.resolvedSearches[name]) return this.resolvedSearches[name];
+
+		if (!this.pathCache) {
+			// We don't really want to spam the FS
+			// So we can a list of files which can then
+			// use in glob again later.
+			this.pathCache = {};
+
+			glob.sync(`**/*`, {
+				cwd: this.cwd,
+				absolute: true,
+				nocase: true,
+			}).forEach(localPath => {
+				this.pathCache[localPath] = true;
+			});
+		}
+
+		let globString = `**/${name}*`;
+
+		const results = glob.sync(globString, {
+			cwd: this.cwd,
+			absolute: true,
+			nocase: true,
+			ignore: baseFile ? `**/${baseFile}` : undefined,
+			cache: this.pathCache
+		});
+
+		if (results[0]) {
+			// To local path is required because glob returns posix paths
+			const localPath = toLocalPath(results[0])
+			this.resolvedSearches[name] = localPath;
+			return localPath;
+		}
 	}
 
 	private getObjectType(relativePath: string, ext: string): ObjectType {
