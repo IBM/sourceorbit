@@ -1221,10 +1221,10 @@ export class Targets {
 	public resolveBinder() {
 		// Right now, we really only support single module programs and service programs
 
-		const deps = this.getTargets();
+		const allTargets = this.getTargets();
 
 		// We can simply check for any modules since we turn them into service programs
-		this.needsBinder = deps.some(d => d.type === `MODULE`);
+		this.needsBinder = allTargets.some(d => d.type === `MODULE`);
 
 		infoOut(``);
 
@@ -1232,7 +1232,7 @@ export class Targets {
 		// And resolve the service program program exports to module exports to bind them together nicely
 		const allModules = this.getTargetsOfType("MODULE");
 
-		for (const target of deps) {
+		for (const target of allTargets) {
 			if (target.type === `SRVPGM` && target.exports) {
 				infoOut(`Resolving modules for ${target.systemName}.${target.type}`);
 
@@ -1275,7 +1275,7 @@ export class Targets {
 
 		// We loop through all programs and service programs and study their imports.
 		// We do this in case they depend on another service programs based on import
-		for (let target of deps) {
+		for (let target of allTargets) {
 			if ([`PGM`, `MODULE`].includes(target.type) && target.imports) {
 				let newImports: ILEObject[] = [];
 
