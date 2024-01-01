@@ -70,6 +70,18 @@ interface FileOptions {
 	text?: string;
 }
 
+/**
+ * This class is responsible for storing all the targets
+ * and their dependencies. It also handles the parsing
+ * of files and the creation of targets.
+ * 
+ * const files = getAllFilesInDir(`.`);
+ * const targets = new Targets(cwd);
+ * targets.loadObjectsFromPaths(files);
+ * await Promise.all(files.map(f => targets.parseFile(f)));
+ * targets.resolveBinder();
+ */
+
 export class Targets {
 	private rpgParser: Parser;
 
