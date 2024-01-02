@@ -16,7 +16,7 @@ import { asPosix, toLocalPath } from './utils';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
-const ignoredObjects = [`QSYSPRT`, `QCMDEXC.PGM`, `*LDA.DTAARA`, `QDCXLATE.PGM`, `QUSRJOBI`, `QTQCVRT.PGM`];
+const ignoredObjects = [`QSYSPRT`, `QCMDEXC`, `*LDA.DTAARA`, `QDCXLATE`, `QUSRJOBI`, `QTQCVRT`];
 
 const sqlTypeExtension = {
 	'TABLE': `table`,
@@ -70,6 +70,18 @@ interface FileOptions {
 	text?: string;
 }
 
+/**
+ * This class is responsible for storing all the targets
+ * and their dependencies. It also handles the parsing
+ * of files and the creation of targets.
+ * 
+ * const files = getAllFilesInDir(`.`);
+ * const targets = new Targets(cwd);
+ * targets.loadObjectsFromPaths(files);
+ * await Promise.all(files.map(f => targets.parseFile(f)));
+ * targets.resolveBinder();
+ */
+
 export class Targets {
 	private rpgParser: Parser;
 
@@ -107,25 +119,13 @@ export class Targets {
 
 	private storeResolved(localPath: string, ileObject: ILEObject) {
 		this.resolvedObjects[localPath] = ileObject;
-
-		// Path cache stores everything as unix, but localPath might be Windows
-		if (this.pathCache) {
-			const posixPath = asPosix(localPath);
-			const detail = path.parse(posixPath);
-
-			this.pathCache[posixPath] = true;
-			if (Array.isArray(this.pathCache[detail.dir])) {
-				const paths = this.pathCache[detail.dir] as string[];
-				const parentIndex = paths.findIndex(p => p === detail.base);
-				if (parentIndex === -1) {
-					paths.push(detail.base)
-				}
-			}
-		}
 	}
 
-	public resolvePathToObject(localPath: string, text?: string) {
-		if (this.resolvedObjects[localPath]) return this.resolvedObjects[localPath];
+	public resolvePathToObject(localPath: string, newText?: string) {
+		if (this.resolvedObjects[localPath]) {
+			if (newText) this.resolvedObjects[localPath].text = newText;
+			return this.resolvedObjects[localPath];
+		}
 
 		const detail = path.parse(localPath);
 		const relativePath = this.getRelative(localPath);
@@ -138,7 +138,7 @@ export class Targets {
 		const theObject: ILEObject = {
 			systemName: name.toUpperCase(),
 			type: type,
-			text,
+			text: newText,
 			relativePath,
 			extension
 		};
@@ -155,17 +155,6 @@ export class Targets {
 		if (resolvedObject) {
 			// First, delete the simple caches
 			this.resolvedObjects[localPath] = undefined;
-
-			if (this.pathCache) {
-				this.pathCache[localPath] = undefined;
-				if (Array.isArray(this.pathCache[pathDetail.dir])) {
-					const paths = this.pathCache[pathDetail.dir] as string[];
-					const parentIndex = paths.findIndex(p => p === pathDetail.base);
-					if (parentIndex >= 0) {
-						paths.splice(parentIndex, 1);
-					}
-				}
-			}
 
 			return this.removeObject(resolvedObject);
 		}
@@ -211,7 +200,11 @@ export class Targets {
 	/**
 	 * Resolves a search to a filename. Basically a special blob
 	 */
-	public searchForFile(name: string, baseFile?: string): string|undefined {
+	public searchForObject(lookFor: ILEObject, currentObject: ILEObject) {
+		return this.getResolvedObjects().find(o => o.systemName === lookFor.systemName && o.type === lookFor.type);
+	}
+
+	public resolveLocalFile(name: string, baseFile?: string): string|undefined {
 		name = name.toUpperCase();
 
 		if (this.resolvedSearches[name]) return this.resolvedSearches[name];
@@ -295,6 +288,10 @@ export class Targets {
 				});
 				return (ext.toUpperCase() as ObjectType);
 		}
+	}
+
+	public loadObjectsFromPaths(paths: string[]) {
+		paths.forEach(p => this.resolvePathToObject(p));
 	}
 
 	public async parseFile(filePath: string) {
@@ -498,7 +495,7 @@ export class Targets {
 					for (const value of parts) {
 						const qualified = value.split(`/`);
 
-						let objectName;
+						let objectName: string|undefined;
 						if (qualified.length === 2 && qualified[0].toLowerCase() === `*libl`) {
 							objectName = qualified[1];
 						} else if (qualified.length === 1) {
@@ -506,8 +503,8 @@ export class Targets {
 						}
 
 						if (objectName) {
-							const resolvedPath = this.searchForFile(objectName, sourceName);
-							if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath))
+							const resolvedPath = this.searchForObject({systemName: objectName.toUpperCase(), type: `FILE`}, ileObject);
+							if (resolvedPath) target.deps.push(resolvedPath);
 							else {
 								this.logger.fileLog(ileObject.relativePath, {
 									message: `no object found for reference '${objectName}'`,
@@ -603,8 +600,8 @@ export class Targets {
 			} else {
 				if (ignoredObjects.includes(possibleObject.name.toUpperCase())) return;
 
-				const resolvedPath = this.searchForFile(possibleObject.name, sourceName);
-				if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath));
+				const resolvedPath = this.searchForObject({systemName: possibleObject.name.toUpperCase(), type: `FILE`}, ileObject);
+				if (resolvedPath) target.deps.push(resolvedPath);
 				else {
 					this.logger.fileLog(ileObject.relativePath, {
 						message: `no object found for reference '${possibleObject.name}'`,
@@ -633,8 +630,8 @@ export class Targets {
 
 					if (ignoredObjects.includes(name.toUpperCase())) return;
 
-					const resolvedPath = this.searchForFile(name + `.pgm`, sourceName);
-					if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath))
+					const resolvedPath = this.searchForObject({systemName: name.toUpperCase(), type: `PGM`}, ileObject);
+					if (resolvedPath) target.deps.push(resolvedPath);
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
 							message: `no object found for reference '${name}'`,
@@ -659,11 +656,8 @@ export class Targets {
 		});
 
 		// We also look to see if there is a `.cmd` object with the same name
-		const possibleCommandPath = this.searchForFile(`${ileObject.systemName}.cmd`, sourceName);
-		if (possibleCommandPath) {
-			const resolvedObject = this.resolvePathToObject(possibleCommandPath);
-			if (resolvedObject) this.createOrAppend(resolvedObject, target);
-		}
+		const possibleCommandObject = this.searchForObject({systemName: ileObject.systemName, type: `CMD`}, ileObject);
+		if (possibleCommandObject) this.createOrAppend(possibleCommandObject, target);
 
 		if (target.deps.length > 0)
 			infoOut(`Depends on: ${target.deps.map(d => `${d.systemName}.${d.type}`).join(` `)}`);
@@ -759,12 +753,14 @@ export class Targets {
 
 						// Creates should be in their own unique file
 						case StatementType.Create:
+							let hasLongName = mainDef.object.name && mainDef.object.system;
 							let objectName = mainDef.object.system || trimQuotes(mainDef.object.name, `"`);
 
 							const extension = pathDetail.ext.substring(1);
 
 							let ileObject: ILEObject = {
 								systemName: objectName.toUpperCase(),
+								longName: hasLongName,
 								type: this.getObjectType(relativePath, mainDef.createType),
 								text: options.text,
 								relativePath,
@@ -814,8 +810,8 @@ export class Targets {
 								for (const def of defs.slice(1)) {
 									const refTokens = def.tokens;
 									const simpleName = trimQuotes(def.object.name, `"`);
-									const resolvedPath = this.searchForFile(simpleName + `.*`, pathDetail.base);
-									if (resolvedPath) newTarget.deps.push(this.resolvePathToObject(resolvedPath))
+									const resolvedObject = this.searchForObject({systemName: simpleName.toUpperCase(), type: `FILE`}, ileObject);
+									if (resolvedObject) this.createOrAppend(resolvedObject, ileObject);
 									else {
 										this.logger.fileLog(newTarget.relativePath, {
 											message: `No object found for reference '${def.object.name}'`,
@@ -1012,18 +1008,18 @@ export class Targets {
 				}
 
 				return {
-					lookup: fileName + `.pgm`,
+					lookup: fileName.toUpperCase(),
 					line: ref.position ? ref.position.line : undefined
 				};
 			})
 			.forEach((ref: RpgLookup) => {
-				if (ignoredObjects.includes(ref.lookup.toUpperCase())) return;
-				if (path.basename(ref.lookup, `.pgm`).toUpperCase() === ileObject.systemName) return;
+				// Don't add ignored objects (usually system APIs)
+				if (ignoredObjects.includes(ref.lookup)) return;
+				// Don't add itself
+				if (ref.lookup === ileObject.systemName) return;
 
-				const resolvedPath = this.searchForFile(ref.lookup, sourceName);
-				if (resolvedPath) {
-					const resolvedObject = this.resolvePathToObject(resolvedPath);
-
+				const resolvedObject = this.searchForObject({systemName: ref.lookup, type: `PGM`}, ileObject);
+				if (resolvedObject) {
 					// because of legacy fixed CALL, there can be dupliicate EXTPGMs with the same name :(
 					if (!target.deps.some(d => d.systemName === resolvedObject.systemName && d.type && resolvedObject.type)) {
 						target.deps.push(resolvedObject)
@@ -1047,13 +1043,13 @@ export class Targets {
 				const value = trimQuotes(keyword[`EXTNAME`]);
 
 				return {
-					lookup: value.split(`:`)[0].toLowerCase(),
+					lookup: value.split(`:`)[0].toUpperCase(),
 					line: struct.position ? struct.position.line : undefined
 				};
 			})
 			.forEach((ref: RpgLookup) => {
-				const resolvedPath = this.searchForFile(ref.lookup, sourceName);
-				if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath))
+				const resolvedObject = this.searchForObject({systemName: ref.lookup, type: `FILE`}, ileObject);
+				if (resolvedObject) target.deps.push(resolvedObject)
 				else {
 					this.logger.fileLog(ileObject.relativePath, {
 						message: `No object found for reference '${ref.lookup}'`,
@@ -1068,12 +1064,12 @@ export class Targets {
 		// Find external files
 		cache.files
 			.map((file): RpgLookup => {
-				let possibleName = file.name;
+				let possibleName: string = file.name;
 				const keyword = file.keyword;
 
 				const extNameValue = keyword[`EXTFILE`];
 				if (extNameValue) {
-					possibleName = trimQuotes(extNameValue).split(`:`)[0].toLowerCase()
+					possibleName = trimQuotes(extNameValue).split(`:`)[0]
 				}
 
 				if (possibleName === `*extdesc`) {
@@ -1089,15 +1085,15 @@ export class Targets {
 				}
 
 				return {
-					lookup: possibleName,
+					lookup: possibleName.toUpperCase(),
 					line: file.position ? file.position.line : undefined
 				};
 			})
 			.forEach((ref: RpgLookup) => {
-				if (ignoredObjects.includes(ref.lookup.toUpperCase())) return;
+				if (ignoredObjects.includes(ref.lookup)) return;
 
-				const resolvedPath = this.searchForFile(ref.lookup, sourceName);
-				if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath))
+				const resolvedObject = this.searchForObject({systemName: ref.lookup, type: `FILE`}, ileObject);
+				if (resolvedObject) target.deps.push(resolvedObject)
 				else {
 					this.logger.fileLog(ileObject.relativePath, {
 						message: `No object found for reference '${ref.lookup}'`,
@@ -1111,12 +1107,12 @@ export class Targets {
 		cache.sqlReferences
 			.filter(ref => !ref.description)
 			.map((ref): RpgLookup => ({
-				lookup: trimQuotes(ref.name, `"`),
+				lookup: trimQuotes(ref.name, `"`).toUpperCase(),
 				line: ref.position ? ref.position.line : undefined
 			}))
 			.forEach((ref: RpgLookup) => {
-				const resolvedPath = this.searchForFile(ref.lookup, sourceName);
-				if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath))
+				const resolvedObject = this.searchForObject({systemName: ref.lookup, type: `FILE`}, ileObject);
+				if (resolvedObject) target.deps.push(resolvedObject)
 				else {
 					this.logger.fileLog(ileObject.relativePath, {
 						message: `No object found for reference '${ref.lookup}'`,
@@ -1131,7 +1127,7 @@ export class Targets {
 			.filter((struct: any) => struct.keyword[`DTAARA`])
 			.map((ref): RpgLookup => {
 				const keyword = ref.keyword;
-				let fileName = ref.name;
+				let fileName: string = ref.name;
 				const dtaara = keyword[`DTAARA`];
 				if (dtaara) {
 					if (dtaara === true) fileName = ref.name;
@@ -1139,15 +1135,15 @@ export class Targets {
 				}
 
 				return {
-					lookup: fileName + `.dtaara`,
+					lookup: fileName.toUpperCase(),
 					line: ref.position ? ref.position.line : undefined
 				};
 			})
 			.forEach((ref: RpgLookup) => {
 				if (ignoredObjects.includes(ref.lookup.toUpperCase())) return;
 
-				const resolvedPath = this.searchForFile(ref.lookup, sourceName);
-				if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath))
+				const resolvedObject = this.searchForObject({systemName: ref.lookup, type: `DTAARA`}, ileObject);
+				if (resolvedObject) target.deps.push(resolvedObject)
 				else {
 					this.logger.fileLog(ileObject.relativePath, {
 						message: `No object found for reference '${ref.lookup}'`,
@@ -1161,7 +1157,7 @@ export class Targets {
 			.filter((struct: any) => struct.keyword[`DTAARA`])
 			.map((ref): RpgLookup => {
 				const keyword = ref.keyword;
-				let fileName = ref.name;
+				let fileName: string = ref.name;
 				const dtaara = keyword[`DTAARA`];
 				if (dtaara) {
 					if (dtaara === true) fileName = ref.name;
@@ -1169,13 +1165,13 @@ export class Targets {
 				}
 
 				return {
-					lookup: fileName + `.dtaara`,
+					lookup: fileName.toUpperCase(),
 					line: ref.position ? ref.position.line : undefined
 				};
 			})
 			.forEach((ref: RpgLookup) => {
-				const resolvedPath = this.searchForFile(ref.lookup, sourceName);
-				if (resolvedPath) target.deps.push(this.resolvePathToObject(resolvedPath))
+				const resolvedObject = this.searchForObject({systemName: ref.lookup, type: `DTAARA`}, ileObject);
+				if (resolvedObject) target.deps.push(resolvedObject)
 				else {
 					this.logger.fileLog(ileObject.relativePath, {
 						message: `No object found for reference '${ref.lookup}'`,
@@ -1187,11 +1183,8 @@ export class Targets {
 
 		// TODO: did we duplicate this?
 		// We also look to see if there is a `.cmd` object with the same name
-		const possibleCommandPath = this.searchForFile(`${ileObject.systemName}.cmd`, sourceName);
-		if (possibleCommandPath) {
-			const resolvedObject = this.resolvePathToObject(possibleCommandPath);
+			const resolvedObject = this.searchForObject({systemName: ileObject.systemName, type: `CMD`}, ileObject);
 			if (resolvedObject) this.createOrAppend(resolvedObject, target);
-		}
 
 		// define internal imports
 		target.imports = cache.procedures
@@ -1240,10 +1233,10 @@ export class Targets {
 	public resolveBinder() {
 		// Right now, we really only support single module programs and service programs
 
-		const deps = this.getTargets();
+		const allTargets = this.getTargets();
 
 		// We can simply check for any modules since we turn them into service programs
-		this.needsBinder = deps.some(d => d.type === `MODULE`);
+		this.needsBinder = allTargets.some(d => d.type === `MODULE`);
 
 		infoOut(``);
 
@@ -1251,7 +1244,7 @@ export class Targets {
 		// And resolve the service program program exports to module exports to bind them together nicely
 		const allModules = this.getTargetsOfType("MODULE");
 
-		for (const target of deps) {
+		for (const target of allTargets) {
 			if (target.type === `SRVPGM` && target.exports) {
 				infoOut(`Resolving modules for ${target.systemName}.${target.type}`);
 
@@ -1294,7 +1287,7 @@ export class Targets {
 
 		// We loop through all programs and service programs and study their imports.
 		// We do this in case they depend on another service programs based on import
-		for (let target of deps) {
+		for (let target of allTargets) {
 			if ([`PGM`, `MODULE`].includes(target.type) && target.imports) {
 				let newImports: ILEObject[] = [];
 

@@ -16,6 +16,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
 	targets.setSuggestions({renames: true});
 
   const initialFiles = getFiles(cwd, scanGlob);
+  targets.loadObjectsFromPaths(initialFiles);
 	await Promise.allSettled(initialFiles.map(f => targets.parseFile(f)));
 
 	targets.resolveBinder();
@@ -100,6 +101,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
 	targets.setSuggestions({renames: true});
 
   const newFiles = getFiles(cwd, scanGlob);
+  targets.loadObjectsFromPaths(newFiles);
 	await Promise.allSettled(newFiles.map(f => targets.parseFile(f)));
 
 	targets.resolveBinder();
@@ -132,6 +134,7 @@ test(`Fix includes in same directory`, async () => {
 	targets.setSuggestions({includes: true});
 
   const initialFiles = getFiles(cwd, scanGlob);
+  targets.loadObjectsFromPaths(initialFiles);
 	await Promise.allSettled(initialFiles.map(f => targets.parseFile(f)));
 
 	targets.resolveBinder();
