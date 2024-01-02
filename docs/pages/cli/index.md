@@ -35,6 +35,11 @@ Types available:
 so -bf imd -f `git diff --name-only origin/main origin/${GITHUB_HEAD_REF}`
 ```
 
+## Specific files
+
+* You can use `-f` to make Source Orbit to only care about specific sources. This still scans the entire project, so will know about object parents.
+* Using `-s` means only a specific files and children of that file/object. This will not scan the entire project.
+
 ## Cleanup capabilities
 
 The ability to cleanup your source code is usually a one-and-done situation. After you've migrated your source code into git, you may find that a majority of your source extensions are incorrect (like missing the `.pgm` attribute on your source). There are currently two methods of cleanup available:

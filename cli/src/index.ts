@@ -86,37 +86,31 @@ async function main() {
 			case `-h`:
 			case `--help`:
 				console.log(``);
-				console.log(`\t-i`);
-				console.log(`\t--init\t\tAdd default compile options to 'iproj.json' file`);
-				console.log(`\t\t\tShould be used for project initialisation or to customize compile commands.`);
-				console.log(`\t\t\tThis is specific to using '-bf' with the 'make' option.`);
-				console.log(``);
 				console.log(`\t-d <dir>`)
 				console.log(`\t--cwd <dir>\tTo see the directory of where source code lives.`);
 				console.log(`\t\t\tThe default is the current working directory.`);
 				console.log(``);
 				console.log(`\t-s <relativePath>`)
-				console.log(`\t\t\tSource Orbit will only scan a specific file and.`);
+				console.log(`\t\t\tSource Orbit will only scan a specific file and`);
 				console.log(`\t\t\tit's dependents useful when building a specific source.`);
+				console.log(`\t\t\tThis means that parents of this file will not be scanned.`);
 				console.log(``);
 				console.log(`\t-f <relative paths>`)
 				console.log(`\t--files <relative paths>`);
-				console.log(`\t\t\tUsed alongside -bf, this option will still`);
-				console.log(`\t\t\tscan the entire working directory, but will single`);
-				console.log(`\t\t\tout these specific files when generating other files.`);
-				console.log(`\t\t\tIf no build file is specified, dependencies will be printed.`);
+				console.log(`\t\t\tthis option will still scan the entire working`);
+				console.log(`\t\t\tdirectory, but will single out these specific files`);
+				console.log(`\t\t\twhen generating other files. If no build file is`);
+				console.log(`\t\t\tspecified, dependencies will be printed.`);
+				console.log(``);
+				console.log(`\t-bf make|bob|imd|json\tCreate build files of a specific format`);
+				console.log(`\t\t\t\tExample: -bf make`);
 				console.log(``);
 				console.log(`\t-bl <name>\tSet the BRANCHLIB environment variable based on `);
 				console.log(`\t\t\ta user provided branch name, and will write it out.`);
 				console.log(`\t\t\tExample: -bl feature/123-cool-idea`);
 				console.log(`\t\t\t\t -bl bug/123-bad-move`);
 				console.log(``);
-				console.log(`\t-bf make|bob|imd|json\tCreate build files of a specific format`);
-				console.log(`\t\t\t\tExample: -bf make`);
-				console.log(``);
-				console.log(`\t-nc`);
-				console.log(`\t--no-children\tUsed with '-bf make' and won't include children of`);
-				console.log(`\t\t\tobjects in the makefile. Useful in conjuction with '-f'.`);
+				console.log(`Options for project cleanup:`);
 				console.log(``);
 				console.log(`\t-ar\t\tRun the auto-rename process after scanning all code`);
 				console.log(`\t\t\tEnsure it is run inside of source control.`);
@@ -128,6 +122,17 @@ async function main() {
 				console.log(`\t\t\tFixes all include/copy directives to use local source if available`);
 				console.log(``);
 				console.log(`\t--verbose\tPrint all the detail.`);
+				console.log(``);
+				console.log(`Options specific to '-bf make':`);
+				console.log(``);
+				console.log(`\t-i`);
+				console.log(`\t--init\t\tAdd default compile options to 'iproj.json' file`);
+				console.log(`\t\t\tShould be used for project initialisation or to customize compile commands.`);
+				console.log(`\t\t\tThis is specific to using '-bf' with the 'make' option.`);
+				console.log(``);
+				console.log(`\t-nc`);
+				console.log(`\t--no-children\tUsed with '-bf make' and won't include children of`);
+				console.log(`\t\t\tobjects in the makefile. Useful in conjuction with '-f'.`);
 				console.log(``);
 				process.exit(0);
 				break;
