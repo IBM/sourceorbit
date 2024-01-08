@@ -31,6 +31,16 @@ export function setupCompanySystem() {
   return projectPath;
 }
 
+export function setupMultiModule() {
+  const fixturePath = path.join(__dirname, `multi_module`);
+  const projectPath = path.join(__dirname, `..`, `..`, `..`, `multi_module`);
+
+  deleteDir(projectPath);
+  fs.cpSync(fixturePath, projectPath, {recursive: true});
+
+  return projectPath;
+}
+
 function deleteDir(dirPath: string) {
   try {
     fs.rmSync(dirPath, {recursive: true, force: true});

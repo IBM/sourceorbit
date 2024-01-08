@@ -1371,10 +1371,13 @@ export class Targets {
 
 		// Then we can create the new module object from this path
 		const newModule: ILEObject = {
-			...currentTarget,
+			systemName: currentTarget.systemName,
+			imports: currentTarget.imports,
+			exports: [],
 			type: `MODULE`,
 			relativePath: basePath
 		};
+
 		// Replace the old resolved object with the module
 		this.storeResolved(path.join(this.cwd, basePath), newModule);
 
