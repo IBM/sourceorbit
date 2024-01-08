@@ -1242,10 +1242,11 @@ export class Targets {
 
 		// We need to loop through all the user-defined server programs (binder source)
 		// And resolve the service program program exports to module exports to bind them together nicely
-		const allModules = this.getTargetsOfType("MODULE");
+		const allSrvPgms = this.getTargetsOfType(`SRVPGM`);
+		const allModules = this.getTargetsOfType(`MODULE`);
 
-		for (const target of allTargets) {
-			if (target.type === `SRVPGM` && target.exports) {
+		for (const target of allSrvPgms) {
+			if (target.exports) {
 				infoOut(`Resolving modules for ${target.systemName}.${target.type}`);
 
 				target.deps = [];
@@ -1288,14 +1289,14 @@ export class Targets {
 
 		// We loop through all programs and module and study their imports.
 		// We do this in case they depend on another service programs based on import
-		for (let target of allTargets) {
-			if ([`PGM`, `MODULE`].includes(target.type) && target.imports) {
+		for (let currentTarget of allTargets) {
+			if ([`PGM`, `MODULE`].includes(currentTarget.type) && currentTarget.imports) {
 				let newImports: ILEObject[] = [];
 
 				// Remove any service program deps so we can resolve them cleanly
-				target.deps = target.deps.filter(d => ![`SRVPGM`].includes(d.type));
+				currentTarget.deps = currentTarget.deps.filter(d => ![`SRVPGM`].includes(d.type));
 
-				target.imports.forEach(importName => {
+				currentTarget.imports.forEach(importName => {
 					// Find if this import resolves to another object
 					const possibleSrvPgmDep = this.resolvedExports[importName.toUpperCase()];
 					// We can't add a module as a dependency at this step.
@@ -1305,7 +1306,7 @@ export class Targets {
 							newImports.push(possibleSrvPgmDep);
 						}
 
-					} else if (target.type === `PGM`) {
+					} else if (currentTarget.type === `PGM`) {
 						// Perhaps we're looking at a program object, which actually should be a multi
 						// module program, so we do a lookup for additional modules.
 						const possibleModuleDep = allModules.find(mod => mod.exports.includes(importName.toUpperCase()))
@@ -1321,14 +1322,14 @@ export class Targets {
 
 				// If the program or module has imports that we ca resolve, then we add them as deps
 				if (newImports.length > 0) {
-					infoOut(`${target.systemName}.${target.type} has additional dependencies: ${newImports.map(i => `${i.systemName}.${i.type}`)}`);
-					target.deps.push(...newImports);
+					infoOut(`${currentTarget.systemName}.${currentTarget.type} has additional dependencies: ${newImports.map(i => `${i.systemName}.${i.type}`)}`);
+					currentTarget.deps.push(...newImports);
 
-					if (target.type === `PGM`) {
+					if (currentTarget.type === `PGM`) {
 						// If this program has MODULE dependecies, that means we need to change the way it's compiled
 						// to be a program made up of many modules, usually done with CRTPGM
-						if (target.deps.some(d => d.type === `MODULE`)) {
-							this.convertBoundProgramToMultiModuleProgram(target);
+						if (currentTarget.deps.some(d => d.type === `MODULE`)) {
+							this.convertBoundProgramToMultiModuleProgram(currentTarget);
 						}
 					}
 				}
