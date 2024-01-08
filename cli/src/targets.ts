@@ -16,7 +16,7 @@ import { asPosix, toLocalPath } from './utils';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
-const ignoredObjects = [`QSYSPRT`, `QCMDEXC`, `*LDA.DTAARA`, `QDCXLATE`, `QUSRJOBI`, `QTQCVRT`];
+const ignoredObjects = [`QSYSPRT`, `QCMDEXC`, `*LDA.DTAARA`, `QDCXLATE`, `QUSRJOBI`, `QTQCVRT`, `QWCRDTAA`, `QUSROBJD`, `QUSRMBRD`, `QUSROBJD`, `QUSLOBJ`, `QUSRTVUS`, `QUSCRTUS`];
 
 const sqlTypeExtension = {
 	'TABLE': `table`,
@@ -1251,6 +1251,7 @@ export class Targets {
 				target.deps = [];
 
 				for (const exportName of target.exports) {
+					// We loop through each export of the service program and find the module that exports it
 					const foundModule = allModules.find(mod => mod.exports && mod.exports.includes(exportName));
 					if (foundModule) {
 						const alreadyBound = target.deps.some(dep => dep.systemName === foundModule.systemName && dep.type === `MODULE`);
@@ -1270,7 +1271,7 @@ export class Targets {
 						this.resolvedExports[e.toUpperCase()] = target;
 					});
 				} else {
-					// This target doesn't have any deps... so, it's not used?
+					// This service program target doesn't have any deps... so, it's not used?
 					this.removeObject(target);
 
 					if (target.relativePath) {
@@ -1285,7 +1286,7 @@ export class Targets {
 			}
 		}
 
-		// We loop through all programs and service programs and study their imports.
+		// We loop through all programs and module and study their imports.
 		// We do this in case they depend on another service programs based on import
 		for (let target of allTargets) {
 			if ([`PGM`, `MODULE`].includes(target.type) && target.imports) {
@@ -1318,6 +1319,7 @@ export class Targets {
 					}
 				});
 
+				// If the program or module has imports that we ca resolve, then we add them as deps
 				if (newImports.length > 0) {
 					infoOut(`${target.systemName}.${target.type} has additional dependencies: ${newImports.map(i => `${i.systemName}.${i.type}`)}`);
 					target.deps.push(...newImports);
@@ -1334,7 +1336,6 @@ export class Targets {
 		}
 
 		const commandObjects = this.getResolvedObjects(`CMD`);
-
 		for (let cmdObject of commandObjects) {
 			// Check if a program exists with the same name.
 			const programObject = this.getTarget({ systemName: cmdObject.systemName, type: `PGM` });
