@@ -39,7 +39,7 @@ export class ObjectsView extends TreeItem implements ProjectExplorerTreeItem {
 */
 export class ILEObjectTreeItem extends TreeItem implements ProjectExplorerTreeItem {
   constructor(public workspaceFolder: WorkspaceFolder, private ileObject: ILEObject, canExpand = false) {
-    super(`${ileObject.name}.${ileObject.type}`, canExpand ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
+    super(`${ileObject.systemName}.${ileObject.type}`, canExpand ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);
     // const logs = TargetsManager.getLogs(workspaceFolder, ileObject);
 
     this.description = [ileObject.text, ileObject.extension ? `(${ileObject.extension})` : undefined].join(` `);

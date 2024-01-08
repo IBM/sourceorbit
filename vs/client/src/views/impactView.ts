@@ -47,7 +47,7 @@ export class ImpactView implements TreeDataProvider<any> {
 
 export class ILEImpactedObject extends TreeItem {
 	constructor(public workspaceFolder: WorkspaceFolder, private impactedObject: ImpactedObject) {
-		super(`${impactedObject.ileObject.name}.${impactedObject.ileObject.type}`, impactedObject.children.length > 0 ? TreeItemCollapsibleState.Expanded : TreeItemCollapsibleState.None);
+		super(`${impactedObject.ileObject.systemName}.${impactedObject.ileObject.type}`, impactedObject.children.length > 0 ? TreeItemCollapsibleState.Expanded : TreeItemCollapsibleState.None);
 		// const logs = TargetsManager.getLogs(workspaceFolder, ileObject);
 
 		this.description = impactedObject.ileObject.relativePath || `No source`;

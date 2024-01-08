@@ -44,8 +44,11 @@ export async function fixProject(workspaceUri: string, suggestions: TargetSugges
 	const targets = new Targets(url);
 	targets.setSuggestions(suggestions);
 
-	progress.report(`Processing files`);
-	await Promise.allSettled(files.map(f => targets.handlePath(f)));
+	progress.report(`Loading files..`);
+	targets.loadObjectsFromPaths(files);
+
+	progress.report(`Processing files..`);
+	await Promise.allSettled(files.map(f => targets.parseFile(f)));
 
 	progress.report(`Resolving the project`);
 	targets.resolveBinder();
