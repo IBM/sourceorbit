@@ -1365,13 +1365,17 @@ export class Targets {
 		currentTarget.extension = `pgm`;
 		currentTarget.relativePath = undefined;
 
-		// Store new resolved path for this object
+		// Store a fake path for this program object
 		this.storeResolved(path.join(this.cwd, `${currentTarget.systemName}.PGM`), currentTarget);
 
-		// Then we can resolve the same path again
-		const newModule = this.resolvePathToObject(path.join(this.cwd, basePath));
-		// Force it as a module
-		newModule.type = `MODULE`;
+		// Then we can create the new module object from this path
+		const newModule: ILEObject = {
+			...currentTarget,
+			type: `MODULE`,
+			relativePath: basePath
+		};
+		// Replace the old resolved object with the module
+		this.storeResolved(path.join(this.cwd, basePath), newModule);
 
 		// Create a new target for the module
 		const newModTarget = this.createOrAppend(newModule);
