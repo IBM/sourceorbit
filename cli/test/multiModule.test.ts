@@ -6,6 +6,7 @@ import { MakeProject } from '../src/builders/make';
 import { getFiles } from '../src/utils';
 import { setupMultiModule } from './fixtures/projects';
 import { scanGlob } from '../src/extensions';
+import { writeFileSync } from 'fs';
 
 const cwd = setupMultiModule();
 
@@ -51,5 +52,11 @@ describe.skipIf(files.length === 0)(`multi_module tests`, () => {
     expect(objectsMod).toBeDefined();
 
     expect(objectsMod.deps.length).toBe(0);
+  });
+
+  test(`Generate makefile`, () => {
+    const makeProj = new MakeProject(cwd, targets);
+
+    writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile().join(`\n`));
   });
 });
