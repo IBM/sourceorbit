@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
-const projectFolder = path.join(__dirname, `..`, `..`, `..`, `projects`);
+const projectFolder = path.join(__dirname, `..`, `..`, `..`, `testData`);
 
 export function setupProjectFromQsys() {
   const fixturePath = path.join(__dirname, `from_qsys`);

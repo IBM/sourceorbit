@@ -6,6 +6,7 @@ import { MakeProject } from '../src/builders/make';
 import { getFiles } from '../src/utils';
 import { setupCompanySystem } from './fixtures/projects';
 import { scanGlob } from '../src/extensions';
+import { writeFileSync } from 'fs';
 
 const cwd = setupCompanySystem();
 
@@ -370,4 +371,10 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     expect(resolvedObject.systemName).toBe(`EMPLOYEE`);
     expect(resolvedObject.type).toBe(`FILE`);
   })
+
+  test(`Generate makefile`, () => {
+    const makeProj = new MakeProject(cwd, targets);
+
+    writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile().join(`\n`));
+  });
 });
