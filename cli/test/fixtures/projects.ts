@@ -48,6 +48,28 @@ export function setupMultiModule() {
   return projectPath;
 }
 
+export function createTestBuildScript() {
+  const lines = [
+    `# First build company system`,
+    `system -qi "DLTLIB LIB(CMPSYSTST)"`,
+    `cd company_system`,
+    `gmake BIN_LIB=CMPSYSTST`,
+    ``,
+    `# Then build multi module`,
+    `cd ../multi_module`,
+    `system -qi "DLTLIB LIB(CMPSYSTST)"`,
+    `gmake BIN_LIB=MMODTEST`,
+    ``,
+    `# Cleanup`,
+    `system -qi "DLTLIB LIB(CMPSYSTST)"`,
+    `system -qi "DLTLIB LIB(MMODTEST)"`
+  ].join(`\n`);
+
+  mkdir(projectFolder);
+  const scriptPath = path.join(projectFolder, `build.sh`);
+  fs.writeFileSync(scriptPath, lines);
+}
+
 function mkdir(dirPath: string) {
   try {
     fs.mkdirSync(dirPath, {recursive: true});
