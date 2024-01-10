@@ -488,6 +488,7 @@ export class Targets {
 		for (const recordFormat of dds.formats) {
 
 			for (const keyword of ddsRefKeywords) {
+				// Look through this record format keywords for the keyword we're looking for
 				const keywordObj = recordFormat.keywords.find(k => k.name === keyword);
 				if (keywordObj) {
 					const wholeValue: string = keywordObj.value;
@@ -515,6 +516,48 @@ export class Targets {
 						} else {
 							this.logger.fileLog(ileObject.relativePath, {
 								message: `${keyword} reference not included as possible reference to library found.`,
+								type: `info`,
+								line: recordFormat.range.start
+							});
+						}
+					}
+				}
+			}
+
+			// Then, let's loop through the fields in this format and see if we can find REFFLD
+			for (const field of recordFormat.fields) {
+				const refFld = field.keywords.find(k => k.name === `REFFLD`);
+
+				if (refFld) {
+					const [fieldRef, fileRef] = refFld.value.trim().split(` `);
+
+					if (fileRef) {
+						const qualified = fileRef.split(`/`);
+
+						let objectName: string|undefined;
+						if (qualified.length === 2 && qualified[0].toLowerCase() === `*libl`) {
+							objectName = qualified[1];
+						} else if (qualified.length === 1) {
+							objectName = qualified[0];
+						}
+
+						if (objectName) {
+							const resolvedPath = this.searchForObject({systemName: objectName.toUpperCase(), type: `FILE`}, ileObject);
+							if (resolvedPath) {
+								if (!target.deps.some(d => d.systemName === resolvedPath.systemName && d.type === resolvedPath.type)) {
+									target.deps.push(resolvedPath);
+								}
+							}
+							else {
+								this.logger.fileLog(ileObject.relativePath, {
+									message: `no object found for reference '${objectName}'`,
+									type: `warning`,
+									line: recordFormat.range.start
+								});
+							}
+						} else {
+							this.logger.fileLog(ileObject.relativePath, {
+								message: `REFFLD reference not included as possible reference to library found.`,
 								type: `info`,
 								line: recordFormat.range.start
 							});
