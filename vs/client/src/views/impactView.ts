@@ -2,7 +2,7 @@ import { ImpactedObject } from '@ibm/sourceorbit/dist/src/targets';
 import { EventEmitter, Uri, WorkspaceFolder, workspace } from "vscode";
 import { Event, ThemeIcon, TreeDataProvider, TreeItem, TreeItemCollapsibleState } from "vscode";
 import { TypeIcons } from './utils';
-import { getImpacts } from '../requests';
+import { getImpacts, isReady } from '../requests';
 import path = require('path');
 
 export class ImpactView implements TreeDataProvider<any> {
@@ -32,9 +32,14 @@ export class ImpactView implements TreeDataProvider<any> {
 			const workspaceFolder = workspace.getWorkspaceFolder(this.impactOf[0]);
 
 			if (workspaceFolder) {
-				const impacts = await getImpacts(workspaceFolder, this.impactOf);
+				const projectLoaded = await isReady(workspaceFolder);
+				if (projectLoaded) {
+					const impacts = await getImpacts(workspaceFolder, this.impactOf);
 
-				return impacts.map(i => new ILEImpactedObject(workspaceFolder, i));
+					return impacts.map(i => new ILEImpactedObject(workspaceFolder, i));
+				} else {
+					return [new TreeItem(`Impact view is not ready. Use Source Orbit to initialise.`)];
+				}
 			}
 		} else {
 			return [new TreeItem(`Open source code to see changes impact.`)];
@@ -47,7 +52,7 @@ export class ImpactView implements TreeDataProvider<any> {
 
 export class ILEImpactedObject extends TreeItem {
 	constructor(public workspaceFolder: WorkspaceFolder, private impactedObject: ImpactedObject) {
-		super(`${impactedObject.ileObject.name}.${impactedObject.ileObject.type}`, impactedObject.children.length > 0 ? TreeItemCollapsibleState.Expanded : TreeItemCollapsibleState.None);
+		super(`${impactedObject.ileObject.systemName}.${impactedObject.ileObject.type}`, impactedObject.children.length > 0 ? TreeItemCollapsibleState.Expanded : TreeItemCollapsibleState.None);
 		// const logs = TargetsManager.getLogs(workspaceFolder, ileObject);
 
 		this.description = impactedObject.ileObject.relativePath || `No source`;

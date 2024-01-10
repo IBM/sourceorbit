@@ -39,21 +39,21 @@ export class TargetsManager {
     }
   }
 
-  static async initialise(workspaceUri: string, overwrite = false) {
+  static async refreshProject(workspaceUri: string) {
     const uri = URI.parse(workspaceUri);
     const url = uri.fsPath;
 
-    if (!this.projects[url] || overwrite) {
-      const files = getFiles(url, SupportedGlob);
+    const files = getFiles(url, SupportedGlob);
 
-      const targets = new Targets(url);
+    const targets = new Targets(url);
 
-      await Promise.allSettled(files.map(f => targets.handlePath(f)));
+    targets.loadObjectsFromPaths(files);
 
-      targets.resolveBinder();
+    await Promise.allSettled(files.map(f => targets.parseFile(f)));
 
-      this.projects[url] = targets;
-    }
+    targets.resolveBinder();
+
+    this.projects[url] = targets;
   }
 
   static destory(workspaceUri: string) {
@@ -77,7 +77,7 @@ export class TargetsManager {
         const targets = this.getTargetsForFile(uriString);
 
         if (targets) {
-          return targets.handlePath(uri.fsPath);
+          return targets.parseFile(uri.fsPath);
 
           // TODO: think about re-resolving later if changing a module?
         }
@@ -109,7 +109,7 @@ export class TargetsManager {
 
               console.log(`Impacted sources:  ${impactedSources.join(`, `)}`);
 
-              return Promise.allSettled(impactedSources.map(sourcePath => targets.handlePath(sourcePath)));
+              return Promise.allSettled(impactedSources.map(sourcePath => targets.parseFile(sourcePath)));
             }
           }
         }
@@ -117,11 +117,11 @@ export class TargetsManager {
     }
   }
 
-  static getDepsFor(workspaceUri: string, ileObject: ILEObject) {
+  static getDepsForTarget(workspaceUri: string, ileObject: ILEObject) {
     const targets = this.getTargetsForWorkspaceUri(workspaceUri);
 
     if (targets) {
-      const target = targets.getDep(ileObject);
+      const target = targets.getTarget(ileObject);
       if (target) {
         return target.deps;
       }

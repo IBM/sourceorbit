@@ -11,7 +11,7 @@ export function setClient(lc: LanguageClient) {
 export async function isReady(workspaceFolder: WorkspaceFolder): Promise<boolean> {
 	if (!client) return false;
 
-	const result = await client.sendRequest(`isReady`, [workspaceFolder.uri]);
+	const result = await client.sendRequest(`isReady`, [workspaceFolder.uri.toString()]);
 	return (result as boolean);
 }
 
@@ -37,15 +37,9 @@ export async function getImpacts(workspaceFolder: WorkspaceFolder, fileUris: Uri
 }
 
 export function reloadProject(workspaceFolder: WorkspaceFolder){
-	if (!client) return;
+	if (!client) return Promise.reject();
 	
 	return client.sendRequest(`reloadProject`, [workspaceFolder.uri.toString()]);
-}
-
-export function resolveProject(workspaceFolder: WorkspaceFolder){
-	if (!client) return;
-	
-	return client.sendRequest(`resolveProject`, [workspaceFolder.uri.toString()]);
 }
 
 export function fixProject(workspaceFolder: WorkspaceFolder, suggestion: string) {

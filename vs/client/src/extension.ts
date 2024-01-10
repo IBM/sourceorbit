@@ -8,7 +8,7 @@ import {
 	ServerOptions,
 	TransportKind
 } from 'vscode-languageclient/node';
-import { fixProject, reloadProject, resolveProject, setClient } from './requests';
+import { fixProject, reloadProject, setClient } from './requests';
 import { getProjectExplorer, getProjectManager, loadIBMiProjectExplorer } from './ProjectExplorer';
 import { ILEObjectTreeItem, ObjectsView } from './views/objectView';
 import { IProject } from '@ibm/vscode-ibmi-projectexplorer-types/iproject';
@@ -16,6 +16,10 @@ import { ImpactView } from './views/impactView';
 import { getDeployGitFiles as getChanged, getDeployGitFiles as getChangedFiles, getGitAPI, lastBranch } from './git';
 
 let client: LanguageClient;
+
+export function enableViews() {
+	commands.executeCommand(`setContext`, `vscode-sourceorbit:projectsLoaded`, true);
+}
 
 export function activate(context: ExtensionContext) {
 	// The server is implemented in node
@@ -117,27 +121,19 @@ export function activate(context: ExtensionContext) {
 	}
 
 	context.subscriptions.push(
-		client.onRequest(`reloadUi`, (params: [string[]]) => {
-			if (projectExplorer) {
-				const folderPaths = params[0];
-
-				for (const folderPath of folderPaths) {
-					if (objectViews[folderPath]) {
-						projectExplorer.refresh(objectViews[folderPath]);
-					}
-				}
+		commands.registerCommand(`vscode-sourceorbit.objects.loadProject`, async (node: ObjectsView) => {
+			if (node) {
+				await reloadProject(node.workspaceFolder);
+				enableViews();
+				node.refresh();
 			}
 		}),
+
 		commands.registerCommand(`vscode-sourceorbit.objects.goToFile`, ((node: ILEObjectTreeItem) => {
 			if (node && node.resourceUri) {
 				workspace.openTextDocument(node.resourceUri).then(doc => {
 					window.showTextDocument(doc);
 				});
-			}
-		})),
-		commands.registerCommand(`vscode-sourceorbit.objects.resolve`, ((node: ObjectsView) => {
-			if (node && node.workspaceFolder) {
-				resolveProject(node.workspaceFolder);
 			}
 		})),
 		commands.registerCommand(`vscode-sourceorbit.objects.autoFix`, ((node: ObjectsView) => {
