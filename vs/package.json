@@ -30,7 +30,8 @@
 					"id": "activeImpactView",
 					"visibility": "collapsed",
 					"name": "Affected Objects",
-					"contextualTitle": "Active Editor"
+					"contextualTitle": "Active Editor",
+					"when": "vscode-sourceorbit:projectsLoaded == true"
 				}
 			],
 			"scm": [
@@ -38,11 +39,17 @@
 					"id": "gitImpactView",
 					"visibility": "collapsed",
 					"name": "Affected Objects",
-					"contextualTitle": "Source Changes"
+					"contextualTitle": "Source Changes",
+					"when": "vscode-sourceorbit:projectsLoaded == true"
 				}
 			]
 		},
 		"commands": [
+			{
+				"command": "vscode-sourceorbit.objects.loadProject",
+				"category": "Source Orbit",
+				"title": "Reload Project"
+			},
 			{
 				"command": "vscode-sourceorbit.objects.goToFile",
 				"icon": "$(go-to-file)",
@@ -60,6 +67,11 @@
 				{
 					"command": "vscode-sourceorbit.objects.goToFile",
 					"when": "viewItem == ileObject",
+					"group": "inline"
+				},
+				{
+					"command": "vscode-sourceorbit.objects.loadProject",
+					"when": "viewItem == objectsView",
 					"group": "inline"
 				},
 				{

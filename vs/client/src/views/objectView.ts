@@ -7,6 +7,7 @@ import { ILEObject } from "@ibm/sourceorbit/dist/src/targets";
 import { getDeps, getResolvedObjects, isReady, reloadProject } from '../requests';
 import path = require('path');
 import { TypeIcons } from './utils';
+import { enableViews } from '../extension';
 
 
 /**
@@ -17,7 +18,8 @@ export class ObjectsView extends TreeItem implements ProjectExplorerTreeItem {
 	readonly onDidChangeTreeData: Event<TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
   constructor(public workspaceFolder: WorkspaceFolder) {
-    super(`Objects`, TreeItemCollapsibleState.Collapsed);
+    super(`Source Orbit`, TreeItemCollapsibleState.Collapsed);
+    this.iconPath = new ThemeIcon(`globe`);
     this.contextValue = `objectsView`;
   }
 
@@ -29,6 +31,7 @@ export class ObjectsView extends TreeItem implements ProjectExplorerTreeItem {
     const isProjectReady = await isReady(this.workspaceFolder);
     if (!isProjectReady) {
       await reloadProject(this.workspaceFolder);
+      await enableViews();
     }
     
     const objects = await getResolvedObjects(this.workspaceFolder);

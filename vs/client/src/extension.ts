@@ -17,6 +17,10 @@ import { getDeployGitFiles as getChanged, getDeployGitFiles as getChangedFiles, 
 
 let client: LanguageClient;
 
+export function enableViews() {
+	commands.executeCommand(`setContext`, `vscode-sourceorbit:projectsLoaded`, true);
+}
+
 export function activate(context: ExtensionContext) {
 	// The server is implemented in node
 	const serverModule = context.asAbsolutePath(
@@ -117,11 +121,14 @@ export function activate(context: ExtensionContext) {
 	}
 
 	context.subscriptions.push(
-		commands.registerCommand(`vscode-sourceorbit.loadProject`, (workspaceFolder: WorkspaceFolder) => {
-			reloadProject(workspaceFolder).then(r => {
-				objectViews[workspaceFolder.uri.toString()].refresh();
-			});
+		commands.registerCommand(`vscode-sourceorbit.objects.loadProject`, async (node: ObjectsView) => {
+			if (node) {
+				await reloadProject(node.workspaceFolder);
+				enableViews();
+				node.refresh();
+			}
 		}),
+
 		commands.registerCommand(`vscode-sourceorbit.objects.goToFile`, ((node: ILEObjectTreeItem) => {
 			if (node && node.resourceUri) {
 				workspace.openTextDocument(node.resourceUri).then(doc => {
