@@ -50,11 +50,6 @@
 				"title": "Go to file"
 			},
 			{
-				"command": "vscode-sourceorbit.objects.resolve",
-				"category": "Source Orbit",
-				"title": "Resolve"
-			},
-			{
 				"command": "vscode-sourceorbit.objects.autoFix",
 				"category": "Source Orbit",
 				"title": "Autofix"
@@ -65,11 +60,6 @@
 				{
 					"command": "vscode-sourceorbit.objects.goToFile",
 					"when": "viewItem == ileObject",
-					"group": "inline"
-				},
-				{
-					"command": "vscode-sourceorbit.objects.resolve",
-					"when": "viewItem == objectsView",
 					"group": "inline"
 				},
 				{

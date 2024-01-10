@@ -1,8 +1,10 @@
 import { ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri, WorkspaceFolder } from "vscode";
+import { EventEmitter, Event } from "vscode";
+
 import { ProjectExplorerTreeItem } from "@ibm/vscode-ibmi-projectexplorer-types/views/projectExplorer/projectExplorerTreeItem";
 
 import { ILEObject } from "@ibm/sourceorbit/dist/src/targets";
-import { getDeps, getResolvedObjects } from '../requests';
+import { getDeps, getResolvedObjects, isReady, reloadProject } from '../requests';
 import path = require('path');
 import { TypeIcons } from './utils';
 
@@ -11,26 +13,27 @@ import { TypeIcons } from './utils';
  * Tree item for the objects heading.
  */
 export class ObjectsView extends TreeItem implements ProjectExplorerTreeItem {
+	private _onDidChangeTreeData: EventEmitter<TreeItem | undefined | null | void> = new EventEmitter<TreeItem | undefined | null | void>();
+	readonly onDidChangeTreeData: Event<TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
   constructor(public workspaceFolder: WorkspaceFolder) {
     super(`Objects`, TreeItemCollapsibleState.Collapsed);
     this.contextValue = `objectsView`;
   }
 
+	refresh() {
+		this._onDidChangeTreeData.fire();
+	}
+
   async getChildren(): Promise<ProjectExplorerTreeItem[]> {
+    const isProjectReady = await isReady(this.workspaceFolder);
+    if (!isProjectReady) {
+      await reloadProject(this.workspaceFolder);
+    }
+    
     const objects = await getResolvedObjects(this.workspaceFolder);
 
     return objects.map(o => new ILEObjectTreeItem(this.workspaceFolder, o, true));
-      
-    // if (viewMode === "impact") {
-    //   if (impactsOf.length > 0) {
-    //     const impacts = await getImpacts(this.workspaceFolder, impactsOf);
-
-    //     return impacts.map(i => new ILEImpactedObject(this.workspaceFolder, i));
-    //   } else {
-    //     return [new Notice(this.workspaceFolder, `Open source code to see changes impact.`)];
-    //   }
-    // }
   }
 }
 
@@ -67,6 +70,10 @@ export class Notice extends TreeItem implements ProjectExplorerTreeItem {
     super(message, TreeItemCollapsibleState.None);
 
     this.iconPath = new ThemeIcon(`unverified`);
+  }
+
+  setCommand(command: string, arg?: string) {
+    this.command = {command: command, title: ``, arguments: [this.workspaceFolder, arg]};
   }
 
   async getChildren(): Promise<ILEObjectTreeItem[]> {

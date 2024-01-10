@@ -6,30 +6,24 @@ import { Logger } from '@ibm/sourceorbit/dist/src/logger';
 import path from 'path';
 import fs from 'fs';
 import { connection } from './server';
-import { reloadLogs, reloadUi } from './ui';
 
-export async function initAndRefresh(workspaceUri: string, destoryOld = false) {
+export async function initAndRefresh(workspaceUri: string) {
 	const progress = await connection.window.createWorkDoneProgress();
 	progress.begin(`Source Orbit`, undefined, `Initialising..`);
 
-	TargetsManager.initialise(workspaceUri, destoryOld)
-		.then(() => {
-			progress.report(`Initialised`);
-			const target = TargetsManager.getTargetsForWorkspaceUri(workspaceUri);
-			if (target) {
-				connection.console.log(`Reloading logs`);
-				reloadLogs(target);
-				reloadUi([workspaceUri]);
-			}
-		})
-		.catch(_e => {
-			progress.report(`Failed to initialise`);
-		})
-		.finally(() => {
-			setTimeout(() => {
-				progress.done();
-			}, 1500);
-		});
+	try {
+		await TargetsManager.refreshProject(workspaceUri);
+		progress.report(`Initialised`);
+
+	} catch (e) {
+		progress.report(`Failed to initialise`);
+	}
+
+	setTimeout(() => {
+		progress.done();
+	}, 1500);
+
+	return 'Hello world';
 }
 
 export async function fixProject(workspaceUri: string, suggestions: TargetSuggestions) {
@@ -70,9 +64,9 @@ export async function fixProject(workspaceUri: string, suggestions: TargetSugges
 	} finally {
 		progress.done();
 		// Let's reinitialised the project when we're done.
-		initAndRefresh(workspaceUri, true);
+		initAndRefresh(workspaceUri);
 	}
-	
+
 }
 
 function replaceIncludes(logger: Logger) {
@@ -100,7 +94,7 @@ function renameFiles(logger: Logger) {
 	console.log(`Starting rename process. Do not end process.`);
 	const allLogs = logger.getAllLogs();
 
-	const validRenames: {[path: string]: string} = {};
+	const validRenames: { [path: string]: string } = {};
 
 	for (const filePath in allLogs) {
 		const logs = allLogs[filePath].filter(l => l.type === `rename`);

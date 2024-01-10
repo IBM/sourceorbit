@@ -39,23 +39,21 @@ export class TargetsManager {
     }
   }
 
-  static async initialise(workspaceUri: string, overwrite = false) {
+  static async refreshProject(workspaceUri: string) {
     const uri = URI.parse(workspaceUri);
     const url = uri.fsPath;
 
-    if (!this.projects[url] || overwrite) {
-      const files = getFiles(url, SupportedGlob);
+    const files = getFiles(url, SupportedGlob);
 
-      const targets = new Targets(url);
+    const targets = new Targets(url);
 
-      targets.loadObjectsFromPaths(files);
+    targets.loadObjectsFromPaths(files);
 
-      await Promise.allSettled(files.map(f => targets.parseFile(f)));
+    await Promise.allSettled(files.map(f => targets.parseFile(f)));
 
-      targets.resolveBinder();
+    targets.resolveBinder();
 
-      this.projects[url] = targets;
-    }
+    this.projects[url] = targets;
   }
 
   static destory(workspaceUri: string) {
@@ -119,7 +117,7 @@ export class TargetsManager {
     }
   }
 
-  static getDepsFor(workspaceUri: string, ileObject: ILEObject) {
+  static getDepsForTarget(workspaceUri: string, ileObject: ILEObject) {
     const targets = this.getTargetsForWorkspaceUri(workspaceUri);
 
     if (targets) {
