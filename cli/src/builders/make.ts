@@ -15,11 +15,12 @@ interface CompileData {
 	/** Used if the commands are built up from source. Usually means `command` and `commands` is blank */
 	commandSource?: boolean;
 	/** `postCommands` do not respect the library list and is run after 'command' */
-	postCommands?: string[]
-	/** if the non-source object now requires source. Use make generic name like `qbndsrc/%.bnd` */
-	targetSource?: string;
+	postCommands?: string[];
+
 	/** if the object can be built without source, flag this true so it builds generic rules */
 	sourceOptional?: boolean;
+	/** if the non-source object now requires source. Use make generic name like `qbndsrc/%.bnd` */
+	targetSource?: string;
 };
 
 interface iProject {

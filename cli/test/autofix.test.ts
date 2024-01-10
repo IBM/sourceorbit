@@ -122,6 +122,12 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
     message: `Include at line 35 found, to path '${path.posix.join(`qprotosrc`, `errortable.rpgleinc`)}'`,
     type: "info",
   });
+
+  // Small test to check we can resolve the files
+  const ddsTarget = targets.getTarget({systemName: `MSTDSP`, type: `FILE`});
+  expect(ddsTarget).toBeDefined();
+  expect(ddsTarget?.relativePath).toBe(path.join(`qddssrc`, `mstdsp.dspf`));
+  expect(ddsTarget.deps.length).toBe(3);
 });
 
 

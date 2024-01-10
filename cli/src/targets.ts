@@ -16,7 +16,7 @@ import { asPosix, toLocalPath } from './utils';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
-const ignoredObjects = [`QSYSPRT`, `QCMDEXC`, `*LDA.DTAARA`, `QDCXLATE`, `QUSRJOBI`, `QTQCVRT`];
+const ignoredObjects = [`QSYSPRT`, `QCMDEXC`, `*LDA.DTAARA`, `QDCXLATE`, `QUSRJOBI`, `QTQCVRT`, `QWCRDTAA`, `QUSROBJD`, `QUSRMBRD`, `QUSROBJD`, `QUSLOBJ`, `QUSRTVUS`, `QUSCRTUS`];
 
 const sqlTypeExtension = {
 	'TABLE': `table`,
@@ -488,6 +488,7 @@ export class Targets {
 		for (const recordFormat of dds.formats) {
 
 			for (const keyword of ddsRefKeywords) {
+				// Look through this record format keywords for the keyword we're looking for
 				const keywordObj = recordFormat.keywords.find(k => k.name === keyword);
 				if (keywordObj) {
 					const wholeValue: string = keywordObj.value;
@@ -515,6 +516,48 @@ export class Targets {
 						} else {
 							this.logger.fileLog(ileObject.relativePath, {
 								message: `${keyword} reference not included as possible reference to library found.`,
+								type: `info`,
+								line: recordFormat.range.start
+							});
+						}
+					}
+				}
+			}
+
+			// Then, let's loop through the fields in this format and see if we can find REFFLD
+			for (const field of recordFormat.fields) {
+				const refFld = field.keywords.find(k => k.name === `REFFLD`);
+
+				if (refFld) {
+					const [fieldRef, fileRef] = refFld.value.trim().split(` `);
+
+					if (fileRef) {
+						const qualified = fileRef.split(`/`);
+
+						let objectName: string|undefined;
+						if (qualified.length === 2 && qualified[0].toLowerCase() === `*libl`) {
+							objectName = qualified[1];
+						} else if (qualified.length === 1) {
+							objectName = qualified[0];
+						}
+
+						if (objectName) {
+							const resolvedPath = this.searchForObject({systemName: objectName.toUpperCase(), type: `FILE`}, ileObject);
+							if (resolvedPath) {
+								if (!target.deps.some(d => d.systemName === resolvedPath.systemName && d.type === resolvedPath.type)) {
+									target.deps.push(resolvedPath);
+								}
+							}
+							else {
+								this.logger.fileLog(ileObject.relativePath, {
+									message: `no object found for reference '${objectName}'`,
+									type: `warning`,
+									line: recordFormat.range.start
+								});
+							}
+						} else {
+							this.logger.fileLog(ileObject.relativePath, {
+								message: `REFFLD reference not included as possible reference to library found.`,
 								type: `info`,
 								line: recordFormat.range.start
 							});
@@ -1242,15 +1285,17 @@ export class Targets {
 
 		// We need to loop through all the user-defined server programs (binder source)
 		// And resolve the service program program exports to module exports to bind them together nicely
-		const allModules = this.getTargetsOfType("MODULE");
+		const allSrvPgms = this.getTargetsOfType(`SRVPGM`);
+		const allModules = this.getTargetsOfType(`MODULE`);
 
-		for (const target of allTargets) {
-			if (target.type === `SRVPGM` && target.exports) {
+		for (const target of allSrvPgms) {
+			if (target.exports) {
 				infoOut(`Resolving modules for ${target.systemName}.${target.type}`);
 
 				target.deps = [];
 
 				for (const exportName of target.exports) {
+					// We loop through each export of the service program and find the module that exports it
 					const foundModule = allModules.find(mod => mod.exports && mod.exports.includes(exportName));
 					if (foundModule) {
 						const alreadyBound = target.deps.some(dep => dep.systemName === foundModule.systemName && dep.type === `MODULE`);
@@ -1270,7 +1315,7 @@ export class Targets {
 						this.resolvedExports[e.toUpperCase()] = target;
 					});
 				} else {
-					// This target doesn't have any deps... so, it's not used?
+					// This service program target doesn't have any deps... so, it's not used?
 					this.removeObject(target);
 
 					if (target.relativePath) {
@@ -1285,16 +1330,16 @@ export class Targets {
 			}
 		}
 
-		// We loop through all programs and service programs and study their imports.
+		// We loop through all programs and module and study their imports.
 		// We do this in case they depend on another service programs based on import
-		for (let target of allTargets) {
-			if ([`PGM`, `MODULE`].includes(target.type) && target.imports) {
+		for (let currentTarget of allTargets) {
+			if ([`PGM`, `MODULE`].includes(currentTarget.type) && currentTarget.imports) {
 				let newImports: ILEObject[] = [];
 
 				// Remove any service program deps so we can resolve them cleanly
-				target.deps = target.deps.filter(d => ![`SRVPGM`].includes(d.type));
+				currentTarget.deps = currentTarget.deps.filter(d => ![`SRVPGM`].includes(d.type));
 
-				target.imports.forEach(importName => {
+				currentTarget.imports.forEach(importName => {
 					// Find if this import resolves to another object
 					const possibleSrvPgmDep = this.resolvedExports[importName.toUpperCase()];
 					// We can't add a module as a dependency at this step.
@@ -1304,7 +1349,7 @@ export class Targets {
 							newImports.push(possibleSrvPgmDep);
 						}
 
-					} else if (target.type === `PGM`) {
+					} else if (currentTarget.type === `PGM`) {
 						// Perhaps we're looking at a program object, which actually should be a multi
 						// module program, so we do a lookup for additional modules.
 						const possibleModuleDep = allModules.find(mod => mod.exports.includes(importName.toUpperCase()))
@@ -1318,15 +1363,16 @@ export class Targets {
 					}
 				});
 
+				// If the program or module has imports that we ca resolve, then we add them as deps
 				if (newImports.length > 0) {
-					infoOut(`${target.systemName}.${target.type} has additional dependencies: ${newImports.map(i => `${i.systemName}.${i.type}`)}`);
-					target.deps.push(...newImports);
+					infoOut(`${currentTarget.systemName}.${currentTarget.type} has additional dependencies: ${newImports.map(i => `${i.systemName}.${i.type}`)}`);
+					currentTarget.deps.push(...newImports);
 
-					if (target.type === `PGM`) {
+					if (currentTarget.type === `PGM`) {
 						// If this program has MODULE dependecies, that means we need to change the way it's compiled
 						// to be a program made up of many modules, usually done with CRTPGM
-						if (target.deps.some(d => d.type === `MODULE`)) {
-							this.convertBoundProgramToMultiModuleProgram(target);
+						if (currentTarget.deps.some(d => d.type === `MODULE`)) {
+							this.convertBoundProgramToMultiModuleProgram(currentTarget);
 						}
 					}
 				}
@@ -1334,7 +1380,6 @@ export class Targets {
 		}
 
 		const commandObjects = this.getResolvedObjects(`CMD`);
-
 		for (let cmdObject of commandObjects) {
 			// Check if a program exists with the same name.
 			const programObject = this.getTarget({ systemName: cmdObject.systemName, type: `PGM` });
@@ -1364,13 +1409,20 @@ export class Targets {
 		currentTarget.extension = `pgm`;
 		currentTarget.relativePath = undefined;
 
-		// Store new resolved path for this object
+		// Store a fake path for this program object
 		this.storeResolved(path.join(this.cwd, `${currentTarget.systemName}.PGM`), currentTarget);
 
-		// Then we can resolve the same path again
-		const newModule = this.resolvePathToObject(path.join(this.cwd, basePath));
-		// Force it as a module
-		newModule.type = `MODULE`;
+		// Then we can create the new module object from this path
+		const newModule: ILEObject = {
+			systemName: currentTarget.systemName,
+			imports: currentTarget.imports,
+			exports: [],
+			type: `MODULE`,
+			relativePath: basePath
+		};
+
+		// Replace the old resolved object with the module
+		this.storeResolved(path.join(this.cwd, basePath), newModule);
 
 		// Create a new target for the module
 		const newModTarget = this.createOrAppend(newModule);

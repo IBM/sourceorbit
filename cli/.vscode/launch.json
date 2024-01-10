@@ -11,7 +11,7 @@
 			"cwd": "${workspaceFolder:cli}",
 			"program": "${workspaceFolder:cli}/dist/index.js",
 			"sourceMaps": true,
-			"args": ["-d", "${workspaceFolder:rename_test}", "-fi"],
+			"args": ["-d", "/Users/barry/Repos/gitcm", "--verbose"],
 			"preLaunchTask": {
 				"type": "npm",
 				"script": "webpack:dev"
