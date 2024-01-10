@@ -158,8 +158,9 @@ export function activate(context: ExtensionContext) {
 			return fixProject(workspaceFolder, type);
 		}),
 		
-		commands.registerCommand(`vscode-sourceorbit.generateBuildFile`, (workspaceFolder: WorkspaceFolder, type: string) => {
-			return generateBuildFile(workspaceFolder, type);
+		commands.registerCommand(`vscode-sourceorbit.generateBuildFile`, async (workspaceFolder: WorkspaceFolder, type: string) => {
+			await generateBuildFile(workspaceFolder, type);
+			enableViews();
 		}),
 
 		window.registerTreeDataProvider(`activeImpactView`, activeImpactView),
