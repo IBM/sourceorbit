@@ -1,3 +1,4 @@
+/* eslint-disable no-case-declarations */
 
 import { Targets, allExtensions } from "@ibm/sourceorbit";
 import { ILEObject } from "@ibm/sourceorbit/dist/src/targets";
@@ -10,7 +11,7 @@ import path = require("path");
 export const SupportedGlob = `**/*.{${allExtensions.join(`,`)}}`;
 
 export class TargetsManager {
-  private static projects: { [workspacePath: string]: Targets|undefined } = {};
+  private static projects: { [workspacePath: string]: Targets | undefined } = {};
 
   static isReady(workspaceUri: string) {
     return (this.getTargetsForWorkspaceUri(workspaceUri) !== undefined);
@@ -153,9 +154,9 @@ export class TargetsManager {
 }
 
 export function getFiles(cwd: string, globPath: string): string[] {
-	return glob.sync(globPath, {
-		cwd,
-		absolute: true,
-		nocase: true,
-	});
+  return glob.sync(globPath, {
+    cwd,
+    absolute: true,
+    nocase: true,
+  });
 }

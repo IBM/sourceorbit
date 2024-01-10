@@ -8,7 +8,7 @@ import {
 	ServerOptions,
 	TransportKind
 } from 'vscode-languageclient/node';
-import { fixProject, reloadProject, setClient } from './requests';
+import { fixProject, generateBuildFile, reloadProject, setClient } from './requests';
 import { getProjectExplorer, getProjectManager, loadIBMiProjectExplorer } from './ProjectExplorer';
 import { ILEObjectTreeItem, ObjectsView } from './views/objectView';
 import { IProject } from '@ibm/vscode-ibmi-projectexplorer-types/iproject';
@@ -156,6 +156,10 @@ export function activate(context: ExtensionContext) {
 		})),
 		commands.registerCommand(`vscode-sourceorbit.autoFix`, (workspaceFolder: WorkspaceFolder, type: "includes" | "renames") => {
 			return fixProject(workspaceFolder, type);
+		}),
+		
+		commands.registerCommand(`vscode-sourceorbit.generateBuildFile`, (workspaceFolder: WorkspaceFolder, type: string) => {
+			return generateBuildFile(workspaceFolder, type);
 		}),
 
 		window.registerTreeDataProvider(`activeImpactView`, activeImpactView),

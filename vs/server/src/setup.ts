@@ -1,6 +1,6 @@
 import { URI } from 'vscode-uri';
 import { SupportedGlob, TargetsManager, getFiles } from './TargetsManager';
-import { Targets } from '@ibm/sourceorbit';
+import { BobProject, MakeProject, Targets } from '@ibm/sourceorbit';
 import { TargetSuggestions } from '@ibm/sourceorbit/dist/src/targets';
 import { Logger } from '@ibm/sourceorbit/dist/src/logger';
 import path from 'path';
@@ -23,7 +23,49 @@ export async function initAndRefresh(workspaceUri: string) {
 		progress.done();
 	}, 1500);
 
-	return 'Hello world';
+	return;
+}
+
+export async function generateBuildFile(workspaceUri: string, type: string) {
+	const progress = await connection.window.createWorkDoneProgress();
+
+	await TargetsManager.refreshProject(workspaceUri);
+
+	progress.begin(`Source Orbit`, undefined, `Reloading project..`);
+	const targets = TargetsManager.getTargetsForWorkspacePath(workspaceUri);
+
+	if (targets) {
+		const cwd = targets.getCwd();
+
+		progress.report(`Creating '${type}' build file..`);
+
+		switch (type) {
+			case `bob`:
+				const bobProj = new BobProject(targets);
+				const outFiles = bobProj.createRules();
+
+				for (const filePath in outFiles) {
+					fs.writeFileSync(path.join(cwd, filePath), outFiles[filePath]);
+				}
+				break;
+
+			case `make`:
+				const makeProj = new MakeProject(cwd, targets);
+				fs.writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile().join(`\n`));
+				break;
+
+			case `json`:
+				const outJson = {
+					targets: targets.getTargets(),
+					resolved: targets.getResolvedObjects(),
+					exports: targets.getExports(),
+					messages: targets.logger.getAllLogs()
+				};
+
+				fs.writeFileSync(path.join(cwd, `sourceorbit.json`), JSON.stringify(outJson, null, 2));
+				break;
+		}
+	}
 }
 
 export async function fixProject(workspaceUri: string, suggestions: TargetSuggestions) {
