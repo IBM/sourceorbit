@@ -56,4 +56,10 @@ describe(`Deterministic system name`, () => {
   test('With underscore', () => {
     expect(getSystemNameFromPath(`ua_fetchUserData`)).toBe(`UAFUD`);
   })
+  test('Bob prefix name A', () => {
+    expect(getSystemNameFromPath(`ART200-Work_with_article`)).toBe(`ART200`);
+  })
+  test('Bob prefix name B', () => {
+    expect(getSystemNameFromPath(`ART200D-Work_with_Article`)).toBe(`ART200D`);
+  })
 });

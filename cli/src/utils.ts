@@ -6,19 +6,21 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os"
 
-export function getSystemNameFromPath(fullName: string) {
+export function getSystemNameFromPath(inputName: string) {
+
+	let baseName = inputName.includes(`-`) ? inputName.split(`-`)[0] : inputName;
 
 	// If the name is of valid length, return it
-	if (fullName.length <= 10) {
-		return fullName.toUpperCase();
+	if (baseName.length <= 10) {
+		return baseName.toUpperCase();
 	}
 
 	// We also support prefixes to the name, such as UA_
 	let prefix = ``;
-	let name = fullName;
+	let name = baseName;
 
-	if (fullName.includes(`_`)) {
-		const parts = fullName.split(`_`);
+	if (baseName.includes(`_`)) {
+		const parts = baseName.split(`_`);
 		prefix = parts[0];
 		name = parts[1];
 	}

@@ -54,13 +54,14 @@ Source Orbit does not care about project structure, but does enforce these rules
 
 Typically, the basename of the file is also the object name. But, Source Orbit will generate a deterministic object name based on the file name.
 
-| Source name                     | Resulting object | Note                                                                    |
-| ------------------------------- | ---------------- | ----------------------------------------------------------------------- |
-| `abcd.rpgle`                    | `ABCD.MODULE`    | No change                                                               |
-| `ab_cd.pgm.rpgle`               | `AB_CD.PGM`      | No change                                                               |
-| `thisIsASuperLongName.pgm.clle` | `TIASLN.PGM`     | First character plus following capitals                                 |
-| `FetchUserData.cmd`             | `FUD.CMD`        | All capitals from file name                                             |
-| `ua_fetchUserData.sqlrpgle`     | `UAFUD.MODULE`   | Prefix, followed by first post-prefix character plus following capitals |
+| Source name                      | Resulting object | Note                                                                    |
+| -------------------------------- | ---------------- | ----------------------------------------------------------------------- |
+| `abcd.rpgle`                     | `ABCD.MODULE`    | No change                                                               |
+| `ab_cd.pgm.rpgle`                | `AB_CD.PGM`      | No change                                                               |
+| `thisIsASuperLongName.pgm.clle`  | `TIASLN.PGM`     | First character plus following capitals                                 |
+| `FetchUserData.cmd`              | `FUD.CMD`        | All capitals from file name                                             |
+| `ua_fetchUserData.sqlrpgle`      | `UAFUD.MODULE`   | Prefix, followed by first post-prefix character plus following capitals |
+| `ART200D-Work_with_Article.DSPF` | `ART200D.FILE`   | Support for ibmi-bob file name                                          |
 
 Even if you use long file names, your source code still needs to reference the object name for object resolves (not including *include directives* of course.)
 
