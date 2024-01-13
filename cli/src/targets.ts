@@ -85,8 +85,10 @@ interface FileOptions {
 export class Targets {
 	private rpgParser: Parser;
 
+	/* pathCache and resolvedSearches are used for file resolving. */
 	private pathCache: { [path: string]: true | string[] } | undefined;
 	private resolvedSearches: { [query: string]: string } = {};
+
 	private resolvedObjects: { [localPath: string]: ILEObject } = {};
 	private resolvedExports: { [name: string]: ILEObject } = {};
 	private targets: { [name: string]: ILEObjectTarget } = {};
