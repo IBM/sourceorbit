@@ -12,7 +12,7 @@ import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensi
 import Parser from "vscode-rpgle/language/parser";
 import { setupParser } from './parser';
 import { Logger } from './logger';
-import { asPosix, toLocalPath } from './utils';
+import { asPosix, getSystemNameFromPath, toLocalPath } from './utils';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -133,12 +133,12 @@ export class Targets {
 		const relativePath = this.getRelative(localPath);
 
 		const isProgram = detail.name.toUpperCase().endsWith(`.PGM`);
-		const name = isProgram ? detail.name.substring(0, detail.name.length - 4) : detail.name;
+		const name = getSystemNameFromPath(isProgram ? detail.name.substring(0, detail.name.length - 4) : detail.name);
 		const extension = detail.ext.length > 1 ? detail.ext.substring(1) : detail.ext;
 		const type: ObjectType = (isProgram ? "PGM" : this.getObjectType(relativePath, extension));
 
 		const theObject: ILEObject = {
-			systemName: name.toUpperCase(),
+			systemName: name,
 			type: type,
 			text: newText,
 			relativePath,
@@ -152,7 +152,6 @@ export class Targets {
 
 	public removeObjectByPath(localPath: string) {
 		const resolvedObject = this.resolvedObjects[localPath];
-		const pathDetail = path.parse(localPath);
 
 		if (resolvedObject) {
 			// First, delete the simple caches
