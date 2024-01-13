@@ -198,10 +198,10 @@ export class Targets {
 	}
 
 	/**
-	 * Resolves a search to a filename. Basically a special blob
+	 * Resolves a search to an object. Use `systemName` parameter for short and long name.
 	 */
 	public searchForObject(lookFor: ILEObject, currentObject: ILEObject) {
-		return this.getResolvedObjects().find(o => o.systemName === lookFor.systemName && o.type === lookFor.type);
+		return this.getResolvedObjects().find(o => (o.systemName === lookFor.systemName || o.systemName === lookFor.longName) && o.type === lookFor.type);
 	}
 
 	public resolveLocalFile(name: string, baseFile?: string): string|undefined {
