@@ -1279,7 +1279,7 @@ export class Targets {
 		const allTargets = this.getTargets();
 
 		// We can simply check for any modules since we turn them into service programs
-		this.needsBinder = allTargets.some(d => d.type === `MODULE`);
+		this.needsBinder = allTargets.some(d => d.type === `SRVPGM`);
 
 		infoOut(``);
 
