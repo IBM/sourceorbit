@@ -180,7 +180,7 @@ async function main() {
 	for (const filePath of files) {
 		const result = await targets.parseFile(filePath);
 		if (!result) {
-			error(`Report this issue to us with an example: github.com/halcyon-tech/vscode-rpgle/issues`);
+			error(`Report this issue to us with an example: github.com/IBM/sourceorbit/issues`);
 		}
 	}
 
