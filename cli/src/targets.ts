@@ -631,30 +631,32 @@ export class Targets {
 		// Loop through local file defs to find a possible dep
 		files.forEach(def => {
 			const possibleObject = def.file;
-			if (possibleObject.library) {
-				this.logger.fileLog(ileObject.relativePath, {
-					message: `Definition to ${possibleObject.library}/${possibleObject.name} ignored due to qualified path.`,
-					range: {
-						start: def.range.start,
-						end: def.range.end
-					},
-					type: `info`,
-				});
-
-			} else {
-				if (ignoredObjects.includes(possibleObject.name.toUpperCase())) return;
-
-				const resolvedPath = this.searchForObject({systemName: possibleObject.name.toUpperCase(), type: `FILE`}, ileObject);
-				if (resolvedPath) target.deps.push(resolvedPath);
-				else {
+			if (possibleObject) {
+				if (possibleObject.library) {
 					this.logger.fileLog(ileObject.relativePath, {
-						message: `no object found for reference '${possibleObject.name}'`,
+						message: `Definition to ${possibleObject.library}/${possibleObject.name} ignored due to qualified path.`,
 						range: {
 							start: def.range.start,
 							end: def.range.end
 						},
-						type: `warning`,
+						type: `info`,
 					});
+
+				} else {
+					if (ignoredObjects.includes(possibleObject.name.toUpperCase())) return;
+
+					const resolvedPath = this.searchForObject({systemName: possibleObject.name.toUpperCase(), type: `FILE`}, ileObject);
+					if (resolvedPath) target.deps.push(resolvedPath);
+					else {
+						this.logger.fileLog(ileObject.relativePath, {
+							message: `no object found for reference '${possibleObject.name}'`,
+							range: {
+								start: def.range.start,
+								end: def.range.end
+							},
+							type: `warning`,
+						});
+					}
 				}
 			}
 		});
