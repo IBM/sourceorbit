@@ -50,6 +50,21 @@ Source Orbit does not care about project structure, but does enforce these rules
    * Source Orbit will scan the binder source to find the exported functions/procedures from modules inside the project.
 * Source Orbit does not yet support SQL long name references. (Coming soon)
 
+#### Long file names
+
+Typically, the basename of the file is also the object name. But, Source Orbit will generate a deterministic object name based on the file name.
+
+| Source name                      | Resulting object | Note                                                                    |
+| -------------------------------- | ---------------- | ----------------------------------------------------------------------- |
+| `abcd.rpgle`                     | `ABCD.MODULE`    | No change                                                               |
+| `ab_cd.pgm.rpgle`                | `AB_CD.PGM`      | No change                                                               |
+| `thisIsASuperLongName.pgm.clle`  | `TIASLN.PGM`     | First character plus following capitals                                 |
+| `FetchUserData.cmd`              | `FUD.CMD`        | All capitals from file name                                             |
+| `ua_fetchUserData.sqlrpgle`      | `UAFUD.MODULE`   | Prefix, followed by first post-prefix character plus following capitals |
+| `ART200D-Work_with_Article.DSPF` | `ART200D.FILE`   | Support for ibmi-bob file name                                          |
+
+Even if you use long file names, your source code still needs to reference the object name for object resolves (not including *include directives* of course.)
+
 ### SQL sources
 
 SQL sources can be defined with many different extensions like `.sql`, `.table`, `.sqlprc`, `.view`, and so on. It is important that the name of source matches the system name of the object that is going to be created.

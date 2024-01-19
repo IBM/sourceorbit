@@ -12,7 +12,7 @@ import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensi
 import Parser from "vscode-rpgle/language/parser";
 import { setupParser } from './parser';
 import { Logger } from './logger';
-import { asPosix, toLocalPath } from './utils';
+import { asPosix, getSystemNameFromPath, toLocalPath } from './utils';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -85,8 +85,10 @@ interface FileOptions {
 export class Targets {
 	private rpgParser: Parser;
 
+	/* pathCache and resolvedSearches are used for file resolving. */
 	private pathCache: { [path: string]: true | string[] } | undefined;
 	private resolvedSearches: { [query: string]: string } = {};
+
 	private resolvedObjects: { [localPath: string]: ILEObject } = {};
 	private resolvedExports: { [name: string]: ILEObject } = {};
 	private targets: { [name: string]: ILEObjectTarget } = {};
@@ -131,12 +133,12 @@ export class Targets {
 		const relativePath = this.getRelative(localPath);
 
 		const isProgram = detail.name.toUpperCase().endsWith(`.PGM`);
-		const name = isProgram ? detail.name.substring(0, detail.name.length - 4) : detail.name;
+		const name = getSystemNameFromPath(isProgram ? detail.name.substring(0, detail.name.length - 4) : detail.name);
 		const extension = detail.ext.length > 1 ? detail.ext.substring(1) : detail.ext;
 		const type: ObjectType = (isProgram ? "PGM" : this.getObjectType(relativePath, extension));
 
 		const theObject: ILEObject = {
-			systemName: name.toUpperCase(),
+			systemName: name,
 			type: type,
 			text: newText,
 			relativePath,
@@ -150,7 +152,6 @@ export class Targets {
 
 	public removeObjectByPath(localPath: string) {
 		const resolvedObject = this.resolvedObjects[localPath];
-		const pathDetail = path.parse(localPath);
 
 		if (resolvedObject) {
 			// First, delete the simple caches
@@ -198,10 +199,10 @@ export class Targets {
 	}
 
 	/**
-	 * Resolves a search to a filename. Basically a special blob
+	 * Resolves a search to an object. Use `systemName` parameter for short and long name.
 	 */
 	public searchForObject(lookFor: ILEObject, currentObject: ILEObject) {
-		return this.getResolvedObjects().find(o => o.systemName === lookFor.systemName && o.type === lookFor.type);
+		return this.getResolvedObjects().find(o => (o.systemName === lookFor.systemName || o.systemName === lookFor.longName) && o.type === lookFor.type);
 	}
 
 	public resolveLocalFile(name: string, baseFile?: string): string|undefined {
@@ -630,30 +631,32 @@ export class Targets {
 		// Loop through local file defs to find a possible dep
 		files.forEach(def => {
 			const possibleObject = def.file;
-			if (possibleObject.library) {
-				this.logger.fileLog(ileObject.relativePath, {
-					message: `Definition to ${possibleObject.library}/${possibleObject.name} ignored due to qualified path.`,
-					range: {
-						start: def.range.start,
-						end: def.range.end
-					},
-					type: `info`,
-				});
-
-			} else {
-				if (ignoredObjects.includes(possibleObject.name.toUpperCase())) return;
-
-				const resolvedPath = this.searchForObject({systemName: possibleObject.name.toUpperCase(), type: `FILE`}, ileObject);
-				if (resolvedPath) target.deps.push(resolvedPath);
-				else {
+			if (possibleObject) {
+				if (possibleObject.library) {
 					this.logger.fileLog(ileObject.relativePath, {
-						message: `no object found for reference '${possibleObject.name}'`,
+						message: `Definition to ${possibleObject.library}/${possibleObject.name} ignored due to qualified path.`,
 						range: {
 							start: def.range.start,
 							end: def.range.end
 						},
-						type: `warning`,
+						type: `info`,
 					});
+
+				} else {
+					if (ignoredObjects.includes(possibleObject.name.toUpperCase())) return;
+
+					const resolvedPath = this.searchForObject({systemName: possibleObject.name.toUpperCase(), type: `FILE`}, ileObject);
+					if (resolvedPath) target.deps.push(resolvedPath);
+					else {
+						this.logger.fileLog(ileObject.relativePath, {
+							message: `no object found for reference '${possibleObject.name}'`,
+							range: {
+								start: def.range.start,
+								end: def.range.end
+							},
+							type: `warning`,
+						});
+					}
 				}
 			}
 		});
@@ -1279,7 +1282,7 @@ export class Targets {
 		const allTargets = this.getTargets();
 
 		// We can simply check for any modules since we turn them into service programs
-		this.needsBinder = allTargets.some(d => d.type === `MODULE`);
+		this.needsBinder = allTargets.some(d => d.type === `SRVPGM`);
 
 		infoOut(``);
 
