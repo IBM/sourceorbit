@@ -12,6 +12,7 @@ import {
 } from 'vscode-languageserver/node';
 import { SupportedGlob, TargetsManager } from './TargetsManager';
 import { setupRequestHandler } from './requests';
+import { setupFsListener } from './fileSystemListener';
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -47,6 +48,13 @@ connection.onInitialize((params: InitializeParams) => {
 		};
 	}
 	return result;
+});
+
+
+connection.onInitialized(() => {
+	if (hasWorkspaceFolderCapability) {
+		setupFsListener(connection);
+	}
 });
 
 // Listen on the connection
