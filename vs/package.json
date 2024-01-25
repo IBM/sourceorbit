@@ -60,9 +60,34 @@
 				"command": "vscode-sourceorbit.objects.autoFix",
 				"category": "Source Orbit",
 				"title": "Autofix"
+			},
+			{
+				"command": "vscode-sourceorbit.objects.autoFix",
+				"category": "Source Orbit",
+				"title": "Autofix"
+			},
+			{
+				"command": "vscode-sourceorbit.generateBuildFile",
+				"category": "Source Orbit (API)",
+				"title": "Generate Build File"
+			},
+			{
+				"command": "vscode-sourceorbit.autoFix",
+				"category": "Source Orbit (API)",
+				"title": "Autofix"
 			}
 		],
 		"menus": {
+			"commandPalette": [
+				{
+					"command": "vscode-sourceorbit.generateBuildFile",
+					"when": "never"
+				},
+				{
+					"command": "vscode-sourceorbit.autoFix",
+					"when": "never"
+				}
+			],
 			"view/item/context": [
 				{
 					"command": "vscode-sourceorbit.objects.goToFile",

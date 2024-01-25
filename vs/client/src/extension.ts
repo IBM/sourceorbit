@@ -154,13 +154,17 @@ export function activate(context: ExtensionContext) {
 				});
 			}
 		})),
-		commands.registerCommand(`vscode-sourceorbit.autoFix`, (workspaceFolder: WorkspaceFolder, type: "includes" | "renames") => {
-			return fixProject(workspaceFolder, type);
+		commands.registerCommand(`vscode-sourceorbit.autoFix`, (workspaceFolder?: WorkspaceFolder, type?: "includes" | "renames") => {
+			if (workspaceFolder && type) {
+				return fixProject(workspaceFolder, type);
+			}
 		}),
 		
-		commands.registerCommand(`vscode-sourceorbit.generateBuildFile`, async (workspaceFolder: WorkspaceFolder, type: string) => {
-			await generateBuildFile(workspaceFolder, type);
-			enableViews();
+		commands.registerCommand(`vscode-sourceorbit.generateBuildFile`, async (workspaceFolder?: WorkspaceFolder, type?: string) => {
+			if (workspaceFolder && type) {
+				await generateBuildFile(workspaceFolder, type);
+				enableViews();
+			}
 		}),
 
 		window.registerTreeDataProvider(`activeImpactView`, activeImpactView),
