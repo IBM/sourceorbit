@@ -11,7 +11,7 @@
 			"cwd": "${workspaceFolder:cli}",
 			"program": "${workspaceFolder:cli}/dist/index.js",
 			"sourceMaps": true,
-			"args": ["-d", "/Users/barry/Repos/gitcm", "--verbose"],
+			"args": ["-d", "/Users/barry/Downloads/ics", "--verbose"],
 			"preLaunchTask": {
 				"type": "npm",
 				"script": "webpack:dev"

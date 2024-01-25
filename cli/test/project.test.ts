@@ -27,12 +27,12 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Check objects are generated`, async () => {
-    expect(targets.getResolvedObjects().length).toBe(11);
-    expect(targets.getTargets().length).toBe(12);
+    expect(targets.getResolvedObjects().length).toBe(12);
+    expect(targets.getTargets().length).toBe(13);
     expect(targets.getTargetsOfType(`FILE`).length).toBe(4);
     expect(targets.getTargetsOfType(`PGM`).length).toBe(3);
     expect(targets.getTargetsOfType(`MODULE`).length).toBe(2);
-    expect(targets.getTargetsOfType(`SRVPGM`).length).toBe(2);
+    expect(targets.getTargetsOfType(`SRVPGM`).length).toBe(3);
   });
 
   test(`Check mypgm`, async () => {
@@ -300,7 +300,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     const allTarget = headerContent.find(l => l.startsWith(`all:`));
     expect(allTarget).toBeDefined();
 
-    expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/EMPLOYEES.PGM $(PREPATH)/DEPTS.PGM`);
+    expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/EMPLOYEES.PGM $(PREPATH)/DEPTS.PGM $(PREPATH)/GETTOTSAL.SRVPGM`);
     
     const deptsTargetDeps = headerContent.find(l => l.startsWith(`$(PREPATH)/DEPTS.PGM:`));
     expect(deptsTargetDeps).toBeDefined();
@@ -320,7 +320,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     const allTarget = headerContent.find(l => l.startsWith(`all:`));
     expect(allTarget).toBeDefined();
 
-    expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/EMPLOYEES.PGM $(PREPATH)/DEPTS.PGM`);
+    expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/EMPLOYEES.PGM $(PREPATH)/DEPTS.PGM $(PREPATH)/GETTOTSAL.SRVPGM`);
     
     const deptsTargetDeps = headerContent.find(l => l.startsWith(`$(PREPATH)/DEPTS.PGM:`));
     expect(deptsTargetDeps).toBeUndefined();
@@ -370,6 +370,27 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     expect(resolvedObject).toBeDefined();
     expect(resolvedObject.systemName).toBe(`EMPLOYEE`);
     expect(resolvedObject.type).toBe(`FILE`);
+  })
+
+  test(`Test function references`, () => {
+    // We have a test for this as SQL objects are created a little different
+    // from regular objects.
+
+    const resolvedObject = targets.getTarget({systemName: `GETTOTSAL`, type: `SRVPGM`});
+    expect(resolvedObject.relativePath).toBe(path.join(`qsqlsrc`, `getTotalSalary.sql`));
+
+    expect(resolvedObject).toBeDefined();
+    expect(resolvedObject.systemName).toBe(`GETTOTSAL`);
+    expect(resolvedObject.longName).toBe(`getTotalSalary`);
+    expect(resolvedObject.type).toBe(`SRVPGM`);
+
+    expect(resolvedObject.deps.length).toBe(1);
+    expect(resolvedObject.deps[0].systemName).toBe(`EMPLOYEE`);
+
+    const functionMake = MakeProject.generateSpecificTarget(makeDefaults.compiles[`sqludf`], resolvedObject);
+    expect(functionMake.length).toBe(4);
+    expect(functionMake[0]).toBe(`$(PREPATH)/GETTOTSAL.SRVPGM: qsqlsrc/getTotalSalary.sql`);
+    expect(functionMake[3]).toBe(`\tsystem "RUNSQLSTM SRCSTMF('qsqlsrc/getTotalSalary.sql') COMMIT(*NONE)" > .logs/gettotsal.splf`);
   })
 
   test(`Generate makefile`, () => {

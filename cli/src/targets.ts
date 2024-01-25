@@ -274,6 +274,7 @@ export class Targets {
 
 			case `binder`:
 			case `bnd`:
+			case `function`:
 				return `SRVPGM`;
 
 			case `procedure`:
@@ -799,7 +800,7 @@ export class Targets {
 
 						// Creates should be in their own unique file
 						case StatementType.Create:
-							let hasLongName = mainDef.object.name && mainDef.object.system;
+							let hasLongName = mainDef.object.name || mainDef.object.system;
 							let objectName = mainDef.object.system || trimQuotes(mainDef.object.name, `"`);
 
 							const extension = pathDetail.ext.substring(1);
@@ -812,8 +813,6 @@ export class Targets {
 								relativePath,
 								extension
 							}
-
-							// TODO: better support for 'for system name' in SQL
 
 							let suggestRename = false;
 							const sqlFileName = pathDetail.name.toUpperCase();
@@ -852,22 +851,32 @@ export class Targets {
 
 							infoOut(`${newTarget.systemName}.${newTarget.type}: ${newTarget.relativePath}`);
 
-							if (defs.length > 1) {
-								for (const def of defs.slice(1)) {
-									const refTokens = def.tokens;
-									const simpleName = trimQuotes(def.object.name, `"`);
-									const resolvedObject = this.searchForObject({systemName: simpleName.toUpperCase(), type: `FILE`}, ileObject);
-									if (resolvedObject) this.createOrAppend(resolvedObject, ileObject);
-									else {
-										this.logger.fileLog(newTarget.relativePath, {
-											message: `No object found for reference '${def.object.name}'`,
-											type: `warning`,
-											range: {
-												start: refTokens[0].range.start,
-												end: refTokens[refTokens.length - 1].range.end
-											},
-										});
-									}
+							// Now, let's go through all the other statements in this group (BEGIN/END)
+							// and grab any references to other objects :eyes:
+							let otherDefs = defs.slice(1);
+
+							for (let i = 1; i < group.statements.length; i++) {
+								const currentStatement = group.statements[i];
+								if ([StatementType.Alter, StatementType.Insert, StatementType.Delete, StatementType.With, StatementType.Select, StatementType.Call].includes(currentStatement.type)) {
+									otherDefs.push(...group.statements[i].getObjectReferences());
+								}
+							}
+
+							for (const def of otherDefs) {
+								const refTokens = def.tokens;
+								const simpleName = trimQuotes(def.object.name, `"`);
+								// TODO: do we need to look for SRVPGM (function) or PGM (procedure) here?
+								const resolvedObject = this.searchForObject({systemName: simpleName.toUpperCase(), type: `FILE`}, ileObject);
+								if (resolvedObject) newTarget.deps.push(resolvedObject);
+								else {
+									this.logger.fileLog(newTarget.relativePath, {
+										message: `No object found for reference '${def.object.name}'`,
+										type: `warning`,
+										range: {
+											start: refTokens[0].range.start,
+											end: refTokens[refTokens.length - 1].range.end
+										},
+									});
 								}
 							}
 

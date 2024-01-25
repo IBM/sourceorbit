@@ -91,6 +91,10 @@ export class MakeProject {
 					becomes: `FILE`,
 					command: `RUNSQLSTM SRCSTMF('$<') COMMIT(*NONE)`
 				},
+				sqludf: {
+					becomes: `SRVPGM`,
+					command: `RUNSQLSTM SRCSTMF('$<') COMMIT(*NONE)`
+				},
 				table: {
 					becomes: `FILE`,
 					command: `RUNSQLSTM SRCSTMF('$<') COMMIT(*NONE)`
