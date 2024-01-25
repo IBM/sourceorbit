@@ -24,6 +24,24 @@
 	],
 	"main": "./out/extension",
 	"contributes": {
+		"taskDefinitions": [
+			{
+				"type": "sourceorbit",
+				"required": [
+					"builder"
+				],
+				"properties": {
+					"builder": {
+						"type": "string",
+						"enum": [
+							"bob",
+							"make",
+							"json"
+						]
+					}
+				}
+			}
+		],
 		"views": {
 			"explorer": [
 				{

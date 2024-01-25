@@ -14,6 +14,7 @@ import { ILEObjectTreeItem, ObjectsView } from './views/objectView';
 import { IProject } from '@ibm/vscode-ibmi-projectexplorer-types/iproject';
 import { ImpactView } from './views/impactView';
 import { getDeployGitFiles as getChanged, getDeployGitFiles as getChangedFiles, getGitAPI, lastBranch } from './git';
+import { initialiseTaskProvider } from './tasks';
 
 let client: LanguageClient;
 
@@ -120,6 +121,8 @@ export function activate(context: ExtensionContext) {
 		}
 	}
 
+	initialiseTaskProvider(context);
+	
 	context.subscriptions.push(
 		commands.registerCommand(`vscode-sourceorbit.objects.loadProject`, async (node: ObjectsView) => {
 			if (node) {

@@ -32,7 +32,7 @@ export async function generateBuildFile(workspaceUri: string, type: string) {
 	await TargetsManager.refreshProject(workspaceUri);
 
 	progress.begin(`Source Orbit`, undefined, `Reloading project..`);
-	const targets = TargetsManager.getTargetsForWorkspacePath(workspaceUri);
+	const targets = TargetsManager.getTargetsForWorkspaceUri(workspaceUri);
 
 	if (targets) {
 		const cwd = targets.getCwd();
@@ -65,7 +65,11 @@ export async function generateBuildFile(workspaceUri: string, type: string) {
 				fs.writeFileSync(path.join(cwd, `sourceorbit.json`), JSON.stringify(outJson, null, 2));
 				break;
 		}
+	} else {
+		progress.report(`Failed to reload project`);
 	}
+
+	progress.done();
 }
 
 export async function fixProject(workspaceUri: string, suggestions: TargetSuggestions) {
