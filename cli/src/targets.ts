@@ -205,6 +205,11 @@ export class Targets {
 		return this.getResolvedObjects().find(o => (o.systemName === lookFor.systemName || o.systemName === lookFor.longName) && o.type === lookFor.type);
 	}
 
+	public searchForAnyObject(lookFor: { name: string, types: ObjectType[] }) {
+		lookFor.name = lookFor.name.toUpperCase();
+		return this.getResolvedObjects().find(o => (o.systemName === lookFor.name || o.longName?.toUpperCase() === lookFor.name) && lookFor.types.includes(o.type));
+	}
+
 	public resolveLocalFile(name: string, baseFile?: string): string|undefined {
 		name = name.toUpperCase();
 
@@ -866,7 +871,7 @@ export class Targets {
 								const refTokens = def.tokens;
 								const simpleName = trimQuotes(def.object.name, `"`);
 								// TODO: do we need to look for SRVPGM (function) or PGM (procedure) here?
-								const resolvedObject = this.searchForObject({systemName: simpleName.toUpperCase(), type: `FILE`}, ileObject);
+								const resolvedObject = this.searchForAnyObject({name: simpleName, types: [`FILE`, `SRVPGM`, `PGM`]});
 								if (resolvedObject) newTarget.deps.push(resolvedObject);
 								else {
 									this.logger.fileLog(newTarget.relativePath, {
