@@ -27,10 +27,10 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Check objects are generated`, async () => {
-    expect(targets.getResolvedObjects().length).toBe(12);
-    expect(targets.getTargets().length).toBe(13);
+    expect(targets.getResolvedObjects().length).toBe(13);
+    expect(targets.getTargets().length).toBe(14);
     expect(targets.getTargetsOfType(`FILE`).length).toBe(4);
-    expect(targets.getTargetsOfType(`PGM`).length).toBe(3);
+    expect(targets.getTargetsOfType(`PGM`).length).toBe(4);
     expect(targets.getTargetsOfType(`MODULE`).length).toBe(2);
     expect(targets.getTargetsOfType(`SRVPGM`).length).toBe(3);
   });
@@ -300,7 +300,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     const allTarget = headerContent.find(l => l.startsWith(`all:`));
     expect(allTarget).toBeDefined();
 
-    expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/EMPLOYEES.PGM $(PREPATH)/DEPTS.PGM $(PREPATH)/GETTOTSAL.SRVPGM`);
+    expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/EMPLOYEES.PGM $(PREPATH)/DEPTS.PGM $(PREPATH)/SHOWEMPS.PGM $(PREPATH)/GETTOTSAL.SRVPGM`);
     
     const deptsTargetDeps = headerContent.find(l => l.startsWith(`$(PREPATH)/DEPTS.PGM:`));
     expect(deptsTargetDeps).toBeDefined();
@@ -320,7 +320,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     const allTarget = headerContent.find(l => l.startsWith(`all:`));
     expect(allTarget).toBeDefined();
 
-    expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/EMPLOYEES.PGM $(PREPATH)/DEPTS.PGM $(PREPATH)/GETTOTSAL.SRVPGM`);
+    expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/EMPLOYEES.PGM $(PREPATH)/DEPTS.PGM $(PREPATH)/SHOWEMPS.PGM $(PREPATH)/GETTOTSAL.SRVPGM`);
     
     const deptsTargetDeps = headerContent.find(l => l.startsWith(`$(PREPATH)/DEPTS.PGM:`));
     expect(deptsTargetDeps).toBeUndefined();
@@ -332,10 +332,13 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
     const impactTree = targets.getImpactFor(empPgm);
     expect(impactTree.ileObject.systemName).toBe(`EMPLOYEES`);
-    expect(impactTree.children.length).toBe(1);
+    expect(impactTree.children.length).toBe(2);
 
     // Because DEPTS calls the EMPLOYEES program, so if EMPLOYEES changes, DEPTS needs a rebuild
     expect(impactTree.children[0].ileObject.systemName).toBe(`DEPTS`);
+
+    // Because SHOWEMPS calls the EMPLOYEES program, so if EMPLOYEES changes, SHOWEMPS needs a rebuild
+    expect(impactTree.children[1].ileObject.systemName).toBe(`SHOWEMPS`);
   });
 
   test(`Impact of UTILS`, () => {
