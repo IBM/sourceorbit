@@ -11,7 +11,7 @@ export function initialiseTaskProvider(context: ExtensionContext) {
 			provideTasks: () => {
 				return [];
 			},
-			resolveTask(_task, token) {
+			resolveTask(_task, _token) {
 				const task = _task.definition as SourceOrbitTask;
 				// A Rake task consists of a task and an optional file as specified in RakeTaskDefinition
 				// Make sure that this looks like a Rake task by checking that there is a task.
@@ -31,14 +31,14 @@ export function initialiseTaskProvider(context: ExtensionContext) {
 							const term: Pseudoterminal = {
 								onDidWrite: writeEmitter.event,
 								onDidClose: closeEmitter.event,
-								open: async (initialDimensions: TerminalDimensions | undefined) => {
+								open: async (_initialDimensions: TerminalDimensions | undefined) => {
 									writeEmitter.fire(`Generating ${task.builder} files for ${workspaceFolder.name}...\r\n`);
 									try {
 										await generateBuildFile(workspaceFolder, task.builder);
 										
 										writeEmitter.fire(`Finished\r\n`);
 										closeEmitter.fire(0);
-									} catch (e) {
+									} catch (_e) {
 										writeEmitter.fire(`Failed\r\n`);
 										writeEmitter.fire(JSON.stringify(e, null, 2) + `\r\n`);
 										closeEmitter.fire(1);
