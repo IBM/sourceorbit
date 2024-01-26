@@ -27,12 +27,12 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Check objects are generated`, async () => {
-    expect(targets.getResolvedObjects().length).toBe(13);
-    expect(targets.getTargets().length).toBe(14);
+    expect(targets.getResolvedObjects().length).toBe(14);
+    expect(targets.getTargets().length).toBe(15);
     expect(targets.getTargetsOfType(`FILE`).length).toBe(4);
     expect(targets.getTargetsOfType(`PGM`).length).toBe(4);
     expect(targets.getTargetsOfType(`MODULE`).length).toBe(2);
-    expect(targets.getTargetsOfType(`SRVPGM`).length).toBe(3);
+    expect(targets.getTargetsOfType(`SRVPGM`).length).toBe(4);
   });
 
   test(`Check mypgm`, async () => {
@@ -96,6 +96,23 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     expect(empPgm.systemName).toBe(`UTILS`);
     expect(empPgm.type).toBe(`MODULE`);
     expect(empPgm.relativePath).toBe(path.join(`qrpglesrc`, `utils.sqlrpgle`));
+  });
+
+  test(`Check getDouble`, async () => {
+    const theObj = targets.getTarget({systemName: `GETDOUBLE`, type: `SRVPGM`});
+    expect(theObj.relativePath).toBe(path.join(`qsqlsrc`, `getDouble.sql`));
+
+    expect(theObj.deps.length).toBe(1);
+
+    const dep = theObj.deps[0];
+    expect(dep.systemName).toBe(`BANKING`);
+    expect(dep.type).toBe(`SRVPGM`);
+    expect(dep.relativePath).toBe(path.join(`qsrvsrc`, `banking.bnd`));
+
+    const logs = targets.logger.getLogsFor(theObj.relativePath);
+    expect(logs.length).toBe(1);
+    expect(logs[0].message).toBe(`Extension should be based on type. Suggested name is 'getdouble.sqludf'`);
+    expect(logs[0].type).toBe(`warning`);
   });
 
   test(`Check binding directory`, async () => {
@@ -389,6 +406,11 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
     expect(resolvedObject.deps.length).toBe(1);
     expect(resolvedObject.deps[0].systemName).toBe(`EMPLOYEE`);
+
+    const logs = targets.logger.getLogsFor(resolvedObject.relativePath);
+    expect(logs.length).toBe(1);
+    expect(logs[0].message).toBe(`Extension should be based on type. Suggested name is 'gettotsal.sqludf'`);
+    expect(logs[0].type).toBe(`warning`);
 
     const functionMake = MakeProject.generateSpecificTarget(makeDefaults.compiles[`sqludf`], resolvedObject);
     expect(functionMake.length).toBe(4);
