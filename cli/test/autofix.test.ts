@@ -46,7 +46,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
     change: {
       rename: {
         path: path.join(cwd, `qsqlsrc`, `super_long_dept_name.sql`),
-        newName: "dept.table",
+        newName: "super_long_dept_name.table",
       },
     },
   });

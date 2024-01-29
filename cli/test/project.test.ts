@@ -397,7 +397,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     // from regular objects.
 
     const resolvedObject = targets.getTarget({systemName: `GETTOTSAL`, type: `SRVPGM`});
-    expect(resolvedObject.relativePath).toBe(path.join(`qsqlsrc`, `getTotalSalary.sql`));
+    expect(resolvedObject.relativePath).toBe(path.join(`qsqlsrc`, `getTotalSalary.sqludf`));
 
     expect(resolvedObject).toBeDefined();
     expect(resolvedObject.systemName).toBe(`GETTOTSAL`);
@@ -408,14 +408,14 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     expect(resolvedObject.deps[0].systemName).toBe(`EMPLOYEE`);
 
     const logs = targets.logger.getLogsFor(resolvedObject.relativePath);
-    expect(logs.length).toBe(1);
-    expect(logs[0].message).toBe(`Extension should be based on type. Suggested name is 'gettotsal.sqludf'`);
-    expect(logs[0].type).toBe(`warning`);
+    expect(logs.length).toBe(0);
+    // expect(logs[0].message).toBe(`Extension should be based on type. Suggested name is 'getTotalSalary.sqludf'`);
+    // expect(logs[0].type).toBe(`warning`);
 
     const functionMake = MakeProject.generateSpecificTarget(makeDefaults.compiles[`sqludf`], resolvedObject);
     expect(functionMake.length).toBe(4);
-    expect(functionMake[0]).toBe(`$(PREPATH)/GETTOTSAL.SRVPGM: qsqlsrc/getTotalSalary.sql`);
-    expect(functionMake[3]).toBe(`\tsystem "RUNSQLSTM SRCSTMF('qsqlsrc/getTotalSalary.sql') COMMIT(*NONE)" > .logs/gettotsal.splf`);
+    expect(functionMake[0]).toBe(`$(PREPATH)/GETTOTSAL.SRVPGM: qsqlsrc/getTotalSalary.sqludf`);
+    expect(functionMake[3]).toBe(`\tsystem "RUNSQLSTM SRCSTMF('qsqlsrc/getTotalSalary.sqludf') COMMIT(*NONE)" > .logs/gettotsal.splf`);
   })
 
   test(`Generate makefile`, () => {

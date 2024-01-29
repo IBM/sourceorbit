@@ -805,7 +805,7 @@ export class Targets {
 
 						// Creates should be in their own unique file
 						case StatementType.Create:
-							let hasLongName = mainDef.object.name || mainDef.object.system;
+							let hasLongName = mainDef.object.name && mainDef.object.name.length > 10 ? mainDef.object.name : undefined;
 							let objectName = mainDef.object.system || trimQuotes(mainDef.object.name, `"`);
 
 							const extension = pathDetail.ext.substring(1);
@@ -820,22 +820,21 @@ export class Targets {
 							}
 
 							let suggestRename = false;
-							const sqlFileName = pathDetail.name.toUpperCase();
+							const sqlFileName = pathDetail.name;
 
+							// First check the file name
 							if (ileObject.systemName.length <= 10) {
-								if (sqlFileName.length > 10) {
-									suggestRename = true;
-								}
-
-								if (ileObject.systemName.toUpperCase() !== sqlFileName) {
+								if (ileObject.systemName.toUpperCase() !== sqlFileName.toUpperCase() && ileObject.longName !== sqlFileName) {
 									suggestRename = true;
 								}
 							}
 
+							// Then make an extension suggestion
 							if (extension.toUpperCase() === `SQL` && mainDef.createType) {
 								suggestRename = true;
 							}
 
+							// Let them know to use a system name in the create statement if one is not present
 							if (ileObject.systemName.length > 10 && mainDef.object.system === undefined) {
 								this.logger.fileLog(ileObject.relativePath, {
 									message: `${ileObject.systemName} (${ileObject.type}) name is longer than 10 characters. Consider using 'FOR SYSTEM NAME' in the CREATE statement.`,
@@ -900,7 +899,7 @@ export class Targets {
 								const newExtension = sqlTypeExtension[mainDef.createType.toUpperCase()];
 
 								if (newExtension) {
-									const possibleName = ileObject.systemName.toLowerCase() + `.` + newExtension;
+									const possibleName = (ileObject.longName ? ileObject.longName : ileObject.systemName.toLowerCase()) + `.` + newExtension;
 
 									if (this.suggestions.renames) {
 										const renameLogPath = relativePath;
