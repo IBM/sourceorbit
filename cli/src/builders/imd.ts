@@ -142,7 +142,7 @@ export class ImpactMarkdown {
   getObjectList() {
     let lines = [];
 
-    lines.push(`| - | Object | Type | Path | Warnings | Children | Parents |`);
+    lines.push(`| - | Object | Type | Path | Warnings | Parents | Children |`);
     lines.push(`| --- | --- | --- | --- | --- | --- | --- |`);
 
     this.targets.getResolvedObjects().forEach(ileObject => {
@@ -157,10 +157,12 @@ export class ImpactMarkdown {
         ileObject.type,
         `\`${ileObject.relativePath}\``,
         ImpactMarkdown.createLogExpand(logs),
-        ImpactMarkdown.createObjectExpand(children),
-        ImpactMarkdown.createObjectExpand(parents)
+        ImpactMarkdown.createObjectExpand(parents),
+        ImpactMarkdown.createObjectExpand(children)
       ].join(' | ') + ` |`);
     });
+    
+    lines.push(``, `* *Parents* are objects that depend on this object.`, `* *Children* are objects that this object depends on.`);
 
     return lines;
   }
