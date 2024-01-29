@@ -11,7 +11,6 @@ import { ImpactMarkdown } from "./builders/imd";
 import { allExtensions } from "./extensions";
 import { getBranchLibraryName } from "./builders/environment";
 import { getFiles, renameFiles, replaceIncludes } from './utils';
-import { MarkdownListing } from './builders/mdl';
 
 const isCli = process.argv.length >= 2 && process.argv[1].endsWith(`so`);
 
@@ -230,11 +229,6 @@ async function main() {
 		case `imd`:
 			const impactMarkdown = new ImpactMarkdown(cwd, targets, cliSettings.lookupFiles);
 			writeFileSync(path.join(cwd, `impact.md`), impactMarkdown.getContent().join(`\n`));
-			break;
-
-		case `mdl`:
-			const markdownList = new MarkdownListing(cwd, targets);
-			writeFileSync(path.join(cwd, `list.md`), markdownList.getContent().join(`\n`));
 			break;
 
 		case `json`:

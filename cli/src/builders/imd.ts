@@ -1,73 +1,105 @@
 import path from 'path';
 import { ILEObject, Targets } from '../targets';
+import { FileLog } from '../logger';
 
 const TypeEmoji = {
-  "PGM": ":hammer_and_pick:",
-  "SRVPGM": ":package:",
-  "MODULE": ":pick:",
-  "FILE": ":open_file_folder:",
-  "BNDDIR": ":closed_book:",
-  "MENU": ":scroll:",
-  "DTAARA": ":page_with_curl:",
-  "CMD": ":desktop_computer:"
+  "PGM": "🛠️",
+  "SRVPGM": "📦",
+  "MODULE": "⛏️",
+  "FILE": "📁",
+  "BNDDIR": "📒",
+  "MENU": "📜",
+  "DTAARA": "📃",
+  "CMD": "⌨️"
 }
 
 const LogEmoji = {
-  'warning': `:warning:`,
-  'info': `:information_source:`
+  'warning': `⚠️`,
+  'info': `ℹ️`,
+  'none': `✅`
 }
 
 export class ImpactMarkdown {
-	constructor(private cwd: string, private targets: Targets, private relativePaths: string[]) { }
+  constructor(private cwd: string, private targets: Targets, private relativePaths: string[]) { }
 
   getContent() {
-    let lines: string[] = [`## Impact Analysis`, ``];
+    let lines: string[] = [];
 
-    const possibleObjects = this.relativePaths.map(r => this.targets.getResolvedObject(path.join(this.cwd, r))).filter(x => x && x.relativePath);
+    // First let's build a touched objects list
 
-    lines.push(
-      `Touched objects: `, ``, 
-      ...possibleObjects.map(ileObject => `* ${TypeEmoji[ileObject.type] || `:question:`} \`${ileObject.systemName}.${ileObject.type}\`: \`${ileObject.relativePath}\``), 
-      ``,
-      `---`,
-      ``
-    );
+    if (this.relativePaths.length > 0) {
+      lines.push(`## Impact Analysis`, ``);
 
-    for (const ileObject of possibleObjects) {
-      const newLines = this.getImpactFor(ileObject);
+      const possibleObjects = this.relativePaths.map(r => this.targets.getResolvedObject(path.join(this.cwd, r))).filter(x => x && x.relativePath);
 
       lines.push(
-        `#### \`${ileObject.systemName}.${ileObject.type}\``,
+        `Touched objects: `, ``,
+        ...possibleObjects.map(ileObject => `* ${TypeEmoji[ileObject.type] || `❔`} \`${ileObject.systemName}.${ileObject.type}\`: \`${ileObject.relativePath}\``),
         ``,
-        ...newLines,
+        `---`,
         ``
-      )
-    }
+      );
 
-    lines.push(
-      `## Messages`,
-      ``
-    );
+      // Then for each of those, we print the impact
 
-    let hasShownMessages = false;
+      for (const ileObject of possibleObjects) {
+        const newLines = this.getImpactFor(ileObject);
 
-    for (const relativePath in this.relativePaths) {
-      const fileLogs = this.targets.logger.getLogsFor(path.join(this.cwd, relativePath))
-
-      if (fileLogs && fileLogs.length > 0) {
-        hasShownMessages = true;
         lines.push(
-          `##### \`${relativePath}\``,
+          `### \`${ileObject.systemName}.${ileObject.type}\``,
           ``,
-          ...fileLogs.map(log => `* ${LogEmoji[log.type] || `:grey_question:`} ${log.message}`),
+          `<details><summary>Click to expand</summary><br>`,
+          ``,
+          ...newLines,
+          ``,
+          `</details>`,
           ``
         )
       }
+
+      // Then we add any messages from the logger
+
+      lines.push(
+        `## Messages`,
+        ``
+      );
+
+      let hasShownMessages = false;
+
+      for (const relativePath in this.relativePaths) {
+        const fileLogs = this.targets.logger.getLogsFor(path.join(this.cwd, relativePath))
+
+        if (fileLogs && fileLogs.length > 0) {
+          hasShownMessages = true;
+          lines.push(
+            `##### \`${relativePath}\``,
+            ``,
+            ...fileLogs.map(log => `* ${LogEmoji[log.type] || `❔`} ${log.message}`),
+            ``
+          )
+        }
+      }
+
+      if (!hasShownMessages) {
+        lines.push(`No messages to show.`);
+      }
+
+      lines.push(``, `---`, ``);
     }
 
-    if (!hasShownMessages) {
-      lines.push(`No messages to show.`);
-    }
+    // Then let's add full project listing for reference
+
+    lines.push(
+      ``,
+      `## Project Listing`,
+      ``,
+      `<details><summary>Click to expand</summary><br>`,
+      ``,
+      ...this.getObjectList(),
+      ``,
+      `</details>`,
+      ``,
+    )
 
     return lines;
   }
@@ -77,24 +109,24 @@ export class ImpactMarkdown {
 
     const allDeps = this.targets.getTargets();
     let currentTree: ILEObject[] = [];
-  
+
     function lookupObject(ileObject: ILEObject) {
-      lines.push(`${''.padEnd(currentTree.length, `\t`)}* ${TypeEmoji[ileObject.type] || `:question:`} \`${ileObject.systemName}.${ileObject.type}\` (${ileObject.relativePath ? `\`${ileObject.relativePath}\`` : `no source`})`);
-  
+      lines.push(`${''.padEnd(currentTree.length, `\t`)}* ${TypeEmoji[ileObject.type] || `❔`} \`${ileObject.systemName}.${ileObject.type}\` (${ileObject.relativePath ? `\`${ileObject.relativePath}\`` : `no source`})`);
+
       currentTree.push(ileObject);
-  
+
       for (const target of allDeps) {
         const containsLookup = target.deps.some(d => d.systemName === ileObject.systemName && d.type === ileObject.type);
         const circular = currentTree.some(d => d.systemName === target.systemName && d.type === target.type);
-  
+
         if (containsLookup && !circular) {
           lookupObject(target);
         }
       }
-  
+
       currentTree.pop();
     }
-  
+
     lookupObject(theObject);
 
     if (lines.length === 1) {
@@ -105,5 +137,45 @@ export class ImpactMarkdown {
     }
 
     return lines;
+  }
+
+  getObjectList() {
+    let lines = [];
+
+    lines.push(`| - | Object | Type | Path | Warnings | Children | Parents |`);
+    lines.push(`| --- | --- | --- | --- | --- | --- | --- |`);
+
+    this.targets.getResolvedObjects().forEach(ileObject => {
+
+      let logs = this.targets.logger.getLogsFor(ileObject.relativePath);
+      let parents = this.targets.getTargets().filter(t => t.deps.some(d => d.systemName === ileObject.systemName && d.type === ileObject.type));
+      let children = this.targets.getTarget(ileObject).deps;
+
+      lines.push(`| ` + [
+        TypeEmoji[ileObject.type] || `❔`,
+        ileObject.systemName,
+        ileObject.type,
+        `\`${ileObject.relativePath}\``,
+        ImpactMarkdown.createLogExpand(logs),
+        ImpactMarkdown.createObjectExpand(children),
+        ImpactMarkdown.createObjectExpand(parents)
+      ].join(' | ') + ` |`);
+    });
+
+    return lines;
+  }
+
+  static createObjectExpand(objs: ILEObject[]) {
+    return objs.length === 0 ? `0` : `<details><summary>${objs.length}</summary>${objs.map(o => `${o.systemName}.${o.type}`).join(`, `)}</details>`;
+  }
+
+  static createLogExpand(logs: FileLog[]) {
+    let logIcon = LogEmoji.none;
+
+    if (logs.length > 0) {
+      logIcon = logs.some(l => l.type === 'warning') ? LogEmoji.warning : LogEmoji.info;
+    }
+
+    return logs.length === 0 ? `${logIcon}` : `<details><summary>${logIcon}</summary><br>${logs.map(o => o.message).join(`<br>`)}</details>`;
   }
 }
