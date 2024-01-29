@@ -21,6 +21,18 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
 
 	targets.resolveBinder();
 
+  // Ensure we can find by system name
+  expect(targets.searchForObject({systemName: `DEPT`, type: `FILE`}, undefined)).toBeDefined();
+
+  const bySystemNameA = targets.searchForAnyObject({name: `DEPT`, types: [`FILE`]});
+  expect(bySystemNameA).toBeDefined();
+  // And by long name
+  const byLongNameA = targets.searchForAnyObject({name: `super_long_dept_name`, types: [`FILE`]});
+  expect(byLongNameA).toBeDefined();
+
+  // In theory they should be the same
+  expect(bySystemNameA).toStrictEqual(byLongNameA);
+
   const oldPrograms = targets.getTargetsOfType(`PGM`);
   expect(oldPrograms.length).toBe(0); //Because the initial project extension is wrong
 
@@ -31,7 +43,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
   const payroll = allLogs[path.join(`qrpglesrc`, `payroll.rpgle`)];
   const empmst = allLogs[path.join(`qsqlsrc`, `empmst.sql`)];
   const emp = allLogs[path.join(`qsqlsrc`, `emp.sql`)];
-  const dept = allLogs[path.join(`qsqlsrc`, `super_long_dept_name.sql`)];
+  const dept = allLogs[path.join(`qsqlsrc`, `dept.sql`)];
 
   expect(emp.length).toBe(1);
   expect(emp[0].message).toBe(`SUPER_LONG_EMP_NAME (FILE) name is longer than 10 characters. Consider using 'FOR SYSTEM NAME' in the CREATE statement.`);
@@ -45,7 +57,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
     type: "rename",
     change: {
       rename: {
-        path: path.join(cwd, `qsqlsrc`, `super_long_dept_name.sql`),
+        path: path.join(cwd, `qsqlsrc`, `dept.sql`),
         newName: "super_long_dept_name.table",
       },
     },
@@ -105,6 +117,15 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
 	await Promise.allSettled(newFiles.map(f => targets.parseFile(f)));
 
 	targets.resolveBinder();
+
+  const bySystemNameB = targets.searchForAnyObject({name: `DEPT`, types: [`FILE`]});
+  expect(bySystemNameB).toBeDefined();
+  // And by long name
+  const byLongNameB = targets.searchForAnyObject({name: `super_long_dept_name`, types: [`FILE`]});
+  expect(byLongNameB).toBeDefined();
+
+  // In theory they should be the same
+  expect(bySystemNameB).toStrictEqual(byLongNameB);
 
   const newPrograms = targets.getTargetsOfType(`PGM`);
   expect(newPrograms.length).toBe(1); //Because the extension was fixed
