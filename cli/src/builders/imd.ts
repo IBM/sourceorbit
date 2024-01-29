@@ -1,4 +1,3 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
 import path from 'path';
 import { ILEObject, Targets } from '../targets';
 

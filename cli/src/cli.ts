@@ -1,5 +1,5 @@
 
-export type BuildFiles = "none" | "make" | "bob" | "imd" | "json";
+export type BuildFiles = "none" | "make" | "bob" | "imd" | "mdl" | "json";
 
 export let cliSettings = {
 	cliMode: false,
