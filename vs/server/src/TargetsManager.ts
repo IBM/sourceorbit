@@ -57,7 +57,7 @@ export class TargetsManager {
     this.projects[url] = targets;
   }
 
-  static destory(workspaceUri: string) {
+  static destroy(workspaceUri: string) {
     const uri = URI.parse(workspaceUri);
     const url = uri.fsPath;
 
