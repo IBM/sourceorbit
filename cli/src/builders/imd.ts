@@ -66,8 +66,8 @@ export class ImpactMarkdown {
 
       let hasShownMessages = false;
 
-      for (const relativePath in this.relativePaths) {
-        const fileLogs = this.targets.logger.getLogsFor(path.join(this.cwd, relativePath))
+      for (const relativePath of this.relativePaths) {
+        const fileLogs = this.targets.logger.getLogsFor(relativePath)
 
         if (fileLogs && fileLogs.length > 0) {
           hasShownMessages = true;
