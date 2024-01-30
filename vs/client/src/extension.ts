@@ -8,12 +8,13 @@ import {
 	ServerOptions,
 	TransportKind
 } from 'vscode-languageclient/node';
-import { fixProject, reloadProject, setClient } from './requests';
+import { fixProject, generateBuildFile, reloadProject, setClient } from './requests';
 import { getProjectExplorer, getProjectManager, loadIBMiProjectExplorer } from './ProjectExplorer';
 import { ILEObjectTreeItem, ObjectsView } from './views/objectView';
 import { IProject } from '@ibm/vscode-ibmi-projectexplorer-types/iproject';
 import { ImpactView } from './views/impactView';
 import { getDeployGitFiles as getChanged, getDeployGitFiles as getChangedFiles, getGitAPI, lastBranch } from './git';
+import { initialiseTaskProvider } from './tasks';
 
 let client: LanguageClient;
 
@@ -120,6 +121,8 @@ export function activate(context: ExtensionContext) {
 		}
 	}
 
+	initialiseTaskProvider(context);
+	
 	context.subscriptions.push(
 		commands.registerCommand(`vscode-sourceorbit.objects.loadProject`, async (node: ObjectsView) => {
 			if (node) {
@@ -154,8 +157,17 @@ export function activate(context: ExtensionContext) {
 				});
 			}
 		})),
-		commands.registerCommand(`vscode-sourceorbit.autoFix`, (workspaceFolder: WorkspaceFolder, type: "includes" | "renames") => {
-			return fixProject(workspaceFolder, type);
+		commands.registerCommand(`vscode-sourceorbit.autoFix`, (workspaceFolder?: WorkspaceFolder, type?: "includes" | "renames") => {
+			if (workspaceFolder && type) {
+				return fixProject(workspaceFolder, type);
+			}
+		}),
+		
+		commands.registerCommand(`vscode-sourceorbit.generateBuildFile`, async (workspaceFolder?: WorkspaceFolder, type?: string) => {
+			if (workspaceFolder && type) {
+				await generateBuildFile(workspaceFolder, type);
+				enableViews();
+			}
 		}),
 
 		window.registerTreeDataProvider(`activeImpactView`, activeImpactView),

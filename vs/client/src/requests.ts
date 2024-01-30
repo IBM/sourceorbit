@@ -47,3 +47,9 @@ export function fixProject(workspaceFolder: WorkspaceFolder, suggestion: string)
 	
 	return client.sendRequest(`fixProject`, [workspaceFolder.uri.toString(), suggestion]);
 }
+
+export function generateBuildFile(workspaceFolder: WorkspaceFolder, type: string) {
+	if (!client) return;
+	
+	return client.sendRequest(`generateBuildFile`, [workspaceFolder.uri.toString(), type]);
+}
