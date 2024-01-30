@@ -110,7 +110,7 @@ export async function fixProject(workspaceUri: string, suggestions: TargetSugges
 	} finally {
 		progress.done();
 		// Let's reinitialised the project when we're done.
-		initAndRefresh(workspaceUri);
+		await initAndRefresh(workspaceUri);
 	}
 
 }
