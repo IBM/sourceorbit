@@ -36,7 +36,7 @@ export function setupRequestHandler(connection: Connection) {
 		return initAndRefresh(params[0]);
 	});
 
-	connection.onRequest(`fixProject`, async (params: [string, keyof TargetSuggestions]) => {
+	connection.onRequest(`fixProject`, (params: [string, keyof TargetSuggestions]) => {
 		const suggestions: TargetSuggestions = {};
 
 		suggestions[params[1]] = true;
