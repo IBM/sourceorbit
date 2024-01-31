@@ -65,50 +65,125 @@ export class MakeProject {
 				},
 				"pgm.rpgle": {
 					becomes: `PGM`,
-					command: `CRTBNDRPG PGM($(BIN_LIB)/$*) SRCSTMF('$<') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)`
+					command: `CRTBNDRPG`,
+					parameters: {
+						pgm: `$(BIN_LIB)/$*`,
+						srcstmf: `'$<'`,
+						option: `*EVENTF`,
+						dbgview: `*SOURCE`,
+						tgtrls: `*CURRENT`,
+						tgtccsid: `*JOB`,
+						bnddir: `$(BNDDIR)`,
+						dftactgrp: `*NO`
+					}
 				},
 				"pgm.sqlrpgle": {
 					becomes: "PGM",
-					command: `CRTSQLRPGI OBJ($(BIN_LIB)/$*) SRCSTMF('$<') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)')`
+					command: `CRTSQLRPGI`,
+					parameters: {
+						obj: `$(BIN_LIB)/$*`,
+						srcstmf: `'$<'`,
+						commit: `*NONE`,
+						dbgview: `*SOURCE`,
+						option: `*EVENTF`,
+						rpgppopt: `*LVL2`,
+						compileopt: `TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)`
+					}
 				},
 				"rpgle": {
 					becomes: `MODULE`,
-					command: `CRTRPGMOD MODULE($(BIN_LIB)/$*) SRCSTMF('$<') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB)`
+					command: `CRTRPGMOD`,
+					parameters: {
+						module: `$(BIN_LIB)/$*`,
+						srcstmf: `'$<'`,
+						option: `*EVENTF`,
+						dbgview: `*SOURCE`,
+						tgtrls: `*CURRENT`,
+						tgtccsid: `*JOB`
+					}
 				},
 				"sqlrpgle": {
 					becomes: "MODULE",
-					command: `CRTSQLRPGI OBJ($(BIN_LIB)/$*) SRCSTMF('$<') COMMIT(*NONE) DBGVIEW(*SOURCE) COMPILEOPT('TGTCCSID(*JOB)') RPGPPOPT(*LVL2) OPTION(*EVENTF) OBJTYPE(*MODULE)`
+					command: `CRTSQLRPGI`,
+					parameters: {
+						obj: `$(BIN_LIB)/$*`,
+						srcstmf: `'$<'`,
+						commit: `*NONE`,
+						dbgview: `*SOURCE`,
+						compileopt: `'TGTCCSID(*JOB)'`,
+						rpgppopt: `*LVL2`,
+						option: `*EVENTF`,
+						objtype: `*MODULE`
+					}
 				},
 				"pgm.clle": {
 					becomes: `PGM`,
-					command: `CRTBNDCL PGM($(BIN_LIB)/$*) SRCSTMF('$<') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) DFTACTGRP(*no)`
+					command: `CRTBNDCL`,
+					parameters: {
+						pgm: `$(BIN_LIB)/$*`,
+						srcstmf: `'$<'`,
+						option: `*EVENTF`,
+						dbgview: `*SOURCE`,
+						tgtrls: `*CURRENT`,
+						dftactgrp: `*NO`
+					}
 				},
 				dspf: {
 					becomes: "FILE",
 					member: true,
-					command: "CRTDSPF FILE($(BIN_LIB)/$*) SRCFILE($(BIN_LIB)/$(SRCPF)) SRCMBR($*) OPTION(*EVENTF)"
+					command: "CRTDSPF",
+					parameters: {
+						file: `$(BIN_LIB)/$*`,
+						srcfile: `$(BIN_LIB)/$(SRCPF)`,
+						srcmbr: `$*`,
+						option: `*EVENTF`
+					}
 				},
 				prtf: {
 					becomes: "FILE",
 					member: true,
-					command: "CRTPRTF FILE($(BIN_LIB)/$*) SRCFILE($(BIN_LIB)/$(SRCPF)) SRCMBR($*) OPTION(*EVENTF)"
+					command: "CRTPRTF FILE($(BIN_LIB)/$*)",
+					parameters: {
+						file: `$(BIN_LIB)/$*`,
+						srcfile: `$(BIN_LIB)/$(SRCPF)`,
+						srcmbr: `$*`,
+						option: `*EVENTF`
+					}
 				},
 				cmd: {
 					becomes: "CMD",
 					member: true,
-					command: "CRTCMD CMD($(BIN_LIB)/$*) PGM($(BIN_LIB)/$*) SRCFILE($(BIN_LIB)/$(SRCPF)) OPTION(*EVENTF)"
+					command: "CRTCMD",
+					parameters: {
+						cmd: `$(BIN_LIB)/$*`,
+						pgm: `$(BIN_LIB)/$*`,
+						srcfile: `$(BIN_LIB)/$(SRCPF)`,
+						option: `*EVENTF`
+					}
 				},
 				sql: {
 					becomes: `FILE`,
-					command: `RUNSQLSTM SRCSTMF('$<') COMMIT(*NONE)`
+					command: `RUNSQLSTM`,
+					parameters: {
+						srcstmf: `'$<'`,
+						commit: `*NONE`
+					}
 				},
 				sqludf: {
 					becomes: `SRVPGM`,
-					command: `RUNSQLSTM SRCSTMF('$<') COMMIT(*NONE)`
+					command: `RUNSQLSTM`,
+					parameters: {
+						srcstmf: `'$<'`,
+						commit: `*NONE`
+					}
 				},
 				table: {
 					becomes: `FILE`,
-					command: `RUNSQLSTM SRCSTMF('$<') COMMIT(*NONE)`
+					command: `RUNSQLSTM`,
+					parameters: {
+						srcstmf: `'$<'`,
+						commit: `*NONE`
+					}
 				},
 				binder: binderSourceCompile,
 				bnd: binderSourceCompile,
@@ -119,7 +194,13 @@ export class MakeProject {
 						`-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/$*))"`,
 						`-system "DLTOBJ OBJ($(BIN_LIB)/$*) OBJTYPE(*SRVPGM)"`
 					],
-					command: `CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE(*MODULES) SRCSTMF('$<') BNDDIR($(BNDDIR))`,
+					command: `CRTSRVPGM`,
+					parameters: {
+						srvpgm: `$(BIN_LIB)/$*`,
+						module: `*MODULES`,
+						srcstmf: `'$<'`,
+						bnddir: `$(BNDDIR)`
+					},
 					postCommands: [
 						`-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/$* *SRVPGM *IMMED))"`
 					]
@@ -139,17 +220,32 @@ export class MakeProject {
 				mnucmd: {
 					becomes: `MENU`,
 					member: true,
-					command: `CRTMNU MENU($(BIN_LIB)/$*) TYPE(*DSPF) DSPF($(BIN_LIB)/$*)`
+					command: `CRTMNU`,
+					parameters: {
+						menu: `$(BIN_LIB)/$*`,
+						type: `*DSPF`,
+						dspf: `$(BIN_LIB)/$*`
+					}
 				},
 				pf: {
 					becomes: `FILE`,
 					member: true,
-					command: `CRTPF FILE($(BIN_LIB)/$*) SRCFILE($(BIN_LIB)/$(SRCPF)) OPTION(*EVENTF)`
+					command: `CRTPF`,
+					parameters: {
+						file: `$(BIN_LIB)/$*`,
+						srcfile: `$(BIN_LIB)/$(SRCPF)`,
+						option: `*EVENTF`
+					}
 				},
 				lf: {
 					becomes: `FILE`,
 					member: true,
-					command: `CRTLF FILE($(BIN_LIB)/$*) SRCFILE($(BIN_LIB)/$(SRCPF)) OPTION(*EVENTF)`
+					command: `CRTLF`,
+					parameters: {
+						file: `$(BIN_LIB)/$*`,
+						srcfile: `$(BIN_LIB)/$(SRCPF)`,
+						option: `*EVENTF`
+					}
 				}
 			}
 		};
@@ -339,7 +435,7 @@ export class MakeProject {
 							[
 								`\tliblist -c $(BIN_LIB);\\`,
 								`\tliblist -a $(LIBL);\\`,
-								`\tsystem "${data.command}"` // TODO: write the spool file somewhere?
+								`\tsystem "${toCl(data.command, data.parameters)}"` // TODO: write the spool file somewhere?
 							]
 							: []
 						),
@@ -415,7 +511,14 @@ const binderSourceCompile: CompileData = {
 		// `-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/$*))"`,
 		// `-system "DLTOBJ OBJ($(BIN_LIB)/$*) OBJTYPE(*SRVPGM)"`
 	],
-	command: `CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE(*MODULES) SRCSTMF('$<') BNDDIR($(BNDDIR)) REPLACE(*YES)`,
+	command: `CRTSRVPGM`,
+	parameters: {
+		srvpgm: `$(BIN_LIB)/$*`,
+		module: `*MODULES`,
+		srcstmf: `'$<'`,
+		bnddir: `$(BNDDIR)`,
+		replace: `*YES`
+	},
 	postCommands: [
 		`-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/$* *SRVPGM *IMMED))"`
 	]
