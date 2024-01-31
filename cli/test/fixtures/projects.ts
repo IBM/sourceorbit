@@ -48,6 +48,17 @@ export function setupMultiModule() {
   return projectPath;
 }
 
+export function setupPseudo() {
+  const fixturePath = path.join(__dirname, `pseudo`);
+  const projectPath = path.join(projectFolder, `pseudo`);
+
+  deleteDir(projectPath);
+  mkdir(projectPath);
+  fs.cpSync(fixturePath, projectPath, {recursive: true});
+
+  return projectPath;
+}
+
 export function createTestBuildScript() {
   const lines = [
     `# First build company system`,
