@@ -1,7 +1,20 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { ILEObject, ILEObjectTarget, ImpactedObject, ObjectType, Targets } from '../targets';
-import { asPosix, toCl } from '../utils';
+import { asPosix, getFiles, toCl } from '../utils';
+import { warningOut } from '../cli';
+import { name } from '../../webpack.config';
+
+// Always try and store parmId as lowercase
+type CommandParameters = {[parmId: string]: string};
+
+interface FolderOptions {
+	version?: "0.0.1",
+	options?: {
+		objLib?: string,
+		tgtCcsid?: string
+	}
+}
 
 interface CompileData {
 	/** indicates what type of object will be built from this source */
@@ -13,7 +26,7 @@ interface CompileData {
 	/** `command` does respect the library list */
 	command?: string;
 	
-	parameters?: {[parmId: string]: string};
+	parameters?: CommandParameters;
 	/** Used if the commands are built up from source. Usually means `command` and `commands` is blank */
 	commandSource?: boolean;
 	/** `postCommands` do not respect the library list and is run after 'command' */
@@ -29,11 +42,15 @@ interface iProject {
 	includePaths?: string[];
 	compiles?: { [ext: string]: CompileData },
 	binders?: string[];
+	objectAttributes?: {
+		[object: string]: CommandParameters
+	}
 }
 
 export class MakeProject {
 	private noChildren: boolean = false;
 	private settings: iProject;
+	private folderSettings: {[folder: string]: FolderOptions} = {};
 
 	constructor(private cwd: string, private targets: Targets) {
 		this.settings = MakeProject.getDefaultSettings();
@@ -252,13 +269,103 @@ export class MakeProject {
 	}
 
 	private setupSettings() {
+		// First, let's setup the project settings
 		try {
 			const content = readFileSync(path.join(this.cwd, `iproj.json`), { encoding: `utf-8` });
 			const asJson: iProject = JSON.parse(content);
 
 			this.applySettings(asJson);
+			warningOut(`make: Loaded project settings.`);
 		} catch (e) {
-			// console.log(`Failed to read 'iproj.json'.`);
+			warningOut(`make: Failed to read 'iproj.json'.`);
+		}
+
+		// Then fetch the directory specific settings
+		const ibmiFiles = getFiles(this.cwd, `**/.ibmi.json`);
+
+		for (const ibmiFile of ibmiFiles) {
+			const relative = path.relative(this.cwd, ibmiFile);
+			const folder = path.dirname(relative);
+
+			try {
+				this.folderSettings[folder] = JSON.parse(readFileSync(ibmiFile, { encoding: `utf-8` }));
+			} catch (e) {
+				warningOut(`make: Failed to read ${relative}.`);
+			}
+		}
+
+		// getFiles is case insensitive
+		const rulesFiles = getFiles(this.cwd, `**/rules.mk`);
+		this.settings.objectAttributes = {};
+
+		for (const rulesFile of rulesFiles) {
+			const relative = path.relative(this.cwd, rulesFile);
+			const folder = path.dirname(relative);
+
+			try {
+				const content = readFileSync(rulesFile, { encoding: `utf-8` });
+				const lines = content.split(`\n`);
+
+				for (const line of lines) {
+					const nameSplit = line.indexOf(`:`);
+					if (nameSplit < 0) continue;
+
+					const name = line.substring(0, nameSplit).trim().toUpperCase();
+					const value = line.substring(nameSplit + 1).trim();
+
+					const assignmentSplit = value.indexOf(`=`);
+					if (assignmentSplit >= 0) {
+						// If there is an assignment value, this means we're
+						// setting a compile parameter on a specific object
+						const key = value.substring(0, assignmentSplit).trim().toLowerCase();
+						const val = value.substring(assignmentSplit + 1).trim();
+
+						if (!this.settings.objectAttributes[name]) this.settings.objectAttributes[name] = {};
+
+						this.settings.objectAttributes[name][key] = val;
+
+					} else {
+						// Otherwise, we're overriding the deps with hardcoded deps
+
+						const nameParts = name.split(`.`);
+						const targetName = nameParts[0];
+						const targetType = nameParts[1] as ObjectType;
+
+						if (targetName && targetType) {
+							const currentTarget = this.targets.getTarget({systemName: targetName, type: targetType});
+
+							if (currentTarget) {
+								// We set this to empty since we're overriding them
+								currentTarget.deps = [];
+
+								const parts = value.split(` `).map(p => p.trim()).filter(p => p.length > 0);
+
+								// We always skip the first because ibmi-bob wants the first entry to be the source name.
+								for (let i = 1; i < parts.length; i++) {
+									const part = parts[i];
+									const partSplit = part.split(`.`);
+									const objName = partSplit[0];
+									const objType = partSplit[1] as ObjectType;
+
+									if (objName && objType) {
+										const obj = this.targets.searchForObject({systemName: objName, type: objType}, undefined);
+
+										if (obj) {
+											currentTarget.deps.push(obj);
+										} else {
+											warningOut(`make: Failed to find '${part}' in '${relative}'`);
+										}
+									}
+								}
+							}
+					}
+
+					}
+				}
+
+			} catch (e) {
+				warningOut(`make: Failed to read ${relative}.`);
+			}
 		}
 	}
 
