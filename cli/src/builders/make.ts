@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { ILEObject, ILEObjectTarget, ImpactedObject, ObjectType, Targets } from '../targets';
-import { asPosix } from '../utils';
+import { asPosix, toCl } from '../utils';
 
 interface CompileData {
 	/** indicates what type of object will be built from this source */
@@ -12,6 +12,8 @@ interface CompileData {
 	preCommands?: string[]
 	/** `command` does respect the library list */
 	command?: string;
+	
+	parameters?: {[parmId: string]: string};
 	/** Used if the commands are built up from source. Usually means `command` and `commands` is blank */
 	commandSource?: boolean;
 	/** `postCommands` do not respect the library list and is run after 'command' */
@@ -50,7 +52,16 @@ export class MakeProject {
 			compiles: {
 				"pgm": {
 					becomes: `PGM`,
-					command: `CRTPGM PGM($(BIN_LIB)/$*) ENTRY($*) MODULES(*MODULES) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)` // TODO: fix this
+					command: `CRTPGM PGM($(BIN_LIB)/$*) ENTRY($*) MODULES(*MODULES) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)`,
+					parameters: {
+						pgm: `$(BIN_LIB)/$*`,
+						entry: `$*`,
+						modules: `*MODULES`,
+						tgtrls: `*CURRENT`,
+						tgtccsid: `*JOB`,
+						bnddir: `$(BNDDIR)`,
+						dftactgrp: `*NO`
+					}
 				},
 				"pgm.rpgle": {
 					becomes: `PGM`,
@@ -369,7 +380,9 @@ export class MakeProject {
 			return command;
 		}
 
-		const resolvedCommand = resolve(data.command);
+		// TODO: resolve the parameters from the Rules.mk
+
+		const resolvedCommand = resolve(toCl(data.command, data.parameters));
 
 		lines.push(
 			`$(PREPATH)/${ileObject.systemName}.${ileObject.type}: ${asPosix(ileObject.relativePath)}`,
