@@ -17,7 +17,7 @@ so -h
 so -bf make && gmake BIN_LIB=libname
 ```
 
-## Dependency file generation
+### Dependency file generation
 
 Source Orbit CLI can generate different file formats using the `-bf <type>` parameter.
 
@@ -32,15 +32,16 @@ Types available:
    * See about [GitHub Actions](./pages/cli/gha.md) here.
 
 ```sh
+so -bf json
 so -bf imd -f `git diff --name-only origin/main origin/${GITHUB_HEAD_REF}`
 ```
 
-## Specific files
+### Specific files
 
 * You can use `-f` to make Source Orbit to only care about specific sources. This still scans the entire project, so will know about object parents.
-* Using `-s` means only a specific files and children of that file/object. This will not scan the entire project.
+* Using `-s` means only a specific files and children of that file/object. This will not scan the entire project. **This option is deprecated and will likely be removed.**
 
-## Cleanup capabilities
+### Cleanup capabilities
 
 The ability to cleanup your source code is usually a one-and-done situation. After you've migrated your source code into git, you may find that a majority of your source extensions are incorrect (like missing the `.pgm` attribute on your source). There are currently two methods of cleanup available:
 
@@ -63,6 +64,21 @@ so --verbose
 
 # Fix names
 so -fi
+```
+
+### Branch library
+
+When building in pipelines, sometimes you need a deterministic library name for a branch to build in. Use `-bl` (branch library) for to get one:
+
+```sh
+# so -bl <branch/name>
+
+$ so -bl feature/5353_new_thing
+VS6541B2A1
+
+$ export BIN_LIB=$(so -bl feature/5353_new_thing)
+$ echo $BIN_LIB                                 
+VS6541B2A1
 ```
 
 ## Installation

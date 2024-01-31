@@ -44,11 +44,11 @@ Source Orbit does not care about project structure, but does enforce these rules
 
 * if your source includes `.pgm`, then it will become a program.
    * `mypgm.pgm.rpgle` becomes a `MYPGM.PGM` object
-   * If you want to use multi-module programs, go ahead and add the prototypes to export functions/procedures in other modules and Source Orbit will automatically take care of the binding.
+   * If you want to use multi-module programs, go ahead and add the prototypes to export functions/procedures in other modules and Source Orbit will automatically take care of the binding. See *Service Programs and Binder Source* below.
 * if your source does not include `.pgm`, then it will become a module, cmd, dtaara, etc.
 * assumes binder source (`.bnd`/`.binder`) is a service program. 
    * Source Orbit will scan the binder source to find the exported functions/procedures from modules inside the project.
-* Source Orbit does not yet support SQL long name references. (Coming soon)
+* Source Orbit does support SQL long names. But, where a long name is used, a system name should also be used (`FOR SYSTEM NAME` or `SPECIFIC`)
 
 #### Long file names
 
@@ -64,6 +64,15 @@ Typically, the basename of the file is also the object name. But, Source Orbit w
 | `ART200D-Work_with_Article.DSPF` | `ART200D.FILE`   | Support for ibmi-bob file name                                          |
 
 Even if you use long file names, your source code still needs to reference the object name for object resolves (not including *include directives* of course.)
+
+### Service Programs and Binder Source
+
+For service programs to be created, binder source must exist for it. Source Orbit will read the binder source, find all the referenced export functions/procedures and will find the correct module that exports them to create the service program.
+
+When Source Orbit is resolving programs & service programs, and specifically resolving their import functions/procedures, it will:
+
+1. Look to see if a service program exports this named function/procedure and then depend on that service program
+2. If no service program is found, then Source Orbit will search all available modules for that named function/procedure. If a module is found, then the module will be bound into the program (and therefore will become a multi module program)
 
 ### SQL sources
 

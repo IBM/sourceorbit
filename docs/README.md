@@ -12,7 +12,8 @@ Source Orbit is a dependency management system. As IBM i developers start using 
 
 ## Start using Source Orbit
 
-Source Orbit is available in two flavours:
+Check out these pages to dive in:
 
 1. [As a CLI](./pages/cli/index.md): run Source Orbit as part of an automated pipeline, or anywhere really!
-2. Inside Visual Studio Code: your devs should know how their changes will affect other objects. This will let them see changes in real time
+2. [Rules](./pages/general/rules.md): using Source Orbit for dependency management? Check out how it works ✅
+3. [Structure](https://codefori.github.io/docs/#/pages/developing/local/structure): want to know how to structure your code when stored in git?
