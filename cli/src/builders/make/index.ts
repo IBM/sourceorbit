@@ -589,4 +589,3 @@ const binderSourceCompile: CompileData = {
 		`-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/$* *SRVPGM *IMMED))"`
 	]
 };
-
