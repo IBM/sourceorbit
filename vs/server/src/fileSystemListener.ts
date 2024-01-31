@@ -20,7 +20,7 @@ export function setupFsListener(connection: Connection) {
 		connection.console.log(JSON.stringify(_event, null, 2));
 
 		for (const removed of _event.removed) {
-			TargetsManager.destory(removed.uri);
+			TargetsManager.destroy(removed.uri);
 		}
 
 		// Commented out since we don't read entire projects on load
