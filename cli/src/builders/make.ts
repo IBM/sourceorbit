@@ -66,6 +66,7 @@ export class MakeProject {
 		return {
 			binders: [],
 			includePaths: [],
+			objectAttributes: {},
 			compiles: {
 				"pgm": {
 					becomes: `PGM`,
@@ -528,8 +529,33 @@ export class MakeProject {
 						// This is used when your object really has source
 
 						const possibleTarget: ILEObjectTarget = this.targets.getTarget(ileObject) || (ileObject as ILEObjectTarget);
+						let customAttributes = this.settings.objectAttributes[`${ileObject.systemName}.${ileObject.type}`] || {};
+
+						if (ileObject.relativePath) {
+							// We need to take in the current folders .ibmi.json file for any specific values
+							const folder = path.dirname(ileObject.relativePath);
+							const folderSettings = this.folderSettings[folder];
+							if (folderSettings) {
+								// If there is a tgtccsid, we only want to apply it to commands
+								// that allow tgtccsid as a valid parameter
+								if (folderSettings.options?.tgtCcsid && data.parameters?.tgtccsid) {
+									customAttributes.tgtccsid = folderSettings.options.tgtCcsid;
+								}
+
+								// Then if this setting has a objLib, we want to replace all instances
+								// of $(BIN_LIB) with the correct value correct value.
+								if (folderSettings.options?.objLib) {
+									const objLib = folderSettings.options.objLib;
+									const correctValue = objLib.startsWith(`&`) ? `$(${objLib})` : objLib;
+									// Replace each occurance of $(BIN_LIB) with the correct value
+									for (const key of Object.keys(customAttributes)) {
+										customAttributes[key] = customAttributes[key].replace(new RegExp(`\\$\\(BIN_LIB\\)`, `g`), correctValue);
+									}
+								}
+							}
+						}
 						
-						lines.push(...MakeProject.generateSpecificTarget(data, possibleTarget));
+						lines.push(...MakeProject.generateSpecificTarget(data, possibleTarget, customAttributes));
 					}
 
 				} else
@@ -558,7 +584,7 @@ export class MakeProject {
 		return lines;
 	}
 
-	static generateSpecificTarget(data: CompileData, ileObject: ILEObjectTarget) {
+	static generateSpecificTarget(data: CompileData, ileObject: ILEObjectTarget, customAttributes?: CommandParameters): string[] {
 		let lines: string[] = [];
 
 		const parentName = ileObject.relativePath ? path.dirname(ileObject.relativePath) : undefined;
@@ -584,11 +610,19 @@ export class MakeProject {
 		}
 
 		// TODO: resolve the parameters from the Rules.mk
+		const objectKey = `${ileObject.systemName}.${ileObject.type}`;
+		
+		if (customAttributes) {
+			data.parameters = {
+				...data.parameters,
+				...customAttributes
+			};
+		}
 
 		const resolvedCommand = resolve(toCl(data.command, data.parameters));
 
 		lines.push(
-			`$(PREPATH)/${ileObject.systemName}.${ileObject.type}: ${asPosix(ileObject.relativePath)}`,
+			`$(PREPATH)/${objectKey}: ${asPosix(ileObject.relativePath)}`,
 			...(qsysTempName && data.member ?
 				[
 					`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/${qsysTempName}) RCDLEN(112)"`,
