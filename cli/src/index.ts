@@ -38,11 +38,6 @@ async function main() {
 				i++;
 				break;
 
-			case `-s`:
-				cliSettings.specificFile = parms[i+1];
-				i++;
-				break;
-
 			case `-i`:
 			case `--init`:
 				initProject(cwd);
@@ -89,11 +84,6 @@ async function main() {
 				console.log(`\t-d <dir>`)
 				console.log(`\t--cwd <dir>\tTo see the directory of where source code lives.`);
 				console.log(`\t\t\tThe default is the current working directory.`);
-				console.log(``);
-				console.log(`\t-s <relativePath>`)
-				console.log(`\t\t\tSource Orbit will only scan a specific file and`);
-				console.log(`\t\t\tit's dependents useful when building a specific source.`);
-				console.log(`\t\t\tThis means that parents of this file will not be scanned.`);
 				console.log(``);
 				console.log(`\t-f <relative paths>`)
 				console.log(`\t--files <relative paths>`);
@@ -163,13 +153,7 @@ async function main() {
 	let files: string[];
 
 	try {
-		if (cliSettings.specificFile) {
-			files = [path.join(cwd, cliSettings.specificFile)];
-			cliSettings.fileList = true;
-			cliSettings.lookupFiles = [cliSettings.specificFile];
-		} else {
-			files = getFiles(cwd, scanGlob);
-		}
+		files = getFiles(cwd, scanGlob);
 	} catch (e) {
 		error(e.message || e);
 		process.exit(1);
