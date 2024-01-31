@@ -52,7 +52,7 @@ export class MakeProject {
 			compiles: {
 				"pgm": {
 					becomes: `PGM`,
-					command: `CRTPGM PGM($(BIN_LIB)/$*) ENTRY($*) MODULES(*MODULES) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)`,
+					command: `CRTPGM`,
 					parameters: {
 						pgm: `$(BIN_LIB)/$*`,
 						entry: `$*`,
