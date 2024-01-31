@@ -3,7 +3,6 @@ export type BuildFiles = "none" | "make" | "bob" | "imd" | "json";
 
 export let cliSettings = {
 	cliMode: false,
-	specificFile: ``,
 	infoMessages: false,
 	buildFile: "none" as BuildFiles,
 	fixIncludes: false,
