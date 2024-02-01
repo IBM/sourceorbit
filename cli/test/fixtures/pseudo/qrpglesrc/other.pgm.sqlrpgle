@@ -1,6 +1,6 @@
 **free
 
-dcl-s thearea char(15) dtaara('MYTHING');
+dcl-f mstdsp workstn usropn;
 
 thearea = 'Hello world';
 
