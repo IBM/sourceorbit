@@ -25,8 +25,9 @@ describe.skipIf(files.length === 0)(`psuedo tests`, () => {
     make = new MakeProject(cwd, targets);
   });
 
-  test(`Test DTAARA exists`, () => {
+  test(`Test objects exists`, () => {
     expect(targets.searchForObject({ systemName: `MYTHING`, type: `DTAARA` }, undefined)).toBeDefined();
+    expect(targets.searchForObject({ systemName: `MSTDSP`, type: `FILE` }, undefined)).toBeDefined();
   });
 
   test(`Program depends on DTAARA`, () => {
@@ -62,5 +63,15 @@ describe.skipIf(files.length === 0)(`psuedo tests`, () => {
     const testerProgram = makefile.findIndex(l => l.startsWith(`$(PREPATH)/OTHER.PGM: qrpglesrc/other.pgm.sqlrpgle`));
     expect(testerProgram).toBeGreaterThan(-1);
     expect(makefile[testerProgram + 3]).toBe(`\tsystem "CRTSQLRPGI OBJ($(BIN_LIB)/OTHER) SRCSTMF('qrpglesrc/other.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(37) BNDDIR($(BNDDIR)) DFTACTGRP(*no)')" > .logs/other.splf`);
+  });
+
+  test(`Ensure TGTCCSID is applied to CRTSRCPF CCSID`, () => {
+    const makefile = make.getMakefile();
+
+    // Covers:
+    // .ibmi.json -> tgtCcsid -> CRTSRCPF CCSID
+    const testerProgram = makefile.findIndex(l => l.startsWith(`$(PREPATH)/MSTDSP.FILE: qobjs/mstdsp.dspf`));
+    expect(testerProgram).toBeGreaterThan(-1);
+    expect(makefile[testerProgram + 1]).toBe(`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/qobjs) RCDLEN(112) CCSID(37)"`);
   });
 });

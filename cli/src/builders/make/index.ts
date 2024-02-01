@@ -154,7 +154,7 @@ export class MakeProject {
 				prtf: {
 					becomes: "FILE",
 					member: true,
-					command: "CRTPRTF FILE($(BIN_LIB)/$*)",
+					command: "CRTPRTF",
 					parameters: {
 						file: `$(BIN_LIB)/$*`,
 						srcfile: `$(BIN_LIB)/$(SRCPF)`,
@@ -318,6 +318,9 @@ export class MakeProject {
 				if (folderSettings.build?.tgtCcsid) {
 					if (compileData.parameters?.tgtccsid) {
 						customAttributes.tgtccsid = folderSettings.build.tgtCcsid;
+					} else if (compileData.member) {
+						// Special attribute
+						customAttributes.memberCcsid = folderSettings.build.tgtCcsid;
 					}
 
 					if (compileData.parameters?.compileopt) {
@@ -533,6 +536,13 @@ export class MakeProject {
 			};
 		}
 
+		let sourceFileCcsid = `*JOB`;
+		
+		if (data.parameters.memberCcsid) {
+			sourceFileCcsid = data.parameters.memberCcsid;
+			delete data.parameters.memberCcsid;
+		}
+
 		const resolvedCommand = resolve(toCl(data.command, data.parameters));
 
 		lines.push(
@@ -540,7 +550,7 @@ export class MakeProject {
 			...(qsysTempName && data.member ?
 				[
 					// TODO: consider CCSID when creating the source file
-					`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/${qsysTempName}) RCDLEN(112)"`,
+					`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/${qsysTempName}) RCDLEN(112) CCSID(${sourceFileCcsid})"`,
 					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${ileObject.systemName}.MBR') MBROPT(*REPLACE)"`
 				] : []),
 			...(data.preCommands ? data.preCommands.map(cmd => `\t${resolve(cmd)}`) : []),
