@@ -11,7 +11,7 @@
 			"cwd": "${workspaceFolder:cli}",
 			"program": "${workspaceFolder:cli}/dist/index.js",
 			"sourceMaps": true,
-			"args": ["-d", "/Users/barry/Downloads/ics", "-bf", "imd", "-f", "qsrcsql/getTotalSalary.sql"],
+			"args": ["-d", "/Users/barry/Downloads/ics", "-bf", "imd"],
 			"preLaunchTask": {
 				"type": "npm",
 				"script": "webpack:dev"

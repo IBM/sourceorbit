@@ -101,6 +101,34 @@ export class ImpactMarkdown {
       ``,
     )
 
+    const allFiles = this.targets.logger.getAllLogs();
+    let warningMarkdown: string[] = [];
+
+    for (const relativePath in allFiles) {
+      const logs = allFiles[relativePath];
+      if (logs.some(l => l.type === 'warning')) {
+        warningMarkdown.push(
+          `**\`${relativePath}\`**`,
+          ``,
+          ...logs.filter(l => l.type === 'warning').map(log => `* [ ] ${LogEmoji[log.type] || `❔`} ${log.message}`),
+          ``
+        )
+      }
+    }
+
+    if (warningMarkdown.length > 0) {
+      lines.push(
+        `### Warnings`,
+        ``,
+        `<details><summary>Click to expand</summary><br>`,
+        ``,
+        ...warningMarkdown,
+        ``,
+        `</details>`,
+        ``
+      )
+    }
+
     return lines;
   }
 
