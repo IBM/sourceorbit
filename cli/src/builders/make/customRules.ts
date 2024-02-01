@@ -23,18 +23,34 @@ export function readAllRules(targets: Targets, project: MakeProject) {
       const lines = content.split(`\n`);
 
       for (const line of lines) {
+        if (line.trim().length === 0) continue; // Skip empty lines
+        if (line[0] === `#`) continue; // Skip comments
+        if (line[0] === ` ` || line[0] === `\t`) continue; // Skip lines that start with a space or tab
+
         const nameSplit = line.indexOf(`:`);
         if (nameSplit < 0) continue;
 
         const name = line.substring(0, nameSplit).trim().toUpperCase();
         const value = line.substring(nameSplit + 1).trim();
 
-        const assignmentSplit = value.indexOf(`=`);
+        let assignmentSplit = -1;
+        let assignmentSplitLength = 0;
+
+        // Assignment can be with multiple operators
+        const assignmentOps = [`:=`, `=`];
+        for (const op of assignmentOps) {
+          assignmentSplit = value.indexOf(op);
+          if (assignmentSplit >= 0) {
+            assignmentSplitLength = op.length;
+            break;
+          }
+        }
+
         if (assignmentSplit >= 0) {
           // If there is an assignment value, this means we're
           // setting a compile parameter on a specific object
           const key = value.substring(0, assignmentSplit).trim().toLowerCase();
-          const val = value.substring(assignmentSplit + 1).trim();
+          const val = value.substring(assignmentSplit + assignmentSplitLength).trim();
 
           if (!settings.objectAttributes[name]) settings.objectAttributes[name] = {};
 
