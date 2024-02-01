@@ -77,14 +77,14 @@ export function activate(context: ExtensionContext) {
 	const gitImpactView: ImpactView = new ImpactView();
 	const objectViews: { [workspaceUri: string]: ObjectsView } = {};
 
-	if (projectManager) {
-		projectManager.pushExtensibleChildren(async (iProject: IProject) => {
-			const fsPath = iProject.workspaceFolder.uri.fsPath;
+	// if (projectManager) {
+	// 	projectManager.pushExtensibleChildren(async (iProject: IProject) => {
+	// 		const fsPath = iProject.workspaceFolder.uri.fsPath;
 
-			objectViews[fsPath] = new ObjectsView(iProject.workspaceFolder);
-			return [objectViews[fsPath]];
-		});
-	}
+	// 		objectViews[fsPath] = new ObjectsView(iProject.workspaceFolder);
+	// 		return [objectViews[fsPath]];
+	// 	});
+	// }
 
 	function setupGitEventHandler(workspaceFolders: WorkspaceFolder[]) {
 		const gitApi = getGitAPI();
@@ -124,39 +124,39 @@ export function activate(context: ExtensionContext) {
 	initialiseTaskProvider(context);
 	
 	context.subscriptions.push(
-		commands.registerCommand(`vscode-sourceorbit.objects.loadProject`, async (node: ObjectsView) => {
-			if (node) {
-				await reloadProject(node.workspaceFolder);
-				enableViews();
-				node.refresh();
-			}
-		}),
+		// commands.registerCommand(`vscode-sourceorbit.objects.loadProject`, async (node: ObjectsView) => {
+		// 	if (node) {
+		// 		await reloadProject(node.workspaceFolder);
+		// 		enableViews();
+		// 		node.refresh();
+		// 	}
+		// }),
 
-		commands.registerCommand(`vscode-sourceorbit.objects.goToFile`, ((node: ILEObjectTreeItem) => {
-			if (node && node.resourceUri) {
-				workspace.openTextDocument(node.resourceUri).then(doc => {
-					window.showTextDocument(doc);
-				});
-			}
-		})),
-		commands.registerCommand(`vscode-sourceorbit.objects.autoFix`, ((node: ObjectsView) => {
-			if (node && node.workspaceFolder) {
-				window.showInformationMessage(`Select auto fix method for ${node.workspaceFolder.name}`, `Cancel`, `File names`, `RPG includes`).then(chosen => {
-					if (chosen) {
-						let type: "includes" | "renames" | undefined;
+		// commands.registerCommand(`vscode-sourceorbit.objects.goToFile`, ((node: ILEObjectTreeItem) => {
+		// 	if (node && node.resourceUri) {
+		// 		workspace.openTextDocument(node.resourceUri).then(doc => {
+		// 			window.showTextDocument(doc);
+		// 		});
+		// 	}
+		// })),
+		// commands.registerCommand(`vscode-sourceorbit.objects.autoFix`, ((node: ObjectsView) => {
+		// 	if (node && node.workspaceFolder) {
+		// 		window.showInformationMessage(`Select auto fix method for ${node.workspaceFolder.name}`, `Cancel`, `File names`, `RPG includes`).then(chosen => {
+		// 			if (chosen) {
+		// 				let type: "includes" | "renames" | undefined;
 
-						switch (chosen) {
-							case `File names`: type = `renames`; break;
-							case `RPG includes`: type = `includes`; break;
-						}
+		// 				switch (chosen) {
+		// 					case `File names`: type = `renames`; break;
+		// 					case `RPG includes`: type = `includes`; break;
+		// 				}
 
-						if (type) {
-							fixProject(node.workspaceFolder, type);
-						}
-					}
-				});
-			}
-		})),
+		// 				if (type) {
+		// 					fixProject(node.workspaceFolder, type);
+		// 				}
+		// 			}
+		// 		});
+		// 	}
+		// })),
 		commands.registerCommand(`vscode-sourceorbit.autoFix`, (workspaceFolder?: WorkspaceFolder, type?: "includes" | "renames") => {
 			if (workspaceFolder && type) {
 				return fixProject(workspaceFolder, type);
@@ -170,21 +170,21 @@ export function activate(context: ExtensionContext) {
 			}
 		}),
 
-		window.registerTreeDataProvider(`activeImpactView`, activeImpactView),
-		window.onDidChangeActiveTextEditor(e => {
-			if (activeImpactView && e && e.document) {
-				// For impact view. Doesn't do anything if the mode isn't set
-				activeImpactView.showImpactFor([e.document.uri]);
-			}
-		}),
+		// window.registerTreeDataProvider(`activeImpactView`, activeImpactView),
+		// window.onDidChangeActiveTextEditor(e => {
+		// 	if (activeImpactView && e && e.document) {
+		// 		// For impact view. Doesn't do anything if the mode isn't set
+		// 		activeImpactView.showImpactFor([e.document.uri]);
+		// 	}
+		// }),
 
-		window.registerTreeDataProvider(`gitImpactView`, gitImpactView),
-		workspace.onDidChangeWorkspaceFolders((e) => {
-			setupGitEventHandler(e.added as WorkspaceFolder[]);
-		})
+		// window.registerTreeDataProvider(`gitImpactView`, gitImpactView),
+		// workspace.onDidChangeWorkspaceFolders((e) => {
+		// 	setupGitEventHandler(e.added as WorkspaceFolder[]);
+		// })
 	);
 
-	if (workspace.workspaceFolders) setupGitEventHandler(workspace.workspaceFolders as WorkspaceFolder[]);
+	// if (workspace.workspaceFolders) setupGitEventHandler(workspace.workspaceFolders as WorkspaceFolder[]);
 }
 
 export function deactivate(): Thenable<void> | undefined {
