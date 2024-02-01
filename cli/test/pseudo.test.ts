@@ -8,8 +8,6 @@ import { scanGlob } from '../src/extensions';
 
 const cwd = setupPseudo();
 
-const makeDefaults = MakeProject.getDefaultSettings();
-
 let files = getFiles(cwd, scanGlob);
 
 describe.skipIf(files.length === 0)(`psuedo tests`, () => {
@@ -39,14 +37,6 @@ describe.skipIf(files.length === 0)(`psuedo tests`, () => {
     expect(programTarget.deps[0].systemName).toBe(`MYTHING`);
   });
 
-  test(`Ensure program doesn't include bad child dep`, () => {
-    const programTarget = targets.getTarget({ systemName: `TESTER`, type: `PGM` });
-
-    expect(programTarget).toBeDefined();
-    expect(programTarget.deps.length).toBe(1);
-    expect(programTarget.deps[0].systemName).toBe(`MYTHING`);
-  });
-
   test(`Program compile CCSID is from config`, () => {
     const makefile = make.getMakefile();
 
@@ -58,4 +48,7 @@ describe.skipIf(files.length === 0)(`psuedo tests`, () => {
     expect(theDtaara).toBeGreaterThan(-1);
     expect(makefile[theDtaara + 1]).toBe(`\t-system -q "CRTDTAARA DTARA(MYTHING) TYPE(*CHAR) LEN(15) VALUE('HELLO') TEXT('Hello world')"`);
   });
+
+  // Test case for .pgm.sqlrpgle COMPILEOPT with TGTCCSID
+  // Test case for := and = in makefile
 });

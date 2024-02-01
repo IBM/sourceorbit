@@ -533,6 +533,7 @@ export class MakeProject {
 			`$(PREPATH)/${objectKey}: ${asPosix(ileObject.relativePath)}`,
 			...(qsysTempName && data.member ?
 				[
+					// TODO: consider CCSID when creating the source file
 					`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/${qsysTempName}) RCDLEN(112)"`,
 					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${ileObject.systemName}.MBR') MBROPT(*REPLACE)"`
 				] : []),
