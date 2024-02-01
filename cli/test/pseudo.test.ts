@@ -10,7 +10,7 @@ const cwd = setupPseudo();
 
 let files = getFiles(cwd, scanGlob);
 
-describe.skipIf(files.length === 0)(`psuedo tests`, () => {
+describe.skipIf(files.length === 0)(`pseudo tests`, () => {
   const targets = new Targets(cwd);
   let make: MakeProject;
 
@@ -38,7 +38,7 @@ describe.skipIf(files.length === 0)(`psuedo tests`, () => {
     expect(programTarget.deps[0].systemName).toBe(`MYTHING`);
   });
 
-  test(`Ensure custom attribures are respected`, () => {
+  test(`Ensure custom attributes are respected`, () => {
     const makefile = make.getMakefile();
 
     // Covers:
