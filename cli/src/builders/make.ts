@@ -10,8 +10,8 @@ type CommandParameters = {[parmId: string]: string};
 
 interface FolderOptions {
 	version?: "0.0.1",
-	options?: {
-		objLib?: string,
+	build?: {
+		// objlib?: string, We don't support objlib
 		tgtCcsid?: string
 	}
 }
@@ -301,7 +301,6 @@ export class MakeProject {
 
 		for (const rulesFile of rulesFiles) {
 			const relative = path.relative(this.cwd, rulesFile);
-			const folder = path.dirname(relative);
 
 			try {
 				const content = readFileSync(rulesFile, { encoding: `utf-8` });
@@ -499,7 +498,7 @@ export class MakeProject {
 				for (const ileObject of objects) {
 					if (ileObject.relativePath) {
 						const sourcePath = path.join(this.cwd, ileObject.relativePath);
-						const exists = existsSync(sourcePath);
+						const exists = existsSync(sourcePath); // Is this even needed? We already have relativePath??
 
 						if (exists) {
 							try {
@@ -507,9 +506,12 @@ export class MakeProject {
 								const eol = content.indexOf(`\r\n`) >= 0 ? `\r\n` : `\n`;
 								const commands = content.split(eol).filter(l => !l.startsWith(`/*`)); // Remove comments
 
+								const customAttributes = this.settings.objectAttributes[`${ileObject.systemName}.${ileObject.type}`];
+
 								lines.push(
 									`$(PREPATH)/${ileObject.systemName}.${data.becomes}: ${asPosix(ileObject.relativePath)}`,
-									...(commands.map(l => `\t-system -q "${l}"`)),
+									...(commands.map(l => `\t-system -q "${toCl(l, customAttributes)}"`)),
+									``,
 								);
 
 							} catch (e) {
@@ -538,19 +540,8 @@ export class MakeProject {
 							if (folderSettings) {
 								// If there is a tgtccsid, we only want to apply it to commands
 								// that allow tgtccsid as a valid parameter
-								if (folderSettings.options?.tgtCcsid && data.parameters?.tgtccsid) {
-									customAttributes.tgtccsid = folderSettings.options.tgtCcsid;
-								}
-
-								// Then if this setting has a objLib, we want to replace all instances
-								// of $(BIN_LIB) with the correct value correct value.
-								if (folderSettings.options?.objLib) {
-									const objLib = folderSettings.options.objLib;
-									const correctValue = objLib.startsWith(`&`) ? `$(${objLib})` : objLib;
-									// Replace each occurance of $(BIN_LIB) with the correct value
-									for (const key of Object.keys(customAttributes)) {
-										customAttributes[key] = customAttributes[key].replace(new RegExp(`\\$\\(BIN_LIB\\)`, `g`), correctValue);
-									}
+								if (folderSettings.build?.tgtCcsid && data.parameters?.tgtccsid) {
+									customAttributes.tgtccsid = folderSettings.build.tgtCcsid;
 								}
 							}
 						}
