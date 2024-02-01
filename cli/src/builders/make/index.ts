@@ -1,20 +1,14 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
-import { ILEObject, ILEObjectTarget, ImpactedObject, ObjectType, Targets } from '../targets';
-import { asPosix, getFiles, toCl } from '../utils';
-import { warningOut } from '../cli';
-import { name } from '../../webpack.config';
+import { ILEObject, ILEObjectTarget, ImpactedObject, ObjectType, Targets } from '../../targets';
+import { asPosix, getFiles, toCl } from '../../utils';
+import { warningOut } from '../../cli';
+import { name } from '../../../webpack.config';
+import { FolderOptions, getFolderOptions } from './folderSettings';
+import { readAllRules } from './customRules';
 
 // Always try and store parmId as lowercase
 type CommandParameters = {[parmId: string]: string};
-
-interface FolderOptions {
-	version?: "0.0.1",
-	build?: {
-		// objlib?: string, We don't support objlib
-		tgtCcsid?: string
-	}
-}
 
 interface CompileData {
 	/** indicates what type of object will be built from this source */
@@ -281,92 +275,9 @@ export class MakeProject {
 			warningOut(`make: Failed to read 'iproj.json'.`);
 		}
 
-		// Then fetch the directory specific settings
-		const ibmiFiles = getFiles(this.cwd, `**/.ibmi.json`);
+		this.folderSettings = getFolderOptions(this.cwd);
 
-		for (const ibmiFile of ibmiFiles) {
-			const relative = path.relative(this.cwd, ibmiFile);
-			const folder = path.dirname(relative);
-
-			try {
-				this.folderSettings[folder] = JSON.parse(readFileSync(ibmiFile, { encoding: `utf-8` }));
-			} catch (e) {
-				warningOut(`make: Failed to read ${relative}.`);
-			}
-		}
-
-		// getFiles is case insensitive
-		const rulesFiles = getFiles(this.cwd, `**/rules.mk`);
-		this.settings.objectAttributes = {};
-
-		for (const rulesFile of rulesFiles) {
-			const relative = path.relative(this.cwd, rulesFile);
-
-			try {
-				const content = readFileSync(rulesFile, { encoding: `utf-8` });
-				const lines = content.split(`\n`);
-
-				for (const line of lines) {
-					const nameSplit = line.indexOf(`:`);
-					if (nameSplit < 0) continue;
-
-					const name = line.substring(0, nameSplit).trim().toUpperCase();
-					const value = line.substring(nameSplit + 1).trim();
-
-					const assignmentSplit = value.indexOf(`=`);
-					if (assignmentSplit >= 0) {
-						// If there is an assignment value, this means we're
-						// setting a compile parameter on a specific object
-						const key = value.substring(0, assignmentSplit).trim().toLowerCase();
-						const val = value.substring(assignmentSplit + 1).trim();
-
-						if (!this.settings.objectAttributes[name]) this.settings.objectAttributes[name] = {};
-
-						this.settings.objectAttributes[name][key] = val;
-
-					} else {
-						// Otherwise, we're overriding the deps with hardcoded deps
-
-						const nameParts = name.split(`.`);
-						const targetName = nameParts[0];
-						const targetType = nameParts[1] as ObjectType;
-
-						if (targetName && targetType) {
-							const currentTarget = this.targets.getTarget({systemName: targetName, type: targetType});
-
-							if (currentTarget) {
-								// We set this to empty since we're overriding them
-								currentTarget.deps = [];
-
-								const parts = value.split(` `).map(p => p.trim()).filter(p => p.length > 0);
-
-								// We always skip the first because ibmi-bob wants the first entry to be the source name.
-								for (let i = 1; i < parts.length; i++) {
-									const part = parts[i];
-									const partSplit = part.split(`.`);
-									const objName = partSplit[0];
-									const objType = partSplit[1] as ObjectType;
-
-									if (objName && objType) {
-										const obj = this.targets.searchForObject({systemName: objName, type: objType}, undefined);
-
-										if (obj) {
-											currentTarget.deps.push(obj);
-										} else {
-											warningOut(`make: Failed to find '${part}' in '${relative}'`);
-										}
-									}
-								}
-							}
-					}
-
-					}
-				}
-
-			} catch (e) {
-				warningOut(`make: Failed to read ${relative}.`);
-			}
-		}
+		readAllRules(this.targets, this);
 	}
 
 	public getSettings() {
@@ -392,6 +303,25 @@ export class MakeProject {
 				};
 			}
 		}
+	}
+
+	public getObjectAttributes(compileData: CompileData, ileObject: ILEObject): CommandParameters {
+		let customAttributes = this.settings.objectAttributes[`${ileObject.systemName}.${ileObject.type}`] || {};
+
+		if (ileObject.relativePath) {
+			// We need to take in the current folders .ibmi.json file for any specific values
+			const folder = path.dirname(ileObject.relativePath);
+			const folderSettings = this.folderSettings[folder];
+			if (folderSettings) {
+				// If there is a tgtccsid, we only want to apply it to commands
+				// that allow tgtccsid as a valid parameter
+				if (folderSettings.build?.tgtCcsid && compileData.parameters?.tgtccsid) {
+					customAttributes.tgtccsid = folderSettings.build.tgtCcsid;
+				}
+			}
+		}
+
+		return customAttributes;
 	}
 
 	public getMakefile(specificObjects?: ILEObject[]) {
@@ -531,20 +461,7 @@ export class MakeProject {
 						// This is used when your object really has source
 
 						const possibleTarget: ILEObjectTarget = this.targets.getTarget(ileObject) || (ileObject as ILEObjectTarget);
-						let customAttributes = this.settings.objectAttributes[`${ileObject.systemName}.${ileObject.type}`] || {};
-
-						if (ileObject.relativePath) {
-							// We need to take in the current folders .ibmi.json file for any specific values
-							const folder = path.dirname(ileObject.relativePath);
-							const folderSettings = this.folderSettings[folder];
-							if (folderSettings) {
-								// If there is a tgtccsid, we only want to apply it to commands
-								// that allow tgtccsid as a valid parameter
-								if (folderSettings.build?.tgtCcsid && data.parameters?.tgtccsid) {
-									customAttributes.tgtccsid = folderSettings.build.tgtCcsid;
-								}
-							}
-						}
+						const customAttributes = this.getObjectAttributes(data, possibleTarget);
 						
 						lines.push(...MakeProject.generateSpecificTarget(data, possibleTarget, customAttributes));
 					}
