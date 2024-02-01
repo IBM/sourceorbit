@@ -318,9 +318,12 @@ export class MakeProject {
 				if (folderSettings.build?.tgtCcsid) {
 					if (compileData.parameters?.tgtccsid) {
 						customAttributes.tgtccsid = folderSettings.build.tgtCcsid;
+<<<<<<< HEAD
 					} else if (compileData.member) {
 						// Special attribute
 						customAttributes.memberCcsid = folderSettings.build.tgtCcsid;
+=======
+>>>>>>> Support TGTCCSID update in COMPILEOPT
 					}
 
 					if (compileData.parameters?.compileopt) {
