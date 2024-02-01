@@ -101,6 +101,34 @@ export class ImpactMarkdown {
       ``,
     )
 
+    const allFiles = this.targets.logger.getAllLogs();
+    let warningMarkdown: string[] = [];
+
+    for (const relativePath in allFiles) {
+      const logs = allFiles[relativePath];
+      if (logs.some(l => l.type === 'warning')) {
+        warningMarkdown.push(
+          `**\`${relativePath}\`**`,
+          ``,
+          ...logs.filter(l => l.type === 'warning').map(log => `* [ ] ${LogEmoji[log.type] || `❔`} ${log.message}`),
+          ``
+        )
+      }
+    }
+
+    if (warningMarkdown.length > 0) {
+      lines.push(
+        `### Warnings`,
+        ``,
+        `<details><summary>Click to expand</summary><br>`,
+        ``,
+        ...warningMarkdown,
+        ``,
+        `</details>`,
+        ``
+      )
+    }
+
     return lines;
   }
 
@@ -111,7 +139,9 @@ export class ImpactMarkdown {
     let currentTree: ILEObject[] = [];
 
     function lookupObject(ileObject: ILEObject) {
-      lines.push(`${''.padEnd(currentTree.length, `\t`)}* ${TypeEmoji[ileObject.type] || `❔`} \`${ileObject.systemName}.${ileObject.type}\` (${ileObject.relativePath ? `\`${ileObject.relativePath}\`` : `no source`})`);
+      let resultLines: string[] = [];
+
+      resultLines.push(`${''.padEnd(currentTree.length, `\t`)}* ${TypeEmoji[ileObject.type] || `❔`} \`${ileObject.systemName}.${ileObject.type}\` (${ileObject.relativePath ? `\`${ileObject.relativePath}\`` : `no source`})`);
 
       currentTree.push(ileObject);
 
@@ -120,20 +150,23 @@ export class ImpactMarkdown {
         const circular = currentTree.some(d => d.systemName === target.systemName && d.type === target.type);
 
         if (containsLookup && !circular) {
-          lookupObject(target);
+          resultLines.push(...lookupObject(target));
         }
       }
 
       currentTree.pop();
+      return resultLines;
     }
 
-    lookupObject(theObject);
+    const depTreeMd = lookupObject(theObject);
 
-    if (lines.length === 1) {
+    if (depTreeMd.length === 1) {
       lines.push(
         ``,
         `Changes to this object have no impact.`
       )
+    } else {
+      lines.push(...depTreeMd);
     }
 
     return lines;
@@ -149,7 +182,7 @@ export class ImpactMarkdown {
 
       let logs = this.targets.logger.getLogsFor(ileObject.relativePath);
       let parents = this.targets.getTargets().filter(t => t.deps.some(d => d.systemName === ileObject.systemName && d.type === ileObject.type));
-      let children = this.targets.getTarget(ileObject).deps;
+      let children = this.targets.getTarget(ileObject)?.deps || [];
 
       lines.push(`| ` + [
         TypeEmoji[ileObject.type] || `❔`,
