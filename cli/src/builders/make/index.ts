@@ -315,8 +315,14 @@ export class MakeProject {
 			if (folderSettings) {
 				// If there is a tgtccsid, we only want to apply it to commands
 				// that allow tgtccsid as a valid parameter
-				if (folderSettings.build?.tgtCcsid && compileData.parameters?.tgtccsid) {
-					customAttributes.tgtccsid = folderSettings.build.tgtCcsid;
+				if (folderSettings.build?.tgtCcsid) {
+					if (compileData.parameters?.tgtccsid) {
+						customAttributes.tgtccsid = folderSettings.build.tgtCcsid;
+					}
+
+					if (compileData.parameters?.compileopt) {
+						customAttributes.compileopt = compileData.parameters?.compileopt.replace(/tgtccsid\([\S]*\)/i, `TGTCCSID(${folderSettings.build.tgtCcsid})`);
+					}
 				}
 			}
 		}
