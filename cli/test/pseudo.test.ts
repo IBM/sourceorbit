@@ -74,4 +74,14 @@ describe.skipIf(files.length === 0)(`pseudo tests`, () => {
     expect(testerProgram).toBeGreaterThan(-1);
     expect(makefile[testerProgram + 1]).toBe(`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/qobjs) RCDLEN(112) CCSID(37)"`);
   });
+
+  test(`Ensure TGTCCSID is applied to CRTSRCPF CCSID`, () => {
+    const makefile = make.getMakefile();
+
+    // Covers:
+    // .ibmi.json -> tgtCcsid -> CRTSRCPF CCSID
+    const testerProgram = makefile.findIndex(l => l.startsWith(`$(PREPATH)/MSTDSP.FILE: qobjs/mstdsp.dspf`));
+    expect(testerProgram).toBeGreaterThan(-1);
+    expect(makefile[testerProgram + 1]).toBe(`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/qobjs) RCDLEN(112) CCSID(37)"`);
+  });
 });

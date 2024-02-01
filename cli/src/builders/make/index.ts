@@ -319,11 +319,17 @@ export class MakeProject {
 					if (compileData.parameters?.tgtccsid) {
 						customAttributes.tgtccsid = folderSettings.build.tgtCcsid;
 <<<<<<< HEAD
+<<<<<<< HEAD
 					} else if (compileData.member) {
 						// Special attribute
 						customAttributes.memberCcsid = folderSettings.build.tgtCcsid;
 =======
 >>>>>>> Support TGTCCSID update in COMPILEOPT
+=======
+					} else if (compileData.member) {
+						// Special attribute
+						customAttributes.memberCcsid = folderSettings.build.tgtCcsid;
+>>>>>>> tgtCcsid support on CRTSRCPF
 					}
 
 					if (compileData.parameters?.compileopt) {
