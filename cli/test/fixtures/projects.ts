@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { mkdir } from "../../src/utils";
 
 const projectFolder = path.join(__dirname, `..`, `..`, `..`, `testData`);
 
@@ -59,6 +60,17 @@ export function setupPseudo() {
   return projectPath;
 }
 
+export function setupTestBuilderSuite() {
+  const fixturePath = path.join(__dirname, `testing`);
+  const projectPath = path.join(projectFolder, `testing`);
+
+  deleteDir(projectPath);
+  mkdir(projectPath);
+  fs.cpSync(fixturePath, projectPath, {recursive: true});
+
+  return projectPath;
+}
+
 export function createTestBuildScript() {
   const lines = [
     `# First build company system`,
@@ -79,12 +91,6 @@ export function createTestBuildScript() {
   mkdir(projectFolder);
   const scriptPath = path.join(projectFolder, `build.sh`);
   fs.writeFileSync(scriptPath, lines);
-}
-
-function mkdir(dirPath: string) {
-  try {
-    fs.mkdirSync(dirPath, {recursive: true});
-  } catch (e) {};
 }
 
 function deleteDir(dirPath: string) {

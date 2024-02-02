@@ -1,0 +1,5 @@
+**free
+
+dcl-pr doubleIt packed(11:2) extproc('doubleIt');
+  inputNum packed(11:2) value;
+end-pr;

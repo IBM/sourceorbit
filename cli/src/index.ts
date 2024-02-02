@@ -10,7 +10,8 @@ import { BobProject } from "./builders/bob";
 import { ImpactMarkdown } from "./builders/imd";
 import { allExtensions } from "./extensions";
 import { getBranchLibraryName } from "./builders/environment";
-import { getFiles, renameFiles, replaceIncludes } from './utils';
+import { getFiles, mkdir, renameFiles, replaceIncludes } from './utils';
+import { TestBuilder } from './tester';
 
 const isCli = process.argv.length >= 2 && process.argv[1].endsWith(`so`);
 
@@ -76,6 +77,11 @@ async function main() {
 			case `--files`:
 			case `-l`:
 				cliSettings.fileList = true;
+				break;
+
+			case `-wt`:
+			case `--withTests`:
+				cliSettings.writeTestRunner = true;
 				break;
 
 			case `-h`:
@@ -191,6 +197,22 @@ async function main() {
 			listDeps(cwd, targets, value);
 		}
 	}
+
+		const testModules = targets.getResolvedObjects().filter(o => o.testModule);
+		if (testModules.length > 0) {
+			const testBuilder = new TestBuilder(testModules, targets.logger);
+			const results = testBuilder.getRunnerStructure();
+
+			if (cliSettings.writeTestRunner) {
+				targets.storeResolved(path.join(cwd, TestBuilder.getRunnerSourcePath()), results.newObjects.module);
+				targets.storeResolved(path.join(cwd, TestBuilder.getRunnerSourcePath(true)), results.newObjects.program);
+				targets.addNewTarget(results.newObjects.program);
+
+				const modulePath = path.join(cwd, TestBuilder.getRunnerSourcePath(false));
+				mkdir(path.dirname(modulePath)); // Ensure the directory exists
+				writeFileSync(modulePath, results.lines.join(`\n`));
+			}
+		}
 
 	switch (cliSettings.buildFile) {
 		case `bob`:

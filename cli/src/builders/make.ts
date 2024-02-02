@@ -50,7 +50,7 @@ export class MakeProject {
 			compiles: {
 				"pgm": {
 					becomes: `PGM`,
-					command: `CRTPGM PGM($(BIN_LIB)/$*) ENTRY($*) MODULES(*MODULES) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)` // TODO: fix this
+					command: `CRTPGM PGM($(BIN_LIB)/$*) ENTMOD($*) MODULE(*MODULES) TGTRLS(*CURRENT) BNDDIR($(BNDDIR)) REPLACE(*YES)` // TODO: fix this
 				},
 				"pgm.rpgle": {
 					becomes: `PGM`,

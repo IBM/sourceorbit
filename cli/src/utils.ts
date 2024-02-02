@@ -7,7 +7,6 @@ import * as path from "path";
 import * as os from "os"
 
 export function getSystemNameFromPath(inputName: string) {
-
 	let baseName = inputName.includes(`-`) ? inputName.split(`-`)[0] : inputName;
 
 	// If the name is of valid length, return it
@@ -112,4 +111,10 @@ export function renameFiles(logger: Logger) {
 		fs.renameSync(ogPath, path.join(path.dirname(ogPath), validRenames[ogPath]));
 		infoOut(`'${ogPath}' -> '${validRenames[ogPath]}'`);
 	}
+}
+
+export function mkdir(dirPath: string) {
+  try {
+    fs.mkdirSync(dirPath, {recursive: true});
+  } catch (e) {};
 }
