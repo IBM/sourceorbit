@@ -93,7 +93,7 @@ export function renameFiles(logger: Logger) {
 	warningOut(`Starting rename process. Do not end process.`);
 	const allLogs = logger.getAllLogs();
 
-	let validRenames: {[path: string]: string} = {};
+	let validRenames: { [path: string]: string } = {};
 
 	for (const filePath in allLogs) {
 		const logs = allLogs[filePath].filter(l => l.type === `rename`);
@@ -117,4 +117,33 @@ export function mkdir(dirPath: string) {
   try {
     fs.mkdirSync(dirPath, {recursive: true});
   } catch (e) {};
+}
+
+/**
+ * 
+ * @param command Optionally qualified CL command
+ * @param parameters A key/value object of parameters
+ * @returns Formatted CL string
+ */
+export function toCl(command: string, parameters?: { [parameter: string]: string }) {
+	let cl = command;
+
+	if (parameters) {
+		for (const [key, value] of Object.entries(parameters)) {
+			let parmValue;
+
+			if (value && value.trim() !== ``) {
+				if (value === value.toLocaleUpperCase()) {
+					parmValue = value;
+				} else {
+					parmValue = value.replace(/'/g, `''`);
+					parmValue = `'${parmValue}'`;
+				}
+
+				cl += ` ${key.toUpperCase()}(${parmValue})`;
+			}
+		}
+	}
+
+	return cl;
 }

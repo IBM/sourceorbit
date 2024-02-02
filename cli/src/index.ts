@@ -5,7 +5,7 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { ILEObject, Targets } from './targets';
 import { MakeProject } from './builders/make';
 import path from 'path';
-import { BuildFiles, cliSettings, error, infoOut, warningOut } from './cli';
+import { BuildFiles, cliSettings, error, warningOut } from './cli';
 import { BobProject } from "./builders/bob";
 import { ImpactMarkdown } from "./builders/imd";
 import { allExtensions } from "./extensions";

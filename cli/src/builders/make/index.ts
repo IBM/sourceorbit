@@ -1,7 +1,14 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
-import { ILEObject, ILEObjectTarget, ImpactedObject, ObjectType, Targets } from '../targets';
-import { asPosix } from '../utils';
+import { ILEObject, ILEObjectTarget, ImpactedObject, ObjectType, Targets } from '../../targets';
+import { asPosix, getFiles, toCl } from '../../utils';
+import { warningOut } from '../../cli';
+import { name } from '../../../webpack.config';
+import { FolderOptions, getFolderOptions } from './folderSettings';
+import { readAllRules } from './customRules';
+
+// Always try and store parmId as lowercase
+type CommandParameters = {[parmId: string]: string};
 
 interface CompileData {
 	/** indicates what type of object will be built from this source */
@@ -12,6 +19,8 @@ interface CompileData {
 	preCommands?: string[]
 	/** `command` does respect the library list */
 	command?: string;
+	
+	parameters?: CommandParameters;
 	/** Used if the commands are built up from source. Usually means `command` and `commands` is blank */
 	commandSource?: boolean;
 	/** `postCommands` do not respect the library list and is run after 'command' */
@@ -27,11 +36,15 @@ interface iProject {
 	includePaths?: string[];
 	compiles?: { [ext: string]: CompileData },
 	binders?: string[];
+	objectAttributes?: {
+		[object: string]: CommandParameters
+	}
 }
 
 export class MakeProject {
 	private noChildren: boolean = false;
 	private settings: iProject;
+	private folderSettings: {[folder: string]: FolderOptions} = {};
 
 	constructor(private cwd: string, private targets: Targets) {
 		this.settings = MakeProject.getDefaultSettings();
@@ -47,57 +60,141 @@ export class MakeProject {
 		return {
 			binders: [],
 			includePaths: [],
+			objectAttributes: {},
 			compiles: {
 				"pgm": {
 					becomes: `PGM`,
-					command: `CRTPGM PGM($(BIN_LIB)/$*) ENTMOD($*) MODULE(*MODULES) TGTRLS(*CURRENT) BNDDIR($(BNDDIR)) REPLACE(*YES)` // TODO: fix this
+					command: `CRTPGM`,
+					parameters: {
+						pgm: `$(BIN_LIB)/$*`,
+						entmod: `$*`,
+						module: `*MODULES`,
+						tgtrls: `*CURRENT`,
+						bnddir: `$(BNDDIR)`,
+						replace: `*YES`
+					}
 				},
 				"pgm.rpgle": {
 					becomes: `PGM`,
-					command: `CRTBNDRPG PGM($(BIN_LIB)/$*) SRCSTMF('$<') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)`
+					command: `CRTBNDRPG`,
+					parameters: {
+						pgm: `$(BIN_LIB)/$*`,
+						srcstmf: `'$<'`,
+						option: `*EVENTF`,
+						dbgview: `*SOURCE`,
+						tgtrls: `*CURRENT`,
+						tgtccsid: `*JOB`,
+						bnddir: `$(BNDDIR)`,
+						dftactgrp: `*NO`
+					}
 				},
 				"pgm.sqlrpgle": {
 					becomes: "PGM",
-					command: `CRTSQLRPGI OBJ($(BIN_LIB)/$*) SRCSTMF('$<') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)')`
+					command: `CRTSQLRPGI`,
+					parameters: {
+						obj: `$(BIN_LIB)/$*`,
+						srcstmf: `'$<'`,
+						commit: `*NONE`,
+						dbgview: `*SOURCE`,
+						option: `*EVENTF`,
+						rpgppopt: `*LVL2`,
+						compileopt: `TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)`
+					}
 				},
 				"rpgle": {
 					becomes: `MODULE`,
-					command: `CRTRPGMOD MODULE($(BIN_LIB)/$*) SRCSTMF('$<') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB)`
+					command: `CRTRPGMOD`,
+					parameters: {
+						module: `$(BIN_LIB)/$*`,
+						srcstmf: `'$<'`,
+						option: `*EVENTF`,
+						dbgview: `*SOURCE`,
+						tgtrls: `*CURRENT`,
+						tgtccsid: `*JOB`
+					}
 				},
 				"sqlrpgle": {
 					becomes: "MODULE",
-					command: `CRTSQLRPGI OBJ($(BIN_LIB)/$*) SRCSTMF('$<') COMMIT(*NONE) DBGVIEW(*SOURCE) COMPILEOPT('TGTCCSID(*JOB)') RPGPPOPT(*LVL2) OPTION(*EVENTF) OBJTYPE(*MODULE)`
+					command: `CRTSQLRPGI`,
+					parameters: {
+						obj: `$(BIN_LIB)/$*`,
+						srcstmf: `'$<'`,
+						commit: `*NONE`,
+						dbgview: `*SOURCE`,
+						compileopt: `'TGTCCSID(*JOB)'`,
+						rpgppopt: `*LVL2`,
+						option: `*EVENTF`,
+						objtype: `*MODULE`
+					}
 				},
 				"pgm.clle": {
 					becomes: `PGM`,
-					command: `CRTBNDCL PGM($(BIN_LIB)/$*) SRCSTMF('$<') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) DFTACTGRP(*no)`
+					command: `CRTBNDCL`,
+					parameters: {
+						pgm: `$(BIN_LIB)/$*`,
+						srcstmf: `'$<'`,
+						option: `*EVENTF`,
+						dbgview: `*SOURCE`,
+						tgtrls: `*CURRENT`,
+						dftactgrp: `*NO`
+					}
 				},
 				dspf: {
 					becomes: "FILE",
 					member: true,
-					command: "CRTDSPF FILE($(BIN_LIB)/$*) SRCFILE($(BIN_LIB)/$(SRCPF)) SRCMBR($*) OPTION(*EVENTF)"
+					command: "CRTDSPF",
+					parameters: {
+						file: `$(BIN_LIB)/$*`,
+						srcfile: `$(BIN_LIB)/$(SRCPF)`,
+						srcmbr: `$*`,
+						option: `*EVENTF`
+					}
 				},
 				prtf: {
 					becomes: "FILE",
 					member: true,
-					command: "CRTPRTF FILE($(BIN_LIB)/$*) SRCFILE($(BIN_LIB)/$(SRCPF)) SRCMBR($*) OPTION(*EVENTF)"
+					command: "CRTPRTF",
+					parameters: {
+						file: `$(BIN_LIB)/$*`,
+						srcfile: `$(BIN_LIB)/$(SRCPF)`,
+						srcmbr: `$*`,
+						option: `*EVENTF`
+					}
 				},
 				cmd: {
 					becomes: "CMD",
 					member: true,
-					command: "CRTCMD CMD($(BIN_LIB)/$*) PGM($(BIN_LIB)/$*) SRCFILE($(BIN_LIB)/$(SRCPF)) OPTION(*EVENTF)"
+					command: "CRTCMD",
+					parameters: {
+						cmd: `$(BIN_LIB)/$*`,
+						pgm: `$(BIN_LIB)/$*`,
+						srcfile: `$(BIN_LIB)/$(SRCPF)`,
+						option: `*EVENTF`
+					}
 				},
 				sql: {
 					becomes: `FILE`,
-					command: `RUNSQLSTM SRCSTMF('$<') COMMIT(*NONE)`
+					command: `RUNSQLSTM`,
+					parameters: {
+						srcstmf: `'$<'`,
+						commit: `*NONE`
+					}
 				},
 				sqludf: {
 					becomes: `SRVPGM`,
-					command: `RUNSQLSTM SRCSTMF('$<') COMMIT(*NONE)`
+					command: `RUNSQLSTM`,
+					parameters: {
+						srcstmf: `'$<'`,
+						commit: `*NONE`
+					}
 				},
 				table: {
 					becomes: `FILE`,
-					command: `RUNSQLSTM SRCSTMF('$<') COMMIT(*NONE)`
+					command: `RUNSQLSTM`,
+					parameters: {
+						srcstmf: `'$<'`,
+						commit: `*NONE`
+					}
 				},
 				binder: binderSourceCompile,
 				bnd: binderSourceCompile,
@@ -108,7 +205,13 @@ export class MakeProject {
 						`-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/$*))"`,
 						`-system "DLTOBJ OBJ($(BIN_LIB)/$*) OBJTYPE(*SRVPGM)"`
 					],
-					command: `CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE(*MODULES) SRCSTMF('$<') BNDDIR($(BNDDIR))`,
+					command: `CRTSRVPGM`,
+					parameters: {
+						srvpgm: `$(BIN_LIB)/$*`,
+						module: `*MODULES`,
+						srcstmf: `'$<'`,
+						bnddir: `$(BNDDIR)`
+					},
 					postCommands: [
 						`-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/$* *SRVPGM *IMMED))"`
 					]
@@ -128,31 +231,52 @@ export class MakeProject {
 				mnucmd: {
 					becomes: `MENU`,
 					member: true,
-					command: `CRTMNU MENU($(BIN_LIB)/$*) TYPE(*DSPF) DSPF($(BIN_LIB)/$*)`
+					command: `CRTMNU`,
+					parameters: {
+						menu: `$(BIN_LIB)/$*`,
+						type: `*DSPF`,
+						dspf: `$(BIN_LIB)/$*`
+					}
 				},
 				pf: {
 					becomes: `FILE`,
 					member: true,
-					command: `CRTPF FILE($(BIN_LIB)/$*) SRCFILE($(BIN_LIB)/$(SRCPF)) OPTION(*EVENTF)`
+					command: `CRTPF`,
+					parameters: {
+						file: `$(BIN_LIB)/$*`,
+						srcfile: `$(BIN_LIB)/$(SRCPF)`,
+						option: `*EVENTF`
+					}
 				},
 				lf: {
 					becomes: `FILE`,
 					member: true,
-					command: `CRTLF FILE($(BIN_LIB)/$*) SRCFILE($(BIN_LIB)/$(SRCPF)) OPTION(*EVENTF)`
+					command: `CRTLF`,
+					parameters: {
+						file: `$(BIN_LIB)/$*`,
+						srcfile: `$(BIN_LIB)/$(SRCPF)`,
+						option: `*EVENTF`
+					}
 				}
 			}
 		};
 	}
 
 	private setupSettings() {
+		// First, let's setup the project settings
 		try {
 			const content = readFileSync(path.join(this.cwd, `iproj.json`), { encoding: `utf-8` });
 			const asJson: iProject = JSON.parse(content);
 
 			this.applySettings(asJson);
+			warningOut(`make: Loaded project settings.`);
 		} catch (e) {
-			// console.log(`Failed to read 'iproj.json'.`);
+			warningOut(`make: Failed to read 'iproj.json'.`);
 		}
+
+		this.folderSettings = getFolderOptions(this.cwd);
+
+		readAllRules(this.targets, this);
 	}
 
 	public getSettings() {
@@ -178,6 +302,34 @@ export class MakeProject {
 				};
 			}
 		}
+	}
+
+	public getObjectAttributes(compileData: CompileData, ileObject: ILEObject): CommandParameters {
+		let customAttributes = this.settings.objectAttributes[`${ileObject.systemName}.${ileObject.type}`] || {};
+
+		if (ileObject.relativePath) {
+			// We need to take in the current folders .ibmi.json file for any specific values
+			const folder = path.dirname(ileObject.relativePath);
+			const folderSettings = this.folderSettings[folder];
+			if (folderSettings) {
+				// If there is a tgtccsid, we only want to apply it to commands
+				// that allow tgtccsid as a valid parameter
+				if (folderSettings.build?.tgtCcsid) {
+					if (compileData.parameters?.tgtccsid) {
+						customAttributes.tgtccsid = folderSettings.build.tgtCcsid;
+					} else if (compileData.member) {
+						// Special attribute
+						customAttributes.memberCcsid = folderSettings.build.tgtCcsid;
+					}
+
+					if (compileData.parameters?.compileopt) {
+						customAttributes.compileopt = compileData.parameters?.compileopt.replace(/tgtccsid\([\S]*\)/i, `TGTCCSID(${folderSettings.build.tgtCcsid})`);
+					}
+				}
+			}
+		}
+
+		return customAttributes;
 	}
 
 	public getMakefile(specificObjects?: ILEObject[]) {
@@ -284,7 +436,7 @@ export class MakeProject {
 				for (const ileObject of objects) {
 					if (ileObject.relativePath) {
 						const sourcePath = path.join(this.cwd, ileObject.relativePath);
-						const exists = existsSync(sourcePath);
+						const exists = existsSync(sourcePath); // Is this even needed? We already have relativePath??
 
 						if (exists) {
 							try {
@@ -292,9 +444,12 @@ export class MakeProject {
 								const eol = content.indexOf(`\r\n`) >= 0 ? `\r\n` : `\n`;
 								const commands = content.split(eol).filter(l => !l.startsWith(`/*`)); // Remove comments
 
+								const customAttributes = this.settings.objectAttributes[`${ileObject.systemName}.${ileObject.type}`];
+
 								lines.push(
 									`$(PREPATH)/${ileObject.systemName}.${data.becomes}: ${asPosix(ileObject.relativePath)}`,
-									...(commands.map(l => `\t-system -q "${l}"`)),
+									...(commands.map(l => `\t-system -q "${toCl(l, customAttributes)}"`)),
+									``,
 								);
 
 							} catch (e) {
@@ -314,8 +469,9 @@ export class MakeProject {
 						// This is used when your object really has source
 
 						const possibleTarget: ILEObjectTarget = this.targets.getTarget(ileObject) || (ileObject as ILEObjectTarget);
+						const customAttributes = this.getObjectAttributes(data, possibleTarget);
 						
-						lines.push(...MakeProject.generateSpecificTarget(data, possibleTarget));
+						lines.push(...MakeProject.generateSpecificTarget(data, possibleTarget, customAttributes));
 					}
 
 				} else
@@ -328,7 +484,7 @@ export class MakeProject {
 							[
 								`\tliblist -c $(BIN_LIB);\\`,
 								`\tliblist -a $(LIBL);\\`,
-								`\tsystem "${data.command}"` // TODO: write the spool file somewhere?
+								`\tsystem "${toCl(data.command, data.parameters)}"` // TODO: write the spool file somewhere?
 							]
 							: []
 						),
@@ -344,7 +500,7 @@ export class MakeProject {
 		return lines;
 	}
 
-	static generateSpecificTarget(data: CompileData, ileObject: ILEObjectTarget) {
+	static generateSpecificTarget(data: CompileData, ileObject: ILEObjectTarget, customAttributes?: CommandParameters): string[] {
 		let lines: string[] = [];
 
 		const parentName = ileObject.relativePath ? path.dirname(ileObject.relativePath) : undefined;
@@ -369,13 +525,31 @@ export class MakeProject {
 			return command;
 		}
 
-		const resolvedCommand = resolve(data.command);
+		// TODO: resolve the parameters from the Rules.mk
+		const objectKey = `${ileObject.systemName}.${ileObject.type}`;
+		
+		if (customAttributes) {
+			data.parameters = {
+				...data.parameters,
+				...customAttributes
+			};
+		}
+
+		let sourceFileCcsid = `*JOB`;
+		
+		if (data.parameters.memberCcsid) {
+			sourceFileCcsid = data.parameters.memberCcsid;
+			delete data.parameters.memberCcsid;
+		}
+
+		const resolvedCommand = resolve(toCl(data.command, data.parameters));
 
 		lines.push(
-			`$(PREPATH)/${ileObject.systemName}.${ileObject.type}: ${asPosix(ileObject.relativePath)}`,
+			`$(PREPATH)/${objectKey}: ${asPosix(ileObject.relativePath)}`,
 			...(qsysTempName && data.member ?
 				[
-					`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/${qsysTempName}) RCDLEN(112)"`,
+					// TODO: consider CCSID when creating the source file
+					`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/${qsysTempName}) RCDLEN(112) CCSID(${sourceFileCcsid})"`,
 					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${ileObject.systemName}.MBR') MBROPT(*REPLACE)"`
 				] : []),
 			...(data.preCommands ? data.preCommands.map(cmd => `\t${resolve(cmd)}`) : []),
@@ -402,7 +576,14 @@ const binderSourceCompile: CompileData = {
 		// `-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/$*))"`,
 		// `-system "DLTOBJ OBJ($(BIN_LIB)/$*) OBJTYPE(*SRVPGM)"`
 	],
-	command: `CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE(*MODULES) SRCSTMF('$<') BNDDIR($(BNDDIR)) REPLACE(*YES)`,
+	command: `CRTSRVPGM`,
+	parameters: {
+		srvpgm: `$(BIN_LIB)/$*`,
+		module: `*MODULES`,
+		srcstmf: `'$<'`,
+		bnddir: `$(BNDDIR)`,
+		replace: `*YES`
+	},
 	postCommands: [
 		`-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/$* *SRVPGM *IMMED))"`
 	]
