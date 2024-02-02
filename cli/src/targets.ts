@@ -36,6 +36,7 @@ export interface ILEObject {
 	systemName: string;
 	longName?: string;
 	type: ObjectType;
+	testModule?: boolean;
 	text?: string,
 	relativePath?: string;
 	extension?: string;
@@ -119,7 +120,7 @@ export class Targets {
 		return path.relative(this.cwd, fullPath);
 	}
 
-	private storeResolved(localPath: string, ileObject: ILEObject) {
+	public storeResolved(localPath: string, ileObject: ILEObject) {
 		this.resolvedObjects[localPath] = ileObject;
 	}
 
@@ -132,18 +133,29 @@ export class Targets {
 		const detail = path.parse(localPath);
 		const relativePath = this.getRelative(localPath);
 
+		let subTypeLength = 0;
 		const isProgram = detail.name.toUpperCase().endsWith(`.PGM`);
-		const name = getSystemNameFromPath(isProgram ? detail.name.substring(0, detail.name.length - 4) : detail.name);
+		const isTestModule = detail.name.toUpperCase().endsWith(`.TEST`);
+
+		if (isProgram) subTypeLength = 4;
+		if (isTestModule) subTypeLength = 5;
+
+		const validBaseName = (subTypeLength > 0 ? detail.name.substring(0, detail.name.length - subTypeLength) : detail.name);
+		const systemName = getSystemNameFromPath((isTestModule ? `t_` : ``) + validBaseName);
 		const extension = detail.ext.length > 1 ? detail.ext.substring(1) : detail.ext;
 		const type: ObjectType = (isProgram ? "PGM" : this.getObjectType(relativePath, extension));
 
 		const theObject: ILEObject = {
-			systemName: name,
+			systemName,
 			type: type,
 			text: newText,
 			relativePath,
 			extension
 		};
+
+		// The reason we assign seperately is because
+		// we don't need to clog up the result
+		if (isTestModule) theObject.testModule = true;
 
 		this.storeResolved(localPath, theObject);
 
@@ -940,10 +952,6 @@ export class Targets {
 		const pathDetail = path.parse(localPath);
 		const sourceName = pathDetail.base;
 		const ileObject = this.resolvePathToObject(localPath, options.text);
-		const target: ILEObjectTarget = {
-			...ileObject,
-			deps: []
-		};
 
 		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
 
@@ -1053,6 +1061,40 @@ export class Targets {
 				type: `warning`,
 			});
 		}
+
+		// define internal imports
+		ileObject.imports = cache.procedures
+			.filter((proc: any) => proc.keyword[`EXTPROC`])
+			.map(ref => {
+				const keyword = ref.keyword;
+				let importName: string = ref.name;
+				const extproc: string | boolean = keyword[`EXTPROC`];
+				if (extproc) {
+					if (extproc === true) importName = ref.name;
+					else importName = extproc;
+				}
+
+				if (importName.includes(`:`)) {
+					const parmParms = importName.split(`:`);
+					importName = parmParms.filter(p => !p.startsWith(`*`)).join(``);
+				}
+
+				importName = trimQuotes(importName);
+
+				return importName;
+			});
+
+					// define exported functions
+		if (cache.keyword[`NOMAIN`]) {
+			ileObject.exports = cache.procedures
+				.filter((proc: any) => proc.keyword[`EXPORT`])
+				.map(ref => ref.name.toUpperCase());
+		}
+
+		const target: ILEObjectTarget = {
+			...ileObject,
+			deps: []
+		};
 
 		// Find external programs
 		cache.procedures
@@ -1244,35 +1286,6 @@ export class Targets {
 		// We also look to see if there is a `.cmd` object with the same name
 			const resolvedObject = this.searchForObject({systemName: ileObject.systemName, type: `CMD`}, ileObject);
 			if (resolvedObject) this.createOrAppend(resolvedObject, target);
-
-		// define internal imports
-		target.imports = cache.procedures
-			.filter((proc: any) => proc.keyword[`EXTPROC`])
-			.map(ref => {
-				const keyword = ref.keyword;
-				let importName: string = ref.name;
-				const extproc: string | boolean = keyword[`EXTPROC`];
-				if (extproc) {
-					if (extproc === true) importName = ref.name;
-					else importName = extproc;
-				}
-
-				if (importName.includes(`:`)) {
-					const parmParms = importName.split(`:`);
-					importName = parmParms.filter(p => !p.startsWith(`*`)).join(``);
-				}
-
-				importName = trimQuotes(importName);
-
-				return importName;
-			});
-
-		// define exported functions
-		if (cache.keyword[`NOMAIN`]) {
-			target.exports = cache.procedures
-				.filter((proc: any) => proc.keyword[`EXPORT`])
-				.map(ref => ref.name.toUpperCase());
-		}
 
 		if (target.deps.length > 0)
 			infoOut(`Depends on: ${target.deps.map(d => `${d.systemName}.${d.type}`).join(` `)}`);
@@ -1468,7 +1481,7 @@ export class Targets {
 		return existingTarget;
 	}
 
-	private addNewTarget(dep: ILEObjectTarget) {
+	public addNewTarget(dep: ILEObjectTarget) {
 		this.targets[`${dep.systemName}.${dep.type}`] = dep;
 	}
 

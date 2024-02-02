@@ -28,41 +28,41 @@ export class Logger {
 
   constructor() {}
 
-  flush(specificPath?: string) {
-    if (specificPath) {
-      this.logs[specificPath] = [];
+  flush(relativePath?: string) {
+    if (relativePath) {
+      this.logs[relativePath] = [];
     } else {
       this.logs = {}
     }
   }
 
-  fileLog(path: string, log: FileLog) {
+  fileLog(relativePath: string, log: FileLog) {
     switch (log.type) {
-      case `info`: infoOut(`${path}${log.line ? `:${log.line}` : ``} - ${log.message}`); break;
-      case `warning`: warningOut(`${path}${log.line ? `:${log.line}` : ``} - ${log.message}`); break;
+      case `info`: infoOut(`${relativePath}${log.line ? `:${log.line}` : ``} - ${log.message}`); break;
+      case `warning`: warningOut(`${relativePath}${log.line ? `:${log.line}` : ``} - ${log.message}`); break;
     }
 
-    if (!this.logs[path]) {
-      this.logs[path] = [];
+    if (!this.logs[relativePath]) {
+      this.logs[relativePath] = [];
     }
 
     if (log.type === `rename`) {
       // If this path already contains a rename, ignore this
-      if (this.logs[path].some(l => l.type === `rename`)) return;
+      if (this.logs[relativePath].some(l => l.type === `rename`)) return;
     }
 
-    this.logs[path].push(log);
+    this.logs[relativePath].push(log);
   }
 
-  exists(path: string, type: LogType) {
-    return this.logs[path] && this.logs[path].some(l => l.type === type)
+  exists(relativePath: string, type: LogType) {
+    return this.logs[relativePath] && this.logs[relativePath].some(l => l.type === type)
   }
 
   getAllLogs() {
     return this.logs;
   }
 
-  getLogsFor(path: string): FileLog[]|undefined {
-    return this.logs[path];
+  getLogsFor(relativePath: string): FileLog[]|undefined {
+    return this.logs[relativePath];
   }
 }
