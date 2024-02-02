@@ -11,6 +11,16 @@ export class TestBuilder {
     return pgm ? `.so/runner.pgm.rpgle` : `.so/runner.rpgle`;
   }
 
+  static getRunnerPaseCommands(withCc?: boolean) {
+    if (withCc) {
+      throw new Error(`Not implemented`);
+    } else {
+      return [
+        `system "CALL RUNNER PARM('')"`
+      ]
+    }
+  }
+
   static generatePrototypesForTestExports(exports: string[]) {
     return exports.map(e => [`Dcl-Pr ${e} ExtProc;`, `End-Pr;`, ``].join(`\n`)).join(`\n`);
   }
@@ -77,8 +87,10 @@ export class TestBuilder {
         lines.push(`printf('${exportName}:START' + x'25');`);
         lines.push(`monitor;`);
         lines.push(`  ${exportName}();`);
+        lines.push(`  printf(x'25');`);
         lines.push(`  printf('${exportName}:SUCCESS' + x'25');`);
         lines.push(`on-error;`);
+        lines.push(`  printf(x'25');`);
         lines.push(`  printf('${exportName}:LOG:Use CALL RUNNER ''${exportName}'')' + x'25');`);
         lines.push(`  printf('${exportName}:CRASH' + x'25');`);
         lines.push(`endmon;`);

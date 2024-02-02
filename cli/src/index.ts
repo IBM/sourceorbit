@@ -228,6 +228,14 @@ async function main() {
 			const makeProj = new MakeProject(cwd, targets);
 			makeProj.setNoChildrenInBuild(cliSettings.makeFileNoChildren);
 
+			if (cliSettings.writeTestRunner) {
+				makeProj.addPseudoTarget(`test`, [
+					`liblist -c $(BIN_LIB);\\`,
+					`liblist -a $(LIBL);\\`,
+					...TestBuilder.getRunnerPaseCommands()
+				]);
+			}
+
 			let specificObjects: ILEObject[] | undefined = cliSettings.fileList ? cliSettings.lookupFiles.map(f => targets.getResolvedObject(path.join(cwd, f))).filter(o => o) : undefined;
 			writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile(specificObjects).join(`\n`));
 			

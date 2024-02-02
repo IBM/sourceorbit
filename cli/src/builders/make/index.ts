@@ -45,6 +45,7 @@ export class MakeProject {
 	private noChildren: boolean = false;
 	private settings: iProject;
 	private folderSettings: {[folder: string]: FolderOptions} = {};
+	private pseudoTargets: {[name: string]: string[]} = {};
 
 	constructor(private cwd: string, private targets: Targets) {
 		this.settings = MakeProject.getDefaultSettings();
@@ -333,13 +334,29 @@ export class MakeProject {
 	}
 
 	public getMakefile(specificObjects?: ILEObject[]) {
+		let customTargetLines = [];
+
+		for (const pseudoTarget in this.pseudoTargets) {
+			customTargetLines.push(
+				`${pseudoTarget}:`,
+				...this.pseudoTargets[pseudoTarget].map(t => `\t${t}`),
+				``
+			);
+		}
+
 		return [
 			...this.generateHeader(),
 			``,
 			...this.generateTargets(specificObjects),
 			``,
-			...this.generateGenericRules()
+			...this.generateGenericRules(),
+			``,
+			...customTargetLines
 		];
+	}
+
+	addPseudoTarget(name: string, commands: string[]) {
+		this.pseudoTargets[name] = commands;
 	}
 
 	public generateHeader(): string[] {
