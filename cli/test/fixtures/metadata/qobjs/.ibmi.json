@@ -1,0 +1,7 @@
+{
+  "version": "0.0.1",
+  "build": {
+    "objlib": "OTHER",
+    "tgtCcsid": "37"
+  }
+}

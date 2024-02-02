@@ -201,7 +201,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
       '$(PREPATH)/MYPGM.PGM: qrpglesrc/mypgm.pgm.rpgle',
       '\tliblist -c $(BIN_LIB);\\',
       '\tliblist -a $(LIBL);\\',
-      `\tsystem "CRTBNDRPG PGM($(BIN_LIB)/MYPGM) SRCSTMF('qrpglesrc/mypgm.pgm.rpgle') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)" > .logs/mypgm.splf`,
+      `\tsystem "CRTBNDRPG PGM($(BIN_LIB)/MYPGM) SRCSTMF('qrpglesrc/mypgm.pgm.rpgle') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*NO)" > .logs/mypgm.splf`,
       `\tsystem "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/MYPGM.MBR\') TOSTMF(\'.evfevent/mypgm.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
     ].join());
   });
@@ -225,7 +225,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
     expect(lines.join()).toBe([
       '$(PREPATH)/DEPTS.FILE: qddssrc/depts.dspf',
-      '\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/qddssrc) RCDLEN(112)"',
+      '\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/qddssrc) RCDLEN(112) CCSID(*JOB)"',
       `\tsystem "CPYFRMSTMF FROMSTMF('qddssrc/depts.dspf') TOMBR('$(PREPATH)/qddssrc.FILE/DEPTS.MBR') MBROPT(*REPLACE)"`,
       '\tliblist -c $(BIN_LIB);\\',
       '\tliblist -a $(LIBL);\\',
