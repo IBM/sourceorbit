@@ -1163,6 +1163,7 @@ export class Targets {
 			})
 
 		// SQLReference detection
+		// author Crisrivlop
 		// this change is made because there are somecases in which files accesed via SQL syntax
 		// are not detected. It can be solved concatenating all the detected sqlReferences in the different
 		// procedure scopes. It seems it can be applied in the Data Strucuture's case.
