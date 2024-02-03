@@ -1162,8 +1162,21 @@ export class Targets {
 				}
 			})
 
+		// SQLReference detection
+		// this change is made because there are somecases in which files accesed via SQL syntax
+		// are not detected. It can be solved concatenating all the detected sqlReferences in the different
+		// procedure scopes. It seems it can be applied in the Data Strucuture's case.
+		const internalScopeSQLRefs = cache.procedures.reduce((references,proc)=> {
+			const internalSQLRef = !proc.scope?[]:proc.scope.sqlReferences;
+			return references.concat(internalSQLRef);
+		},[...cache.sqlReferences])
+		// reduce to avoid repeated sql elements
+		.reduce((SqlRefs,ref)=>{
+			if (!SqlRefs.some(r => r.name === ref.name && r.type === ref.type)) SqlRefs.push(ref);
+			return SqlRefs;
+		},[]);
 		// We ignore anything with hardcoded schemas
-		cache.sqlReferences
+		internalScopeSQLRefs
 			.filter(ref => !ref.description)
 			.map((ref): RpgLookup => ({
 				lookup: trimQuotes(ref.name, `"`).toUpperCase(),
