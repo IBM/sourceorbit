@@ -1173,7 +1173,6 @@ export class Targets {
 			}))
 			.forEach((ref: RpgLookup) => {
 				const resolvedObject = this.searchForObject({systemName: ref.lookup, type: `FILE`}, ileObject);
-				const previouslyScanned = target.deps.some((r => r.systemName === ref.lookup && r.type === `FILE` ));
 				if (resolvedObject) target.deps.push(resolvedObject)
 				else {
 					this.logger.fileLog(ileObject.relativePath, {
