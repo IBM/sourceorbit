@@ -93,6 +93,7 @@ export class Targets {
 	private resolvedExports: { [name: string]: ILEObject } = {};
 	private targets: { [name: string]: ILEObjectTarget } = {};
 	private needsBinder = false;
+	private analyzeScope = false;
 
 	private suggestions: TargetSuggestions = {};
 
@@ -1161,23 +1162,10 @@ export class Targets {
 					});
 				}
 			})
-
-		// SQLReference detection
-		// author Crisrivlop
-		// this change is made because there are somecases in which files accesed via SQL syntax
-		// are not detected. It can be solved concatenating all the detected sqlReferences in the different
-		// procedure scopes. It seems it can be applied in the Data Strucuture's case.
-		const internalScopeSQLRefs = cache.procedures.reduce((references,proc)=> {
-			const internalSQLRef = !proc.scope?[]:proc.scope.sqlReferences;
-			return references.concat(internalSQLRef);
-		},[...cache.sqlReferences])
-		// reduce to avoid repeated sql elements
-		.reduce((SqlRefs,ref)=>{
-			if (!SqlRefs.some(r => r.name === ref.name && r.type === ref.type)) SqlRefs.push(ref);
-			return SqlRefs;
-		},[]);
+		const internalScopeSQLRefs = this.scanSqlReferencesInProcedures(cache);
+		const sqlReferences = this.isScopeAnalysisActivated()?internalScopeSQLRefs:cache.sqlReferences;
 		// We ignore anything with hardcoded schemas
-		internalScopeSQLRefs
+		sqlReferences
 			.filter(ref => !ref.description)
 			.map((ref): RpgLookup => ({
 				lookup: trimQuotes(ref.name, `"`).toUpperCase(),
@@ -1185,6 +1173,7 @@ export class Targets {
 			}))
 			.forEach((ref: RpgLookup) => {
 				const resolvedObject = this.searchForObject({systemName: ref.lookup, type: `FILE`}, ileObject);
+				const previouslyScanned = target.deps.some((r => r.systemName === ref.lookup && r.type === `FILE` ));
 				if (resolvedObject) target.deps.push(resolvedObject)
 				else {
 					this.logger.fileLog(ileObject.relativePath, {
@@ -1194,7 +1183,6 @@ export class Targets {
 					});
 				}
 			});
-
 		// Find external data areas
 		cache.structs
 			.filter((struct: any) => struct.keyword[`DTAARA`])
@@ -1558,6 +1546,34 @@ export class Targets {
 
 		return currentItem;
 	}
+
+	/**
+	 * isScopeAnalysisActivated
+	 */
+	public isScopeAnalysisActivated() {
+		return this.analyzeScope;
+	}
+
+	/**
+	 * setAnalysisForScopes
+	 * @param analyzeScope set the flag encharged to analyze procedure internal scope 
+	 */
+	public setAnalysisForScopes(analyzeScope:boolean) {
+		this.analyzeScope = analyzeScope;
+	}
+
+	private scanSqlReferencesInProcedures(cache:Cache) {
+		return cache.procedures.reduce((references,proc)=> {
+			const internalSQLRef = !proc.scope?[]:proc.scope.sqlReferences;
+			return references.concat(internalSQLRef);
+		},[...cache.sqlReferences])
+		// reduce to avoid repeated sql elements
+		.reduce((SqlRefs,ref)=>{
+			if (!SqlRefs.some(r => r.name === ref.name && r.type === ref.type)) SqlRefs.push(ref);
+			return [...SqlRefs];
+		},[]);
+	}
+
 }
 
 function trimQuotes(input: string, value = `'`) {

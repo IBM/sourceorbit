@@ -5,7 +5,7 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { ILEObject, Targets } from './targets';
 import { MakeProject } from './builders/make';
 import path from 'path';
-import { BuildFiles, cliSettings, error, warningOut } from './cli';
+import { BuildFiles, cliSettings, error, infoOut, warningOut } from './cli';
 import { BobProject } from "./builders/bob";
 import { ImpactMarkdown } from "./builders/imd";
 import { allExtensions } from "./extensions";
@@ -71,7 +71,11 @@ async function main() {
 				cliSettings.userBranch = parms[i+1];
 				i++;
 				break;
-
+			case `-sa`:
+			case `--scope-analysis`:
+				infoOut('Scope analysis activated. Information from internal procedure is going to be included (SQLReference is going to be analyzed by now)');
+				cliSettings.scopeAnalysis = true;
+				break;
 			case `-f`:
 			case `--files`:
 			case `-l`:
@@ -123,6 +127,9 @@ async function main() {
 				console.log(`\t-nc`);
 				console.log(`\t--no-children\tUsed with '-bf make' and won't include children of`);
 				console.log(`\t\t\tobjects in the makefile. Useful in conjuction with '-f'.`);
+				console.log(`\t-sa`);
+				console.log(`\t--scope-analysis\tUsed with '-bf' and will include the analysis from`);
+				console.log(`\t\t\t\tinternal procedures scopes. Useful in conjuction with '-f'.`);
 				console.log(``);
 				process.exit(0);
 				break;

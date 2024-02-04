@@ -37,6 +37,17 @@ export function setupCompanySystem() {
   return projectPath;
 }
 
+export function setupSqlReferencesSystem() {
+  const fixturePath = path.join(__dirname, `sql_references`);
+  const projectPath = path.join(projectFolder, `sql_references`);
+
+  deleteDir(projectPath);
+  mkdir(projectPath);
+  fs.cpSync(fixturePath, projectPath, {recursive: true});
+
+  return projectPath;
+}
+
 export function setupMultiModule() {
   const fixturePath = path.join(__dirname, `multi_module`);
   const projectPath = path.join(projectFolder, `multi_module`);

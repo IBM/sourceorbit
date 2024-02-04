@@ -1,0 +1,8 @@
+--%METADATA                                                     *
+-- %TEXT Stock File                              *
+--%EMETADATA                                                    *
+
+CREATE OR REPLACE TABLE STOCK
+      (PRDKEY       CHAR(6)         NOT NULL, 
+       PRDNAM       CHAR(12)        NOT NULL,
+       PRIMARY KEY (EMPNO)); 
