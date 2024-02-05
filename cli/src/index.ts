@@ -157,6 +157,8 @@ async function main() {
 		renames: cliSettings.autoRename
 	});
 
+	targets.setAnalysisForScopes(cliSettings.scopeAnalysis);
+
 	let files: string[];
 
 	try {
