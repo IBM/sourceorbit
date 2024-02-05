@@ -6,7 +6,6 @@ export let cliSettings = {
 	infoMessages: false,
 	buildFile: "none" as BuildFiles,
 	fixIncludes: false,
-	scopeAnalysis: false,
 	autoRename: false,
 	fileList: false,
 	lookupFiles: [] as string[],

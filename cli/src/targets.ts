@@ -93,7 +93,6 @@ export class Targets {
 	private resolvedExports: { [name: string]: ILEObject } = {};
 	private targets: { [name: string]: ILEObjectTarget } = {};
 	private needsBinder = false;
-	private analyzeScope = false;
 
 	private suggestions: TargetSuggestions = {};
 
@@ -211,7 +210,7 @@ export class Targets {
 		return this.getResolvedObjects().find(o => (o.systemName === lookFor.name || o.longName?.toUpperCase() === lookFor.name) && lookFor.types.includes(o.type));
 	}
 
-	public resolveLocalFile(name: string, baseFile?: string): string|undefined {
+	public resolveLocalFile(name: string, baseFile?: string): string | undefined {
 		name = name.toUpperCase();
 
 		if (this.resolvedSearches[name]) return this.resolvedSearches[name];
@@ -504,7 +503,7 @@ export class Targets {
 					for (const value of parts) {
 						const qualified = value.split(`/`);
 
-						let objectName: string|undefined;
+						let objectName: string | undefined;
 						if (qualified.length === 2 && qualified[0].toLowerCase() === `*libl`) {
 							objectName = qualified[1];
 						} else if (qualified.length === 1) {
@@ -512,7 +511,7 @@ export class Targets {
 						}
 
 						if (objectName) {
-							const resolvedPath = this.searchForObject({systemName: objectName.toUpperCase(), type: `FILE`}, ileObject);
+							const resolvedPath = this.searchForObject({ systemName: objectName.toUpperCase(), type: `FILE` }, ileObject);
 							if (resolvedPath) target.deps.push(resolvedPath);
 							else {
 								this.logger.fileLog(ileObject.relativePath, {
@@ -542,7 +541,7 @@ export class Targets {
 					if (fileRef) {
 						const qualified = fileRef.split(`/`);
 
-						let objectName: string|undefined;
+						let objectName: string | undefined;
 						if (qualified.length === 2 && qualified[0].toLowerCase() === `*libl`) {
 							objectName = qualified[1];
 						} else if (qualified.length === 1) {
@@ -550,7 +549,7 @@ export class Targets {
 						}
 
 						if (objectName) {
-							const resolvedPath = this.searchForObject({systemName: objectName.toUpperCase(), type: `FILE`}, ileObject);
+							const resolvedPath = this.searchForObject({ systemName: objectName.toUpperCase(), type: `FILE` }, ileObject);
 							if (resolvedPath) {
 								if (!target.deps.some(d => d.systemName === resolvedPath.systemName && d.type === resolvedPath.type)) {
 									target.deps.push(resolvedPath);
@@ -652,7 +651,7 @@ export class Targets {
 				} else {
 					if (ignoredObjects.includes(possibleObject.name.toUpperCase())) return;
 
-					const resolvedPath = this.searchForObject({systemName: possibleObject.name.toUpperCase(), type: `FILE`}, ileObject);
+					const resolvedPath = this.searchForObject({ systemName: possibleObject.name.toUpperCase(), type: `FILE` }, ileObject);
 					if (resolvedPath) target.deps.push(resolvedPath);
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -683,7 +682,7 @@ export class Targets {
 
 					if (ignoredObjects.includes(name.toUpperCase())) return;
 
-					const resolvedPath = this.searchForObject({systemName: name.toUpperCase(), type: `PGM`}, ileObject);
+					const resolvedPath = this.searchForObject({ systemName: name.toUpperCase(), type: `PGM` }, ileObject);
 					if (resolvedPath) target.deps.push(resolvedPath);
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -709,7 +708,7 @@ export class Targets {
 		});
 
 		// We also look to see if there is a `.cmd` object with the same name
-		const possibleCommandObject = this.searchForObject({systemName: ileObject.systemName, type: `CMD`}, ileObject);
+		const possibleCommandObject = this.searchForObject({ systemName: ileObject.systemName, type: `CMD` }, ileObject);
 		if (possibleCommandObject) this.createOrAppend(possibleCommandObject, target);
 
 		if (target.deps.length > 0)
@@ -871,7 +870,7 @@ export class Targets {
 								const refTokens = def.tokens;
 								const simpleName = trimQuotes(def.object.name, `"`);
 								// TODO: do we need to look for SRVPGM (function) or PGM (procedure) here?
-								const resolvedObject = this.searchForAnyObject({name: simpleName, types: [`FILE`, `SRVPGM`, `PGM`]});
+								const resolvedObject = this.searchForAnyObject({ name: simpleName, types: [`FILE`, `SRVPGM`, `PGM`] });
 								if (resolvedObject) newTarget.deps.push(resolvedObject);
 								else {
 									this.logger.fileLog(newTarget.relativePath, {
@@ -1078,7 +1077,7 @@ export class Targets {
 				// Don't add itself
 				if (ref.lookup === ileObject.systemName) return;
 
-				const resolvedObject = this.searchForObject({systemName: ref.lookup, type: `PGM`}, ileObject);
+				const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `PGM` }, ileObject);
 				if (resolvedObject) {
 					// because of legacy fixed CALL, there can be dupliicate EXTPGMs with the same name :(
 					if (!target.deps.some(d => d.systemName === resolvedObject.systemName && d.type && resolvedObject.type)) {
@@ -1095,158 +1094,162 @@ export class Targets {
 				}
 			});
 
-		// Find external data structure sources
-		cache.structs
-			.filter((struct: any) => struct.keyword[`EXTNAME`])
-			.map((struct): RpgLookup => {
-				const keyword = struct.keyword;
-				const value = trimQuotes(keyword[`EXTNAME`]);
+		// Scan the multiple scopes available in an RPGLE program
+		const scopes = [cache, ...cache.procedures.map(p => p.scope)].filter(s => s);
 
-				return {
-					lookup: value.split(`:`)[0].toUpperCase(),
-					line: struct.position ? struct.position.line : undefined
-				};
-			})
-			.forEach((ref: RpgLookup) => {
-				const resolvedObject = this.searchForObject({systemName: ref.lookup, type: `FILE`}, ileObject);
-				if (resolvedObject) target.deps.push(resolvedObject)
-				else {
-					this.logger.fileLog(ileObject.relativePath, {
-						message: `No object found for reference '${ref.lookup}'`,
-						type: `warning`,
-						line: ref.line
-					});
-				}
-			});
+		for (const scope of scopes) {
 
+			// Find external data structure sources
+			scope.structs
+				.filter((struct: any) => struct.keyword[`EXTNAME`])
+				.map((struct): RpgLookup => {
+					const keyword = struct.keyword;
+					const value = trimQuotes(keyword[`EXTNAME`]);
 
-
-		// Find external files
-		cache.files
-			.map((file): RpgLookup => {
-				let possibleName: string = file.name;
-				const keyword = file.keyword;
-
-				const extNameValue = keyword[`EXTFILE`];
-				if (extNameValue) {
-					possibleName = trimQuotes(extNameValue).split(`:`)[0]
-				}
-
-				if (possibleName === `*extdesc`) {
-					const extDescValue = keyword[`EXTDESC`];
-					if (extDescValue) {
-						possibleName = trimQuotes(extDescValue);
-					} else {
+					return {
+						lookup: value.split(`:`)[0].toUpperCase(),
+						line: struct.position ? struct.position.line : undefined
+					};
+				})
+				.forEach((ref: RpgLookup) => {
+					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` }, ileObject);
+					if (resolvedObject) target.deps.push(resolvedObject)
+					else {
 						this.logger.fileLog(ileObject.relativePath, {
-							message: `*EXTDESC is used for '${file.name}' but EXTDESC keyword not found/`,
+							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
+							line: ref.line
 						});
 					}
-				}
+				});
 
-				return {
-					lookup: possibleName.toUpperCase(),
-					line: file.position ? file.position.line : undefined
-				};
-			})
-			.forEach((ref: RpgLookup) => {
-				if (ignoredObjects.includes(ref.lookup)) return;
+			// Find external files
+			scope.files
+				.map((file): RpgLookup => {
+					let possibleName: string = file.name;
+					const keyword = file.keyword;
 
-				const resolvedObject = this.searchForObject({systemName: ref.lookup, type: `FILE`}, ileObject);
-				if (resolvedObject) target.deps.push(resolvedObject)
-				else {
-					this.logger.fileLog(ileObject.relativePath, {
-						message: `No object found for reference '${ref.lookup}'`,
-						type: `warning`,
-						line: ref.line
-					});
-				}
-			})
-		const internalScopeSQLRefs = this.scanSqlReferencesInProcedures(cache);
-		const sqlReferences = this.isScopeAnalysisActivated()?internalScopeSQLRefs:cache.sqlReferences;
-		// We ignore anything with hardcoded schemas
-		sqlReferences
-			.filter(ref => !ref.description)
-			.map((ref): RpgLookup => ({
-				lookup: trimQuotes(ref.name, `"`).toUpperCase(),
-				line: ref.position ? ref.position.line : undefined
-			}))
-			.forEach((ref: RpgLookup) => {
-				const previouslyScanned = target.deps.some((r => r.systemName === ref.lookup && r.type === `FILE` ));
-				if (previouslyScanned) return;
-				const resolvedObject = this.searchForObject({systemName: ref.lookup, type: `FILE`}, ileObject);
-				if (resolvedObject) target.deps.push(resolvedObject)
-				else {
-					this.logger.fileLog(ileObject.relativePath, {
-						message: `No object found for reference '${ref.lookup}'`,
-						type: `warning`,
-						line: ref.line
-					});
-				}
-			});
-		// Find external data areas
-		cache.structs
-			.filter((struct: any) => struct.keyword[`DTAARA`])
-			.map((ref): RpgLookup => {
-				const keyword = ref.keyword;
-				let fileName: string = ref.name;
-				const dtaara = keyword[`DTAARA`];
-				if (dtaara) {
-					if (dtaara === true) fileName = ref.name;
-					else fileName = trimQuotes(dtaara);
-				}
+					const extNameValue = keyword[`EXTFILE`];
+					if (extNameValue) {
+						possibleName = trimQuotes(extNameValue).split(`:`)[0]
+					}
 
-				return {
-					lookup: fileName.toUpperCase(),
+					if (possibleName === `*extdesc`) {
+						const extDescValue = keyword[`EXTDESC`];
+						if (extDescValue) {
+							possibleName = trimQuotes(extDescValue);
+						} else {
+							this.logger.fileLog(ileObject.relativePath, {
+								message: `*EXTDESC is used for '${file.name}' but EXTDESC keyword not found/`,
+								type: `warning`,
+							});
+						}
+					}
+
+					return {
+						lookup: possibleName.toUpperCase(),
+						line: file.position ? file.position.line : undefined
+					};
+				})
+				.forEach((ref: RpgLookup) => {
+					if (ignoredObjects.includes(ref.lookup)) return;
+
+					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` }, ileObject);
+					if (resolvedObject) target.deps.push(resolvedObject)
+					else {
+						this.logger.fileLog(ileObject.relativePath, {
+							message: `No object found for reference '${ref.lookup}'`,
+							type: `warning`,
+							line: ref.line
+						});
+					}
+				});
+
+			// We ignore anything with hardcoded schemas
+			scope.sqlReferences
+				.filter(ref => !ref.description)
+				.map((ref): RpgLookup => ({
+					lookup: trimQuotes(ref.name, `"`).toUpperCase(),
 					line: ref.position ? ref.position.line : undefined
-				};
-			})
-			.forEach((ref: RpgLookup) => {
-				if (ignoredObjects.includes(ref.lookup.toUpperCase())) return;
+				}))
+				.forEach((ref: RpgLookup) => {
+					const previouslyScanned = target.deps.some((r => r.systemName === ref.lookup && r.type === `FILE`));
+					if (previouslyScanned) return;
+					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` }, ileObject);
+					if (resolvedObject) target.deps.push(resolvedObject)
+					else {
+						this.logger.fileLog(ileObject.relativePath, {
+							message: `No object found for reference '${ref.lookup}'`,
+							type: `warning`,
+							line: ref.line
+						});
+					}
+				});
 
-				const resolvedObject = this.searchForObject({systemName: ref.lookup, type: `DTAARA`}, ileObject);
-				if (resolvedObject) target.deps.push(resolvedObject)
-				else {
-					this.logger.fileLog(ileObject.relativePath, {
-						message: `No object found for reference '${ref.lookup}'`,
-						type: `warning`,
-						line: ref.line
-					});
-				}
-			});
+			// Find external data areas
+			scope.structs
+				.filter((struct: any) => struct.keyword[`DTAARA`])
+				.map((ref): RpgLookup => {
+					const keyword = ref.keyword;
+					let fileName: string = ref.name;
+					const dtaara = keyword[`DTAARA`];
+					if (dtaara) {
+						if (dtaara === true) fileName = ref.name;
+						else fileName = trimQuotes(dtaara);
+					}
 
-		cache.variables
-			.filter((struct: any) => struct.keyword[`DTAARA`])
-			.map((ref): RpgLookup => {
-				const keyword = ref.keyword;
-				let fileName: string = ref.name;
-				const dtaara = keyword[`DTAARA`];
-				if (dtaara) {
-					if (dtaara === true) fileName = ref.name;
-					else fileName = trimQuotes(dtaara);
-				}
+					return {
+						lookup: fileName.toUpperCase(),
+						line: ref.position ? ref.position.line : undefined
+					};
+				})
+				.forEach((ref: RpgLookup) => {
+					if (ignoredObjects.includes(ref.lookup.toUpperCase())) return;
 
-				return {
-					lookup: fileName.toUpperCase(),
-					line: ref.position ? ref.position.line : undefined
-				};
-			})
-			.forEach((ref: RpgLookup) => {
-				const resolvedObject = this.searchForObject({systemName: ref.lookup, type: `DTAARA`}, ileObject);
-				if (resolvedObject) target.deps.push(resolvedObject)
-				else {
-					this.logger.fileLog(ileObject.relativePath, {
-						message: `No object found for reference '${ref.lookup}'`,
-						type: `warning`,
-						line: ref.line
-					});
-				}
-			});
+					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` }, ileObject);
+					if (resolvedObject) target.deps.push(resolvedObject)
+					else {
+						this.logger.fileLog(ileObject.relativePath, {
+							message: `No object found for reference '${ref.lookup}'`,
+							type: `warning`,
+							line: ref.line
+						});
+					}
+				});
+
+			scope.variables
+				.filter((struct: any) => struct.keyword[`DTAARA`])
+				.map((ref): RpgLookup => {
+					const keyword = ref.keyword;
+					let fileName: string = ref.name;
+					const dtaara = keyword[`DTAARA`];
+					if (dtaara) {
+						if (dtaara === true) fileName = ref.name;
+						else fileName = trimQuotes(dtaara);
+					}
+
+					return {
+						lookup: fileName.toUpperCase(),
+						line: ref.position ? ref.position.line : undefined
+					};
+				})
+				.forEach((ref: RpgLookup) => {
+					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` }, ileObject);
+					if (resolvedObject) target.deps.push(resolvedObject)
+					else {
+						this.logger.fileLog(ileObject.relativePath, {
+							message: `No object found for reference '${ref.lookup}'`,
+							type: `warning`,
+							line: ref.line
+						});
+					}
+				});
+		}
 
 		// TODO: did we duplicate this?
 		// We also look to see if there is a `.cmd` object with the same name
-			const resolvedObject = this.searchForObject({systemName: ileObject.systemName, type: `CMD`}, ileObject);
-			if (resolvedObject) this.createOrAppend(resolvedObject, target);
+		const resolvedObject = this.searchForObject({ systemName: ileObject.systemName, type: `CMD` }, ileObject);
+		if (resolvedObject) this.createOrAppend(resolvedObject, target);
 
 		// define internal imports
 		target.imports = cache.procedures
@@ -1546,33 +1549,6 @@ export class Targets {
 		lookupObject(currentItem);
 
 		return currentItem;
-	}
-
-	/**
-	 * isScopeAnalysisActivated
-	 */
-	public isScopeAnalysisActivated() {
-		return this.analyzeScope;
-	}
-
-	/**
-	 * setAnalysisForScopes
-	 * @param analyzeScope set the flag encharged to analyze procedure internal scope 
-	 */
-	public setAnalysisForScopes(analyzeScope:boolean) {
-		this.analyzeScope = analyzeScope;
-	}
-
-	private scanSqlReferencesInProcedures(cache:Cache) {
-		return cache.procedures.reduce((references,proc)=> {
-			const internalSQLRef = !proc.scope?[]:proc.scope.sqlReferences;
-			return references.concat(internalSQLRef);
-		},[...cache.sqlReferences])
-		// reduce to avoid repeated sql elements
-		.reduce((SqlRefs,ref)=>{
-			if (!SqlRefs.some(r => r.name === ref.name && r.type === ref.type)) SqlRefs.push(ref);
-			return [...SqlRefs];
-		},[]);
 	}
 
 }
