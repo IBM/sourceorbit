@@ -28,7 +28,7 @@ describe.skipIf(files.length === 0)(`sql_references tests (internal scope analys
       await setupScopeAnalysis(targets,true);
     });
   
-    test(`Check stock (with internal scope analisys)`, async () => {
+    test(`Check stock (with internal scope analysis)`, async () => {
       const myPgm = targets.getTarget({systemName: `SQLREFPGM`, type: `PGM`});
       expect(myPgm.relativePath).toBe(path.join(`qrpglesrc`, `sqlrefpgm.pgm.sqlrpgle`));
       expect(myPgm.deps.length).toBe(1);
@@ -39,7 +39,7 @@ describe.skipIf(files.length === 0)(`sql_references tests (internal scope analys
       expect(empTable.relativePath).toBe(path.join(`qddssrc`, `stock.table`));
     });
   
-    test(`Check stock (without internal scope analisys)`, async () => {
+    test(`Check stock (without internal scope analysis)`, async () => {
         await setupScopeAnalysis(targets,false);
         const myPgm = targets.getTarget({systemName: `SQLREFPGM`, type: `PGM`});
         expect(myPgm.relativePath).toBe(path.join(`qrpglesrc`, `sqlrefpgm.pgm.sqlrpgle`));
