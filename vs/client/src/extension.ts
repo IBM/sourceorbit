@@ -15,6 +15,7 @@ import { IProject } from '@ibm/vscode-ibmi-projectexplorer-types/iproject';
 import { ImpactView } from './views/impactView';
 import { getDeployGitFiles as getChanged, getDeployGitFiles as getChangedFiles, getGitAPI, lastBranch } from './git';
 import { initialiseTaskProvider } from './tasks';
+import { EnvironmentManager } from './environmentManager';
 
 let client: LanguageClient;
 
@@ -66,7 +67,10 @@ export function activate(context: ExtensionContext) {
 
 	initialiseTaskProvider(context);
 
-	registerViews(context);
+	if (!EnvironmentManager.isInMerlin()) {
+		// Hide the views if we are in Merlin. Merlin has its own stuff.
+		registerViews(context);
+	}
 	
 	context.subscriptions.push(
 		commands.registerCommand(`vscode-sourceorbit.objects.autoFix`, ((node: ObjectsView) => {
