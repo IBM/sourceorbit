@@ -19,7 +19,6 @@
 		"onStartupFinished"
 	],
 	"extensionDependencies": [
-		"IBM.vscode-ibmi-projectexplorer",
 		"vscode.git"
 	],
 	"main": "./out/extension",

@@ -107,13 +107,26 @@ export function enableViews() {
 }
 
 function registerViews(context: ExtensionContext) {
-	loadIBMiProjectExplorer();
 
-	const projectManager = getProjectManager();
+	// Ensure that the PE items only load if that extension is installed
+	const peLoaded = loadIBMiProjectExplorer();
 
+	if (peLoaded) {
+		const projectManager = getProjectManager();
+		const objectViews: { [workspaceUri: string]: ObjectsView } = {};
+
+		if (projectManager) {
+			projectManager.pushExtensibleChildren(async (iProject: IProject) => {
+				const fsPath = iProject.workspaceFolder.uri.fsPath;
+	
+				objectViews[fsPath] = new ObjectsView(iProject.workspaceFolder);
+				return [objectViews[fsPath]];
+			});
+		}
+	}
+
+	// Register all the remaining views
 	const gitImpactView: ImpactView = new ImpactView();
-	const objectViews: { [workspaceUri: string]: ObjectsView } = {};
-
 	const activeImpactView: ImpactView = new ImpactView();
 	
 	context.subscriptions.push(
@@ -146,15 +159,6 @@ function registerViews(context: ExtensionContext) {
 			setupGitEventHandler(e.added as WorkspaceFolder[]);
 		})
 	);
-
-	if (projectManager) {
-		projectManager.pushExtensibleChildren(async (iProject: IProject) => {
-			const fsPath = iProject.workspaceFolder.uri.fsPath;
-
-			objectViews[fsPath] = new ObjectsView(iProject.workspaceFolder);
-			return [objectViews[fsPath]];
-		});
-	}
 
 	function setupGitEventHandler(workspaceFolders: WorkspaceFolder[]) {
 		const gitApi = getGitAPI();
