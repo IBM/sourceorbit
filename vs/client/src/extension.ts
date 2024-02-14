@@ -67,36 +67,26 @@ export function activate(context: ExtensionContext) {
 
 	initialiseTaskProvider(context);
 
+	registerApiCommands(context);
+
 	if (!EnvironmentManager.isInMerlin()) {
 		// Hide the views if we are in Merlin. Merlin has its own stuff.
 		registerViews(context);
 	}
-	
+}
+
+export function enableViews() {
+	commands.executeCommand(`setContext`, `vscode-sourceorbit:projectsLoaded`, true);
+}
+
+function registerApiCommands(context: ExtensionContext) {
 	context.subscriptions.push(
-		commands.registerCommand(`vscode-sourceorbit.objects.autoFix`, ((node: ObjectsView) => {
-			if (node && node.workspaceFolder) {
-				window.showInformationMessage(`Select auto fix method for ${node.workspaceFolder.name}`, `Cancel`, `File names`, `RPG includes`).then(chosen => {
-					if (chosen) {
-						let type: "includes" | "renames" | undefined;
-
-						switch (chosen) {
-							case `File names`: type = `renames`; break;
-							case `RPG includes`: type = `includes`; break;
-						}
-
-						if (type) {
-							fixProject(node.workspaceFolder, type);
-						}
-					}
-				});
-			}
-		})),
 		commands.registerCommand(`vscode-sourceorbit.autoFix`, (workspaceFolder?: WorkspaceFolder, type?: "includes" | "renames") => {
 			if (workspaceFolder && type) {
 				return fixProject(workspaceFolder, type);
 			}
 		}),
-		
+
 		commands.registerCommand(`vscode-sourceorbit.generateBuildFile`, async (workspaceFolder?: WorkspaceFolder, type?: string) => {
 			if (workspaceFolder && type) {
 				await generateBuildFile(workspaceFolder, type);
@@ -106,42 +96,62 @@ export function activate(context: ExtensionContext) {
 	);
 }
 
-export function enableViews() {
-	commands.executeCommand(`setContext`, `vscode-sourceorbit:projectsLoaded`, true);
-}
-
-function registerViews(context: ExtensionContext) {
-
+async function registerViews(context: ExtensionContext) {
 	// Ensure that the PE items only load if that extension is installed
-	const peLoaded = loadIBMiProjectExplorer();
+	const peLoaded = await loadIBMiProjectExplorer();
 
 	if (peLoaded) {
 		const projectManager = getProjectManager();
 		const objectViews: { [workspaceUri: string]: ObjectsView } = {};
 
 		if (projectManager) {
+			commands.executeCommand(`setContext`, `vscode-sourceorbit:projectExplorerLoaded`, true);
+
 			projectManager.pushExtensibleChildren(async (iProject: IProject) => {
 				const fsPath = iProject.workspaceFolder.uri.fsPath;
-	
+
 				objectViews[fsPath] = new ObjectsView(iProject.workspaceFolder);
 				return [objectViews[fsPath]];
 			});
+
+			context.subscriptions.push(
+				// Project Explorer specific command
+				commands.registerCommand(`vscode-sourceorbit.objects.loadProject`, async (node: ObjectsView) => {
+					if (node) {
+						await reloadProject(node.workspaceFolder);
+						enableViews();
+						node.refresh();
+					}
+				}),
+
+				// Project Explorer specific command
+				commands.registerCommand(`vscode-sourceorbit.objects.autoFix`, ((node: ObjectsView) => {
+					if (node && node.workspaceFolder) {
+						window.showInformationMessage(`Select auto fix method for ${node.workspaceFolder.name}`, `Cancel`, `File names`, `RPG includes`).then(chosen => {
+							if (chosen) {
+								let type: "includes" | "renames" | undefined;
+
+								switch (chosen) {
+									case `File names`: type = `renames`; break;
+									case `RPG includes`: type = `includes`; break;
+								}
+
+								if (type) {
+									fixProject(node.workspaceFolder, type);
+								}
+							}
+						});
+					}
+				})),
+			);
 		}
 	}
 
 	// Register all the remaining views
 	const gitImpactView: ImpactView = new ImpactView();
 	const activeImpactView: ImpactView = new ImpactView();
-	
-	context.subscriptions.push(
-		commands.registerCommand(`vscode-sourceorbit.objects.loadProject`, async (node: ObjectsView) => {
-			if (node) {
-				await reloadProject(node.workspaceFolder);
-				enableViews();
-				node.refresh();
-			}
-		}),
 
+	context.subscriptions.push(
 		commands.registerCommand(`vscode-sourceorbit.objects.goToFile`, ((node: ILEObjectTreeItem) => {
 			if (node && node.resourceUri) {
 				workspace.openTextDocument(node.resourceUri).then(doc => {
@@ -149,7 +159,7 @@ function registerViews(context: ExtensionContext) {
 				});
 			}
 		})),
-		
+
 		window.registerTreeDataProvider(`activeImpactView`, activeImpactView),
 		window.onDidChangeActiveTextEditor(e => {
 			if (activeImpactView && e && e.document) {
@@ -198,7 +208,7 @@ function registerViews(context: ExtensionContext) {
 			}
 		}
 	}
-	
+
 	if (workspace.workspaceFolders) setupGitEventHandler(workspace.workspaceFolders as WorkspaceFolder[]);
 }
 

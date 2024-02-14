@@ -5,9 +5,15 @@ import ProjectExplorer from "@ibm/vscode-ibmi-projectexplorer-types/views/projec
 
 let baseExtension: Extension<IBMiProjectExplorer> | undefined;
 
-export function loadIBMiProjectExplorer(): IBMiProjectExplorer | undefined {
+export async function loadIBMiProjectExplorer(): Promise<IBMiProjectExplorer | undefined> {
   if (!baseExtension) {
     baseExtension = (extensions ? extensions.getExtension<IBMiProjectExplorer>(`IBM.vscode-ibmi-projectexplorer`) : undefined);
+  }
+
+  if (baseExtension) {
+    if (!baseExtension.isActive) {
+      await baseExtension.activate();
+    }
   }
 
   return (baseExtension && baseExtension.isActive && baseExtension.exports ? baseExtension.exports : undefined);
