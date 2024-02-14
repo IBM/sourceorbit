@@ -1374,7 +1374,7 @@ export class Targets {
 					} else if (currentTarget.type === `PGM`) {
 						// Perhaps we're looking at a program object, which actually should be a multi
 						// module program, so we do a lookup for additional modules.
-						const possibleModuleDep = allModules.find(mod => mod.exports.includes(importName.toUpperCase()))
+						const possibleModuleDep = allModules.find(mod => mod.exports && mod.exports.includes(importName.toUpperCase()))
 						if (possibleModuleDep) {
 							if (!newImports.some(i => i.systemName === possibleModuleDep.systemName && i.type === possibleModuleDep.type)) {
 								newImports.push(possibleModuleDep);
