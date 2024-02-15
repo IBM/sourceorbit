@@ -263,6 +263,8 @@ export class Targets {
 			case `sqludt`:
 			case `sqlalias`:
 			case `sqlseq`:
+			case `sequence`:
+			case `msgf`:
 				return "FILE";
 
 			case `dtaara`:
