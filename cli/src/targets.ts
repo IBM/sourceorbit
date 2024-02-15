@@ -1134,13 +1134,13 @@ export class Targets {
 						possibleName = trimQuotes(extNameValue).split(`:`)[0]
 					}
 
-					if (possibleName === `*extdesc`) {
+					if (possibleName.toLowerCase() === `*extdesc`) {
 						const extDescValue = keyword[`EXTDESC`];
 						if (extDescValue) {
 							possibleName = trimQuotes(extDescValue);
 						} else {
 							this.logger.fileLog(ileObject.relativePath, {
-								message: `*EXTDESC is used for '${file.name}' but EXTDESC keyword not found/`,
+								message: `*EXTDESC is used for '${file.name}' but EXTDESC keyword not found`,
 								type: `warning`,
 							});
 						}
