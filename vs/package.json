@@ -3,7 +3,7 @@
 	"description": "Object dependency management",
 	"author": "IBM",
 	"license": "MIT",
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"publisher": "IBM",
 	"categories": ["Programming Languages", "Other"],
 	"keywords": [
@@ -134,7 +134,7 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
+		"vscode:prepublish": "npm run webpack",
 		"package": "vsce package",
 		"compile": "tsc -b",
 		"clean": "rimraf out && rimraf client/out && rimraf server/out",
