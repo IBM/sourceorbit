@@ -42,7 +42,7 @@ describe.skipIf(files.length === 0)(`include_mismatch_fix tests`, () => {
     expect(articleIncludeLogs[0].type).toBe(`rename`);
     expect(articleIncludeLogs[0].change).toMatchObject({
       rename: {
-        path: '/Users/barry/Repos/sourceorbit/testData/include_mismatch_fix/QPROTOSRC/ARTICLE.RPGLE',
+        path: path.join(cwd, `QPROTOSRC`, `ARTICLE.RPGLE`),
         newName: 'ARTICLE.rpgleinc'
       }
     })
