@@ -70,6 +70,17 @@ export function setupPseudo() {
   return projectPath;
 }
 
+export function setupFixture(folderName: string) {
+  const fixturePath = path.join(__dirname, folderName);
+  const projectPath = path.join(projectFolder, folderName);
+
+  deleteDir(projectPath);
+  mkdir(projectPath);
+  fs.cpSync(fixturePath, projectPath, {recursive: true});
+
+  return projectPath;
+}
+
 export function createTestBuildScript() {
   const lines = [
     `# First build company system`,
