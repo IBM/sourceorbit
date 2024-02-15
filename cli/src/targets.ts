@@ -483,7 +483,6 @@ export class Targets {
 	 * Handles all DDS types: pf, lf, dspf
 	 */
 	private createDdsFileTarget(localPath: string, dds: dds, options: FileOptions = {}) {
-		const sourceName = path.basename(localPath);
 		const ileObject = this.resolvePathToObject(localPath, options.text);
 		const target: ILEObjectTarget = {
 			...ileObject,
@@ -492,46 +491,71 @@ export class Targets {
 
 		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
 
+		// We have a local cache of refs found so we don't keep doing global lookups
+		// on objects we already know to depend on in this object.
+		
+		let alreadyFoundRefs: string[] = [];
+
+		const handleObjectPath = (currentKeyword: string, recordFormat: any, value: string) => {
+			const qualified = value.split(`/`);
+
+			let objectName: string | undefined;
+			if (qualified.length === 2 && qualified[0].toLowerCase() === `*libl`) {
+				objectName = qualified[1];
+			} else if (qualified.length === 1) {
+				objectName = qualified[0];
+			}
+
+			if (objectName) {
+				const upperName = objectName.toUpperCase();
+				if (alreadyFoundRefs.includes(upperName)) return;
+
+				const resolvedPath = this.searchForObject({ systemName: upperName, type: `FILE` });
+				if (resolvedPath) {
+					target.deps.push(resolvedPath);
+					alreadyFoundRefs.push(upperName);
+				}
+				else {
+					this.logger.fileLog(ileObject.relativePath, {
+						message: `no object found for reference '${objectName}'`,
+						type: `warning`,
+						line: recordFormat.range.start
+					});
+				}
+			} else {
+				this.logger.fileLog(ileObject.relativePath, {
+					message: `${currentKeyword} reference not included as possible reference to library found.`,
+					type: `info`,
+					line: recordFormat.range.start
+				});
+			}
+		}
+
+		// PFILE -> https://www.ibm.com/docs/en/i/7.5?topic=80-pfile-physical-file-keywordlogical-files-only
+		// REF -> https://www.ibm.com/docs/en/i/7.5?topic=80-ref-reference-keywordphysical-files-only
+
 		const ddsRefKeywords = [`PFILE`, `REF`, `JFILE`];
 
 		for (const recordFormat of dds.formats) {
 
+			// Look through this record format keywords for the keyword we're looking for
 			for (const keyword of ddsRefKeywords) {
-				// Look through this record format keywords for the keyword we're looking for
 				const keywordObj = recordFormat.keywords.find(k => k.name === keyword);
 				if (keywordObj) {
 					const wholeValue: string = keywordObj.value;
 					const parts = wholeValue.split(` `).filter(x => x.length > 0);
-					for (const value of parts) {
-						const qualified = value.split(`/`);
 
-						let objectName: string | undefined;
-						if (qualified.length === 2 && qualified[0].toLowerCase() === `*libl`) {
-							objectName = qualified[1];
-						} else if (qualified.length === 1) {
-							objectName = qualified[0];
-						}
+					// JFILE can have multiple files referenced in it, whereas 
+					// REF and PFILE can only have one at the first element
+					const pathsToCheck = (keyword === `JFILE` ? parts.length : 1);
 
-						if (objectName) {
-							const resolvedPath = this.searchForObject({ systemName: objectName.toUpperCase(), type: `FILE` });
-							if (resolvedPath) target.deps.push(resolvedPath);
-							else {
-								this.logger.fileLog(ileObject.relativePath, {
-									message: `no object found for reference '${objectName}'`,
-									type: `warning`,
-									line: recordFormat.range.start
-								});
-							}
-						} else {
-							this.logger.fileLog(ileObject.relativePath, {
-								message: `${keyword} reference not included as possible reference to library found.`,
-								type: `info`,
-								line: recordFormat.range.start
-							});
-						}
+					for (let i = 0; i < pathsToCheck; i++) {
+						handleObjectPath(keyword, recordFormat, parts[i]);
 					}
 				}
 			}
+
+			// REFFLD -> https://www.ibm.com/docs/en/i/7.5?topic=80-reffld-referenced-field-keywordphysical-files-only
 
 			// Then, let's loop through the fields in this format and see if we can find REFFLD
 			for (const field of recordFormat.fields) {
@@ -541,36 +565,7 @@ export class Targets {
 					const [fieldRef, fileRef] = refFld.value.trim().split(` `);
 
 					if (fileRef) {
-						const qualified = fileRef.split(`/`);
-
-						let objectName: string | undefined;
-						if (qualified.length === 2 && qualified[0].toLowerCase() === `*libl`) {
-							objectName = qualified[1];
-						} else if (qualified.length === 1) {
-							objectName = qualified[0];
-						}
-
-						if (objectName) {
-							const resolvedPath = this.searchForObject({ systemName: objectName.toUpperCase(), type: `FILE` });
-							if (resolvedPath) {
-								if (!target.deps.some(d => d.systemName === resolvedPath.systemName && d.type === resolvedPath.type)) {
-									target.deps.push(resolvedPath);
-								}
-							}
-							else {
-								this.logger.fileLog(ileObject.relativePath, {
-									message: `no object found for reference '${objectName}'`,
-									type: `warning`,
-									line: recordFormat.range.start
-								});
-							}
-						} else {
-							this.logger.fileLog(ileObject.relativePath, {
-								message: `REFFLD reference not included as possible reference to library found.`,
-								type: `info`,
-								line: recordFormat.range.start
-							});
-						}
+						handleObjectPath(`REFFLD`, recordFormat, fileRef);
 					}
 				}
 			}
