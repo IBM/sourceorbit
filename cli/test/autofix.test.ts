@@ -22,7 +22,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
 	targets.resolveBinder();
 
   // Ensure we can find by system name
-  expect(targets.searchForObject({systemName: `DEPT`, type: `FILE`}, undefined)).toBeDefined();
+  expect(targets.searchForObject({systemName: `DEPT`, type: `FILE`})).toBeDefined();
 
   const bySystemNameA = targets.searchForAnyObject({name: `DEPT`, types: [`FILE`]});
   expect(bySystemNameA).toBeDefined();

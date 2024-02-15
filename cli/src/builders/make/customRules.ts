@@ -80,7 +80,7 @@ export function readAllRules(targets: Targets, project: MakeProject) {
                 const objType = partSplit[1] as ObjectType;
 
                 if (objName && objType) {
-                  const obj = targets.searchForObject({systemName: objName, type: objType}, undefined);
+                  const obj = targets.searchForObject({systemName: objName, type: objType});
 
                   if (obj) {
                     currentTarget.deps.push(obj);
