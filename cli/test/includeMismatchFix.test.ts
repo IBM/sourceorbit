@@ -36,7 +36,7 @@ describe.skipIf(files.length === 0)(`include_mismatch_fix tests`, () => {
     expect(articlePfLogs[0].message).toBe(`no object found for reference 'SAMREF'`);
     expect(articlePfLogs[0].type).toBe(`warning`);
 
-    const articleIncludeLogs = targets.logger.getLogsFor(`QPROTOSRC/ARTICLE.RPGLE`);
+    const articleIncludeLogs = targets.logger.getLogsFor(path.join(`QPROTOSRC`, `ARTICLE.RPGLE`));
     expect(articleIncludeLogs.length).toBe(1);
     expect(articleIncludeLogs[0].message).toBe(`Rename suggestion`);
     expect(articleIncludeLogs[0].type).toBe(`rename`);
