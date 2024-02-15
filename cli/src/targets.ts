@@ -40,6 +40,8 @@ export interface ILEObject {
 	relativePath?: string;
 	extension?: string;
 
+	pseudo?: boolean;
+
 	/** exported functions */
 	exports?: string[];
 	/** each function import in the object */
@@ -148,6 +150,15 @@ export class Targets {
 		this.storeResolved(localPath, theObject);
 
 		return theObject;
+	}
+
+	public storePseudoObject(ileObject: ILEObject) {
+		// We don't add the same object twice.
+		if (!this.searchForObject(ileObject, ileObject)) {
+			const key = `/${ileObject.systemName}.${ileObject.type}`;
+			ileObject.pseudo = true;
+			this.resolvedObjects[key] = ileObject;
+		}
 	}
 
 	public removeObjectByPath(localPath: string) {

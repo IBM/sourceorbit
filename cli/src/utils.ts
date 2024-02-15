@@ -5,6 +5,7 @@ import { infoOut, warningOut } from "./cli";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os"
+import { ILEObject, ObjectType } from "./targets";
 
 export function getSystemNameFromPath(inputName: string) {
 
@@ -112,6 +113,34 @@ export function renameFiles(logger: Logger) {
 		fs.renameSync(ogPath, path.join(path.dirname(ogPath), validRenames[ogPath]));
 		infoOut(`'${ogPath}' -> '${validRenames[ogPath]}'`);
 	}
+}
+
+export function getPseudoObjectsFrom(fullPath: string) {
+	const pseudoObjects: ILEObject[] = [];
+
+	if (fs.existsSync(fullPath)) {
+		const content = fs.readFileSync(fullPath, { encoding: `utf8` });
+		const newLine = content.includes(`\r\n`) ? `\r\n` : `\n`;
+
+		const lines = content.split(newLine);
+
+		for (let line of lines) {
+			line = line.trim();
+			if (line.startsWith(`#`)) continue;
+
+			const objectParts = line.toUpperCase().split(`.`);
+			const object: ILEObject = {
+				systemName: objectParts[0],
+				type: objectParts[1] as ObjectType, //TODO: validate type
+			}
+
+			pseudoObjects.push(object);
+		}
+	} else {
+		infoOut(`No file pseudo references file found: ${fullPath}`);
+	}
+
+	return pseudoObjects;
 }
 
 /**
