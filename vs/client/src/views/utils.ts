@@ -1,6 +1,3 @@
-import { TreeItem, WorkspaceFolder, TreeItemCollapsibleState, ThemeIcon } from 'vscode';
-import { ILEObjectTreeItem } from './objectView';
-import { ProjectExplorerTreeItem } from '@ibm/vscode-ibmi-projectexplorer-types/views/projectExplorer/projectExplorerTreeItem';
 
 export const TypeIcons = {
   "BNDDIR": "book",
@@ -13,3 +10,4 @@ export const TypeIcons = {
   "MENU": "menu",
   "DTAQ": "list-flat"
 };
+
