@@ -1050,7 +1050,7 @@ export class Targets {
 		if (cache.keyword[`BNDDIR`]) {
 			this.logger.fileLog(ileObject.relativePath, {
 				message: `has the BNDDIR keyword. 'binders' property in iproj.json should be used instead.`,
-				type: `warning`,
+				type: `info`,
 			});
 		}
 
