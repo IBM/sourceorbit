@@ -201,7 +201,7 @@ export class Targets {
 	/**
 	 * Resolves a search to an object. Use `systemName` parameter for short and long name.
 	 */
-	public searchForObject(lookFor: ILEObject, currentObject: ILEObject) {
+	public searchForObject(lookFor: ILEObject) {
 		return this.getResolvedObjects().find(o => (o.systemName === lookFor.systemName || o.systemName === lookFor.longName) && o.type === lookFor.type);
 	}
 
@@ -511,7 +511,7 @@ export class Targets {
 						}
 
 						if (objectName) {
-							const resolvedPath = this.searchForObject({ systemName: objectName.toUpperCase(), type: `FILE` }, ileObject);
+							const resolvedPath = this.searchForObject({ systemName: objectName.toUpperCase(), type: `FILE` });
 							if (resolvedPath) target.deps.push(resolvedPath);
 							else {
 								this.logger.fileLog(ileObject.relativePath, {
@@ -549,7 +549,7 @@ export class Targets {
 						}
 
 						if (objectName) {
-							const resolvedPath = this.searchForObject({ systemName: objectName.toUpperCase(), type: `FILE` }, ileObject);
+							const resolvedPath = this.searchForObject({ systemName: objectName.toUpperCase(), type: `FILE` });
 							if (resolvedPath) {
 								if (!target.deps.some(d => d.systemName === resolvedPath.systemName && d.type === resolvedPath.type)) {
 									target.deps.push(resolvedPath);
@@ -651,7 +651,7 @@ export class Targets {
 				} else {
 					if (ignoredObjects.includes(possibleObject.name.toUpperCase())) return;
 
-					const resolvedPath = this.searchForObject({ systemName: possibleObject.name.toUpperCase(), type: `FILE` }, ileObject);
+					const resolvedPath = this.searchForObject({ systemName: possibleObject.name.toUpperCase(), type: `FILE` });
 					if (resolvedPath) target.deps.push(resolvedPath);
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -682,7 +682,7 @@ export class Targets {
 
 					if (ignoredObjects.includes(name.toUpperCase())) return;
 
-					const resolvedPath = this.searchForObject({ systemName: name.toUpperCase(), type: `PGM` }, ileObject);
+					const resolvedPath = this.searchForObject({ systemName: name.toUpperCase(), type: `PGM` });
 					if (resolvedPath) target.deps.push(resolvedPath);
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -708,7 +708,7 @@ export class Targets {
 		});
 
 		// We also look to see if there is a `.cmd` object with the same name
-		const possibleCommandObject = this.searchForObject({ systemName: ileObject.systemName, type: `CMD` }, ileObject);
+		const possibleCommandObject = this.searchForObject({ systemName: ileObject.systemName, type: `CMD` });
 		if (possibleCommandObject) this.createOrAppend(possibleCommandObject, target);
 
 		if (target.deps.length > 0)
@@ -1077,7 +1077,7 @@ export class Targets {
 				// Don't add itself
 				if (ref.lookup === ileObject.systemName) return;
 
-				const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `PGM` }, ileObject);
+				const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `PGM` });
 				if (resolvedObject) {
 					// because of legacy fixed CALL, there can be dupliicate EXTPGMs with the same name :(
 					if (!target.deps.some(d => d.systemName === resolvedObject.systemName && d.type && resolvedObject.type)) {
@@ -1112,7 +1112,7 @@ export class Targets {
 					};
 				})
 				.forEach((ref: RpgLookup) => {
-					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` }, ileObject);
+					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -1154,7 +1154,7 @@ export class Targets {
 				.forEach((ref: RpgLookup) => {
 					if (ignoredObjects.includes(ref.lookup)) return;
 
-					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` }, ileObject);
+					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -1175,7 +1175,7 @@ export class Targets {
 				.forEach((ref: RpgLookup) => {
 					const previouslyScanned = target.deps.some((r => r.systemName === ref.lookup && r.type === `FILE`));
 					if (previouslyScanned) return;
-					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` }, ileObject);
+					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -1206,7 +1206,7 @@ export class Targets {
 				.forEach((ref: RpgLookup) => {
 					if (ignoredObjects.includes(ref.lookup.toUpperCase())) return;
 
-					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` }, ileObject);
+					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -1234,7 +1234,7 @@ export class Targets {
 					};
 				})
 				.forEach((ref: RpgLookup) => {
-					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` }, ileObject);
+					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -1248,7 +1248,7 @@ export class Targets {
 
 		// TODO: did we duplicate this?
 		// We also look to see if there is a `.cmd` object with the same name
-		const resolvedObject = this.searchForObject({ systemName: ileObject.systemName, type: `CMD` }, ileObject);
+		const resolvedObject = this.searchForObject({ systemName: ileObject.systemName, type: `CMD` });
 		if (resolvedObject) this.createOrAppend(resolvedObject, target);
 
 		// define internal imports
