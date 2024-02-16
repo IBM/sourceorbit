@@ -115,7 +115,7 @@ export function renameFiles(logger: Logger) {
 	}
 }
 
-export function getPseudoObjectsFrom(content: string) {
+export function getReferenceObjectsFrom(content: string) {
 	const pseudoObjects: ILEObject[] = [];
 
 	const newLine = content.includes(`\r\n`) ? `\r\n` : `\n`;
