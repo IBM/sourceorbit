@@ -15,6 +15,7 @@ Source Orbit does not care about project structure, but does enforce these rules
 | `lf`       | Logical File       | View/Index                          |
 | `dspf`     | Display File       |                                     |
 | `prtf`     | Printer File       |                                     |
+| `msgf`     | Message filee      |                                     |
 | `sql`      | Any SQL object     | Type determined by create statement |
 | `table`    | SQL table          | Expects `CREATE TABLE`              |
 | `view`     | SQL view           | Expects `CREATE VIEW`               |
@@ -64,6 +65,26 @@ Typically, the basename of the file is also the object name. But, Source Orbit w
 | `ART200D-Work_with_Article.DSPF` | `ART200D.FILE`   | Support for ibmi-bob file name                                          |
 
 Even if you use long file names, your source code still needs to reference the object name for object resolves (not including *include directives* of course.)
+
+### Unresolved objects
+
+When using Source Orbit, you may find that you want to reference objects that do not existing in the same repository. Perhaps those objects/sources exist in another repository or already exist in a library on the system you're building on this. Usually, Source Orbit will complain about unresolved objects with an error like:
+
+> `no object found for reference 'COUNTRY'`
+
+If you know those objects do exist but outside of this project, then you can use the `.objrefs` file in the project root to list those objects and if that object is a service program, you can also list the exports by indenting after the service program reference. Comments can start with `#`
+
+```
+# Files that exist outside this project
+
+COUNTRY.FILE
+
+# Service programs outside this project
+
+UTILS.SRVPGM
+  toUpper
+  toLower
+```
 
 ### Service Programs and Binder Source
 

@@ -126,6 +126,7 @@ export function getPseudoObjectsFrom(content: string) {
 
 	for (let line of lines) {
 		const shortLine = line.trim();
+		if (shortLine.length === 0) continue;
 		if (shortLine.startsWith(`#`)) continue;
 
 		// If the line starts with space, then it's an export of the parent
