@@ -5,6 +5,7 @@ import { infoOut, warningOut } from "./cli";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os"
+import { ILEObject, ObjectType } from "./targets";
 
 export function getSystemNameFromPath(inputName: string) {
 
@@ -114,6 +115,47 @@ export function renameFiles(logger: Logger) {
 	}
 }
 
+export function getReferenceObjectsFrom(content: string) {
+	const pseudoObjects: ILEObject[] = [];
+
+	const newLine = content.includes(`\r\n`) ? `\r\n` : `\n`;
+
+	const lines = content.split(newLine);
+
+	let currentObject: ILEObject;
+
+	for (let line of lines) {
+		const shortLine = line.trim();
+		if (shortLine.length === 0) continue;
+		if (shortLine.startsWith(`#`)) continue;
+
+		// If the line starts with space, then it's an export of the parent
+		if (line.startsWith(` `) || line.startsWith(`\t`)) {
+			if (currentObject) {
+				currentObject.exports.push(shortLine.toUpperCase());
+			}
+
+		} else {
+			const objectParts = line.toUpperCase().split(`.`);
+
+			if (objectParts[0].length > 10) {
+				warningOut(`Trying to add referenced object: object name '${objectParts[0]}' is too long.`);
+			}
+
+			currentObject = {
+				systemName: objectParts[0],
+				type: objectParts[1] as ObjectType, //TODO: validate type
+				exports: [],
+				reference: true,
+			}
+
+			pseudoObjects.push(currentObject);
+		}
+	}
+
+	return pseudoObjects;
+}
+
 /**
  * 
  * @param command Optionally qualified CL command
@@ -141,4 +183,10 @@ export function toCl(command: string, parameters?: { [parameter: string]: string
 	}
 
 	return cl;
+}
+
+export function checkFileExists(file) {
+  return fs.promises.access(file, fs.constants.F_OK)
+		.then(() => true)
+		.catch(() => false)
 }

@@ -1,0 +1,24 @@
+      *%METADATA                                                      *
+      * %TEXT Provider file                                           *
+      *%EMETADATA                                                     *
+                                            REF(SAMREF)
+                R FPROV
+                  PRID      R
+                  PROVNM    R
+                  PRCONT        30          TEXT('CONTACT PERSON')
+                  PRPHONE   R               REFFLD(PHONE)
+                  PRVAT     R               REFFLD(VATNUM)
+                  PRMAIL    R               REFFLD(EMAIL)
+                  PRLINE1   R               REFFLD(ADRLINE)
+                  PRLINE2   R               REFFLD(ADRLINE)
+                  PRLINE3   R               REFFLD(ADRLINE)
+                  PRZIP     R               REFFLD(ZIPCOD)
+                  PRCITY    R               REFFLD(CITY)
+                  PRCOUN    R               REFFLD(COID)
+                  PRCREA          L         TEXT('CREATION DATE')
+                                            COLHDG('CREAETION' 'DATE')
+                  PRMOD           Z         TEXT('LAST MODIFICATION')
+                                            COLHDG('LAST' 'MODIFICATION')
+                  PRMODID       10          TEXT('LAS MOD BY')
+                                            COLHDG('LAST' 'MODIF.' 'BY')
+                  PRDEL     R               REFFLD(DLCODE)

@@ -9,3 +9,5 @@ export const objectExtensions = [`dtaara`, `mnucmd`, `msgf`, `dtaq`];
 
 export const allExtensions = [...rpgExtensions, ...clExtensions, ...ddsExtension, ...sqlExtensions, ...srvPgmExtensions, ...cmdExtensions, ...objectExtensions];
 export const scanGlob = `**/*.{${allExtensions.join(`,`)},${allExtensions.map(e => e.toUpperCase()).join(`,`)}}`;
+
+export const referencesFileName = `.objrefs`;

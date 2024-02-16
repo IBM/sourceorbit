@@ -405,7 +405,7 @@ export class MakeProject {
 			for (const target of this.targets.getTargets()) {
 				if (target && target.deps.length > 0) {
 					lines.push(
-						`$(PREPATH)/${target.systemName}.${target.type}: ${target.deps.map(dep => `$(PREPATH)/${dep.systemName}.${dep.type}`).join(` `)}`
+						`$(PREPATH)/${target.systemName}.${target.type}: ${target.deps.filter(d => d.reference !== true).map(dep => `$(PREPATH)/${dep.systemName}.${dep.type}`).join(` `)}`
 					)
 				}
 			};
@@ -435,6 +435,7 @@ export class MakeProject {
 				const objects = this.targets.getResolvedObjects(data.becomes);
 
 				for (const ileObject of objects) {
+					if (ileObject.reference) continue;
 					if (ileObject.relativePath) {
 						const sourcePath = path.join(this.cwd, ileObject.relativePath);
 						const exists = existsSync(sourcePath); // Is this even needed? We already have relativePath??
@@ -467,6 +468,8 @@ export class MakeProject {
 
 				if (objects.length > 0) {
 					for (const ileObject of objects) {
+						if (ileObject.reference) continue;
+						
 						// This is used when your object really has source
 
 						const possibleTarget: ILEObjectTarget = this.targets.getTarget(ileObject) || (ileObject as ILEObjectTarget);

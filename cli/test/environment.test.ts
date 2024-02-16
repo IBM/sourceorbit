@@ -1,6 +1,6 @@
 import { assert, describe, expect, test } from 'vitest'
 import { getBranchLibraryName } from '../src/builders/environment';
-import { getSystemNameFromPath } from '../src/utils';
+import { getReferenceObjectsFrom, getSystemNameFromPath } from '../src/utils';
 
 describe(`Deterministic branch name`, () => {
   test('Basic name', () => {
@@ -63,3 +63,33 @@ describe(`Deterministic system name`, () => {
     expect(getSystemNameFromPath(`ART200D-Work_with_Article`)).toBe(`ART200D`);
   })
 });
+
+describe(`Reference files`, () => {
+  test('content', () => {
+    const lines = [
+      `# Files that exist outside this project`,
+      ``,
+      `COUNTRY.FILE`,
+      ``,
+      `# Service programs outside this project`,
+      `UTILS.SRVPGM`,
+      `  toUpper`,
+      `  toLower`,
+    ].join('\n');
+
+    const refObjects = getReferenceObjectsFrom(lines);
+
+    expect(refObjects).toHaveLength(2);
+
+    expect(refObjects[0]).toMatchObject({
+      type: `FILE`,
+      systemName: `COUNTRY`
+    });
+
+    expect(refObjects[1]).toMatchObject({
+      type: `SRVPGM`,
+      systemName: `UTILS`,
+      exports: [`TOUPPER`, `TOLOWER`]
+    });
+  });
+})

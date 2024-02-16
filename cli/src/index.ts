@@ -8,7 +8,7 @@ import path from 'path';
 import { BuildFiles, cliSettings, error, infoOut, warningOut } from './cli';
 import { BobProject } from "./builders/bob";
 import { ImpactMarkdown } from "./builders/imd";
-import { allExtensions } from "./extensions";
+import { allExtensions, referencesFileName } from "./extensions";
 import { getBranchLibraryName } from "./builders/environment";
 import { getFiles, renameFiles, replaceIncludes } from './utils';
 
@@ -156,6 +156,12 @@ async function main() {
 	} catch (e) {
 		error(e.message || e);
 		process.exit(1);
+	}
+
+	const referenceFile = path.join(cwd, referencesFileName);
+	if (existsSync(referenceFile)) {
+		infoOut(`Found reference file: ${referenceFile}`);
+		targets.handleRefsFile(referenceFile);
 	}
 
 	targets.loadObjectsFromPaths(files);

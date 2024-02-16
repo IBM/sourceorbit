@@ -37,7 +37,7 @@ export class BobProject {
 			let lines: string[] = [];
 
 			for (let target of targets) {
-				lines.push(`${target.systemName}.${target.type}: ${path.relative(subdir, target.relativePath)} ${target.deps.map(d => `${d.systemName}.${d.type}`).join(` `)}`);
+				lines.push(`${target.systemName}.${target.type}: ${path.relative(subdir, target.relativePath)} ${target.deps.filter(d => d.reference !== true).map(d => `${d.systemName}.${d.type}`).join(` `)}`);
 			}
 
 			output[path.join(subdir, `Rules.mk`)] = lines.join(`\n`);

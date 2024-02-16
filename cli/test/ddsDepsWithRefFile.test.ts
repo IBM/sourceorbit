@@ -5,20 +5,22 @@ import path from 'path';
 import { MakeProject } from '../src/builders/make';
 import { getFiles } from '../src/utils';
 import { setupFixture } from './fixtures/projects';
-import { scanGlob } from '../src/extensions';
+import { referencesFileName, scanGlob } from '../src/extensions';
 import { writeFileSync } from 'fs';
+import { BobProject } from '../src/builders/bob';
 
-const cwd = setupFixture(`dds_refs`);
+const cwd = setupFixture(`dds_deps_with_refs`);
 
 // This issue was occuring when you had two files with the same name, but different extensions.
 
 let files = getFiles(cwd, scanGlob);
 
-describe.skipIf(files.length === 0)(`dds_refs tests`, () => {
+describe.skipIf(files.length === 0)(`dds_refs tests with reference file`, () => {
   const targets = new Targets(cwd);
   targets.setSuggestions({renames: true, includes: true})
   
   beforeAll(async () => {
+    targets.handleRefsFile(path.join(cwd, referencesFileName));
     targets.loadObjectsFromPaths(files);
     const parsePromises = files.map(f => targets.parseFile(f));
     await Promise.all(parsePromises);
@@ -29,15 +31,24 @@ describe.skipIf(files.length === 0)(`dds_refs tests`, () => {
 
   test(`Ensure objects are defined`, async () => {
     expect(targets.getTargets().length).toBe(3);
-    expect(targets.getResolvedObjects(`FILE`).length).toBe(3);
+    expect(targets.getResolvedObjects(`FILE`).length).toBe(4);
     expect(targets.binderRequired()).toBe(false);
 
     const pro250d = targets.searchForObject({systemName: `PRO250D`, type: `FILE`});
     expect(pro250d).toBeDefined();
+    expect(pro250d.reference).toBeUndefined();
+
     const provider = targets.searchForObject({systemName: `PROVIDER`, type: `FILE`});
     expect(provider).toBeDefined();
+    expect(provider.reference).toBeUndefined();
+
     const provide1 = targets.searchForObject({systemName: `PROVIDE1`, type: `FILE`});
     expect(provide1).toBeDefined();
+    expect(provide1.reference).toBeUndefined();
+
+    const samref = targets.searchForObject({systemName: `SAMREF`, type: `FILE`});
+    expect(samref).toBeDefined();
+    expect(samref.reference).toBeTruthy();
   });
 
   test(`test PROD250D deps (REF & 32REFFLD)`, async () => {
@@ -62,15 +73,10 @@ describe.skipIf(files.length === 0)(`dds_refs tests`, () => {
 
     expect(provider).toBeDefined();
     const deps = provider.deps;
-    expect(deps.length).toBe(0);
+    expect(deps.length).toBe(1);
 
     const logs = targets.logger.getLogsFor(provider.relativePath);
-    expect(logs.length).toBe(1);
-    expect(logs[0]).toMatchObject({
-      message: `no object found for reference 'SAMREF'`,
-      type: `warning`,
-      line: -1
-    });
+    expect(logs).toBeUndefined();
   });
 
   test(`test PROVIDE1 deps (REF)`, async () => {
@@ -82,5 +88,30 @@ describe.skipIf(files.length === 0)(`dds_refs tests`, () => {
 
     const logs = targets.logger.getLogsFor(providerLf.relativePath);
     expect(logs).toBeUndefined();
+  });
+
+
+  test(`make doesn't include refs that do not exist or are referenced objects`, () => {
+    const project = new MakeProject(cwd, targets);
+
+    const targetContent = project.generateTargets();
+
+    expect(targetContent).toContain(`$(PREPATH)/PROVIDE1.FILE: $(PREPATH)/PROVIDER.FILE`);
+    expect(targetContent).toContain(`$(PREPATH)/PRO250D.FILE: $(PREPATH)/PROVIDER.FILE`);
+    expect(targetContent).not.toContain(`$(PREPATH)/PROVIDER.FILE: $(PREPATH)/SAMREF.FILE`);
+  });
+
+  test(`bob doesn't include refs that do not exist or are referenced objects`, () => {
+    const project = new BobProject(targets);
+
+    const files = project.createRules();
+
+    expect(files[`Rules.mk`]).toBeDefined();
+
+    const baseRules = files[`Rules.mk`].split('\n').map(l => l.trim());
+
+    expect(baseRules).toContain(`PRO250D.FILE: PRO250D.DSPF PROVIDER.FILE`);
+    expect(baseRules).toContain(`PROVIDER.FILE: PROVIDER.PF`);
+    expect(baseRules).toContain(`PROVIDE1.FILE: PROVIDE1.LF PROVIDER.FILE`);
   });
 });

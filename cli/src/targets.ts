@@ -12,7 +12,7 @@ import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensi
 import Parser from "vscode-rpgle/language/parser";
 import { setupParser } from './parser';
 import { Logger } from './logger';
-import { asPosix, getSystemNameFromPath, toLocalPath } from './utils';
+import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -39,6 +39,8 @@ export interface ILEObject {
 	text?: string,
 	relativePath?: string;
 	extension?: string;
+
+	reference?: boolean;
 
 	/** exported functions */
 	exports?: string[];
@@ -77,6 +79,7 @@ interface FileOptions {
  * 
  * const files = getAllFilesInDir(`.`);
  * const targets = new Targets(cwd);
+ * targets.handlePseudoFile(pseudoFilePath);
  * targets.loadObjectsFromPaths(files);
  * await Promise.all(files.map(f => targets.parseFile(f)));
  * targets.resolveBinder();
@@ -148,6 +151,25 @@ export class Targets {
 		this.storeResolved(localPath, theObject);
 
 		return theObject;
+	}
+
+	/**
+	 * This can be expensive. It should only be called:
+	 * before loadObjectsFromPaths and parseFile are called.
+	 * @param filePath Fully qualified path to the file. Assumed to exist.
+	 */
+	public async handleRefsFile(filePath: string) {
+		const content = await fs.readFile(filePath, { encoding: `utf-8` });
+
+		const pseudoObjects = getReferenceObjectsFrom(content);
+
+		pseudoObjects.forEach(ileObject => {
+			if (!this.searchForObject(ileObject)) {
+				const key = `/${ileObject.systemName}.${ileObject.type}`;
+				ileObject.reference = true;
+				this.resolvedObjects[key] = ileObject;
+			}
+		});
 	}
 
 	public removeObjectByPath(localPath: string) {
@@ -935,8 +957,37 @@ export class Targets {
 
 	private createRpgTarget(localPath: string, cache: Cache, options: FileOptions = {}) {
 		const pathDetail = path.parse(localPath);
-		const sourceName = pathDetail.base;
 		const ileObject = this.resolvePathToObject(localPath, options.text);
+
+		// define internal imports
+		ileObject.imports = cache.procedures
+			.filter((proc: any) => proc.keyword[`EXTPROC`])
+			.map(ref => {
+				const keyword = ref.keyword;
+				let importName: string = ref.name;
+				const extproc: string | boolean = keyword[`EXTPROC`];
+				if (extproc) {
+					if (extproc === true) importName = ref.name;
+					else importName = extproc;
+				}
+
+				if (importName.includes(`:`)) {
+					const parmParms = importName.split(`:`);
+					importName = parmParms.filter(p => !p.startsWith(`*`)).join(``);
+				}
+
+				importName = trimQuotes(importName);
+
+				return importName;
+			});
+	
+		// define exported functions
+		if (cache.keyword[`NOMAIN`]) {
+			ileObject.exports = cache.procedures
+				.filter((proc: any) => proc.keyword[`EXPORT`])
+				.map(ref => ref.name.toUpperCase());
+		}
+
 		const target: ILEObjectTarget = {
 			...ileObject,
 			deps: []
@@ -1247,35 +1298,6 @@ export class Targets {
 		// We also look to see if there is a `.cmd` object with the same name
 		const resolvedObject = this.searchForObject({ systemName: ileObject.systemName, type: `CMD` });
 		if (resolvedObject) this.createOrAppend(resolvedObject, target);
-
-		// define internal imports
-		target.imports = cache.procedures
-			.filter((proc: any) => proc.keyword[`EXTPROC`])
-			.map(ref => {
-				const keyword = ref.keyword;
-				let importName: string = ref.name;
-				const extproc: string | boolean = keyword[`EXTPROC`];
-				if (extproc) {
-					if (extproc === true) importName = ref.name;
-					else importName = extproc;
-				}
-
-				if (importName.includes(`:`)) {
-					const parmParms = importName.split(`:`);
-					importName = parmParms.filter(p => !p.startsWith(`*`)).join(``);
-				}
-
-				importName = trimQuotes(importName);
-
-				return importName;
-			});
-
-		// define exported functions
-		if (cache.keyword[`NOMAIN`]) {
-			target.exports = cache.procedures
-				.filter((proc: any) => proc.keyword[`EXPORT`])
-				.map(ref => ref.name.toUpperCase());
-		}
 
 		if (target.deps.length > 0)
 			infoOut(`Depends on: ${target.deps.map(d => `${d.systemName}.${d.type}`).join(` `)}`);
