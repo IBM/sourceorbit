@@ -115,29 +115,36 @@ export function renameFiles(logger: Logger) {
 	}
 }
 
-export function getPseudoObjectsFrom(fullPath: string) {
+export function getPseudoObjectsFrom(content: string) {
 	const pseudoObjects: ILEObject[] = [];
 
-	if (fs.existsSync(fullPath)) {
-		const content = fs.readFileSync(fullPath, { encoding: `utf8` });
-		const newLine = content.includes(`\r\n`) ? `\r\n` : `\n`;
+	const newLine = content.includes(`\r\n`) ? `\r\n` : `\n`;
 
-		const lines = content.split(newLine);
+	const lines = content.split(newLine);
 
-		for (let line of lines) {
-			line = line.trim();
-			if (line.startsWith(`#`)) continue;
+	let currentObject: ILEObject;
 
-			const objectParts = line.toUpperCase().split(`.`);
-			const object: ILEObject = {
-				systemName: objectParts[0],
-				type: objectParts[1] as ObjectType, //TODO: validate type
+	for (let line of lines) {
+		const shortLine = line.trim();
+		if (shortLine.startsWith(`#`)) continue;
+
+		// If the line starts with space, then it's an export of the parent
+		if (line.startsWith(` `) || line.startsWith(`\t`)) {
+			if (currentObject) {
+				currentObject.exports.push(shortLine.toUpperCase());
 			}
 
-			pseudoObjects.push(object);
+		} else {
+			const objectParts = line.toUpperCase().split(`.`);
+			currentObject = {
+				systemName: objectParts[0],
+				type: objectParts[1] as ObjectType, //TODO: validate type
+				exports: [],
+				pseudo: true,
+			}
+
+			pseudoObjects.push(currentObject);
 		}
-	} else {
-		infoOut(`No file pseudo references file found: ${fullPath}`);
 	}
 
 	return pseudoObjects;
@@ -170,4 +177,10 @@ export function toCl(command: string, parameters?: { [parameter: string]: string
 	}
 
 	return cl;
+}
+
+export function checkFileExists(file) {
+  return fs.promises.access(file, fs.constants.F_OK)
+		.then(() => true)
+		.catch(() => false)
 }

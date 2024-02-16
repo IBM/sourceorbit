@@ -12,7 +12,7 @@ import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensi
 import Parser from "vscode-rpgle/language/parser";
 import { setupParser } from './parser';
 import { Logger } from './logger';
-import { asPosix, getSystemNameFromPath, toLocalPath } from './utils';
+import { asPosix, getPseudoObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -79,6 +79,7 @@ interface FileOptions {
  * 
  * const files = getAllFilesInDir(`.`);
  * const targets = new Targets(cwd);
+ * targets.handlePseudoFile(pseudoFilePath);
  * targets.loadObjectsFromPaths(files);
  * await Promise.all(files.map(f => targets.parseFile(f)));
  * targets.resolveBinder();
@@ -152,13 +153,23 @@ export class Targets {
 		return theObject;
 	}
 
-	public storePseudoObject(ileObject: ILEObject) {
-		// We don't add the same object twice.
-		if (!this.searchForObject(ileObject)) {
-			const key = `/${ileObject.systemName}.${ileObject.type}`;
-			ileObject.pseudo = true;
-			this.resolvedObjects[key] = ileObject;
-		}
+	/**
+	 * This can be expensive. It should only be called:
+	 * before loadObjectsFromPaths and parseFile are called.
+	 * @param filePath Fully qualified path to the file. Assumed to exist.
+	 */
+	public async handlePseudoFile(filePath: string) {
+		const content = await fs.readFile(filePath, { encoding: `utf-8` });
+
+		const pseudoObjects = getPseudoObjectsFrom(content);
+
+		pseudoObjects.forEach(ileObject => {
+			if (!this.searchForObject(ileObject)) {
+				const key = `/${ileObject.systemName}.${ileObject.type}`;
+				ileObject.pseudo = true;
+				this.resolvedObjects[key] = ileObject;
+			}
+		});
 	}
 
 	public removeObjectByPath(localPath: string) {
