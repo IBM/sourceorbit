@@ -105,3 +105,4 @@ Source Orbit does not support embedded SQL (`exec sql`) used in a C spec. - no p
 | Referenced object | An object where the source is not contained in the project, but does exist at build time (in the library list) |
 | Incremental build | The building on only specific objects, not the entire project                                                  |
 | Full build        | The build of the entire project                                                                                |
+| Dependency        | An object which is required in order for a build of a certain object to happen                                 |
