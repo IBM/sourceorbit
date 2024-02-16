@@ -35,12 +35,19 @@ describe.skipIf(files.length === 0)(`dds_refs tests with reference file`, () => 
 
     const pro250d = targets.searchForObject({systemName: `PRO250D`, type: `FILE`});
     expect(pro250d).toBeDefined();
+    expect(pro250d.reference).toBeUndefined();
+
     const provider = targets.searchForObject({systemName: `PROVIDER`, type: `FILE`});
     expect(provider).toBeDefined();
+    expect(provider.reference).toBeUndefined();
+
     const provide1 = targets.searchForObject({systemName: `PROVIDE1`, type: `FILE`});
     expect(provide1).toBeDefined();
+    expect(provide1.reference).toBeUndefined();
+
     const samref = targets.searchForObject({systemName: `SAMREF`, type: `FILE`});
     expect(samref).toBeDefined();
+    expect(samref.reference).toBeTruthy();
   });
 
   test(`test PROD250D deps (REF & 32REFFLD)`, async () => {
