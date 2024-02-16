@@ -136,6 +136,11 @@ export function getPseudoObjectsFrom(content: string) {
 
 		} else {
 			const objectParts = line.toUpperCase().split(`.`);
+
+			if (objectParts[0].length > 10) {
+				warningOut(`Trying to add referenced object: object name '${objectParts[0]}' is too long.`);
+			}
+
 			currentObject = {
 				systemName: objectParts[0],
 				type: objectParts[1] as ObjectType, //TODO: validate type
