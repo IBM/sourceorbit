@@ -9,7 +9,7 @@ import { scanGlob } from '../src/extensions';
 import { writeFileSync } from 'fs';
 import { BobProject } from '../src';
 
-const cwd = setupFixture(`dds_refs`);
+const cwd = setupFixture(`dds_deps`);
 
 // This issue was occuring when you had two files with the same name, but different extensions.
 
