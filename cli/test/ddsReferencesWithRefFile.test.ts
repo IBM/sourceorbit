@@ -7,6 +7,7 @@ import { getFiles } from '../src/utils';
 import { setupFixture } from './fixtures/projects';
 import { referencesFileName, scanGlob } from '../src/extensions';
 import { writeFileSync } from 'fs';
+import { BobProject } from '../src/builders/bob';
 
 const cwd = setupFixture(`dds_refs_with_refs`);
 
@@ -87,5 +88,30 @@ describe.skipIf(files.length === 0)(`dds_refs tests with reference file`, () => 
 
     const logs = targets.logger.getLogsFor(providerLf.relativePath);
     expect(logs).toBeUndefined();
+  });
+
+
+  test(`make doesn't include refs that do not exist or are referenced objects`, () => {
+    const project = new MakeProject(cwd, targets);
+
+    const targetContent = project.generateTargets();
+
+    expect(targetContent).toContain(`$(PREPATH)/PROVIDE1.FILE: $(PREPATH)/PROVIDER.FILE`);
+    expect(targetContent).toContain(`$(PREPATH)/PRO250D.FILE: $(PREPATH)/PROVIDER.FILE`);
+    expect(targetContent).not.toContain(`$(PREPATH)/PROVIDER.FILE: $(PREPATH)/SAMREF.FILE`);
+  });
+
+  test(`bob doesn't include refs that do not exist or are referenced objects`, () => {
+    const project = new BobProject(targets);
+
+    const files = project.createRules();
+
+    expect(files[`Rules.mk`]).toBeDefined();
+
+    const baseRules = files[`Rules.mk`].split('\n').map(l => l.trim());
+
+    expect(baseRules).toContain(`PRO250D.FILE: PRO250D.DSPF PROVIDER.FILE`);
+    expect(baseRules).toContain(`PROVIDER.FILE: PROVIDER.PF`);
+    expect(baseRules).toContain(`PROVIDE1.FILE: PROVIDE1.LF PROVIDER.FILE`);
   });
 });
