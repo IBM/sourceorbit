@@ -154,7 +154,7 @@ export class Targets {
 
 	public storePseudoObject(ileObject: ILEObject) {
 		// We don't add the same object twice.
-		if (!this.searchForObject(ileObject, ileObject)) {
+		if (!this.searchForObject(ileObject)) {
 			const key = `/${ileObject.systemName}.${ileObject.type}`;
 			ileObject.pseudo = true;
 			this.resolvedObjects[key] = ileObject;
@@ -946,8 +946,37 @@ export class Targets {
 
 	private createRpgTarget(localPath: string, cache: Cache, options: FileOptions = {}) {
 		const pathDetail = path.parse(localPath);
-		const sourceName = pathDetail.base;
 		const ileObject = this.resolvePathToObject(localPath, options.text);
+
+		// define internal imports
+		ileObject.imports = cache.procedures
+			.filter((proc: any) => proc.keyword[`EXTPROC`])
+			.map(ref => {
+				const keyword = ref.keyword;
+				let importName: string = ref.name;
+				const extproc: string | boolean = keyword[`EXTPROC`];
+				if (extproc) {
+					if (extproc === true) importName = ref.name;
+					else importName = extproc;
+				}
+
+				if (importName.includes(`:`)) {
+					const parmParms = importName.split(`:`);
+					importName = parmParms.filter(p => !p.startsWith(`*`)).join(``);
+				}
+
+				importName = trimQuotes(importName);
+
+				return importName;
+			});
+	
+		// define exported functions
+		if (cache.keyword[`NOMAIN`]) {
+			ileObject.exports = cache.procedures
+				.filter((proc: any) => proc.keyword[`EXPORT`])
+				.map(ref => ref.name.toUpperCase());
+		}
+
 		const target: ILEObjectTarget = {
 			...ileObject,
 			deps: []
@@ -1258,35 +1287,6 @@ export class Targets {
 		// We also look to see if there is a `.cmd` object with the same name
 		const resolvedObject = this.searchForObject({ systemName: ileObject.systemName, type: `CMD` });
 		if (resolvedObject) this.createOrAppend(resolvedObject, target);
-
-		// define internal imports
-		target.imports = cache.procedures
-			.filter((proc: any) => proc.keyword[`EXTPROC`])
-			.map(ref => {
-				const keyword = ref.keyword;
-				let importName: string = ref.name;
-				const extproc: string | boolean = keyword[`EXTPROC`];
-				if (extproc) {
-					if (extproc === true) importName = ref.name;
-					else importName = extproc;
-				}
-
-				if (importName.includes(`:`)) {
-					const parmParms = importName.split(`:`);
-					importName = parmParms.filter(p => !p.startsWith(`*`)).join(``);
-				}
-
-				importName = trimQuotes(importName);
-
-				return importName;
-			});
-
-		// define exported functions
-		if (cache.keyword[`NOMAIN`]) {
-			target.exports = cache.procedures
-				.filter((proc: any) => proc.keyword[`EXPORT`])
-				.map(ref => ref.name.toUpperCase());
-		}
 
 		if (target.deps.length > 0)
 			infoOut(`Depends on: ${target.deps.map(d => `${d.systemName}.${d.type}`).join(` `)}`);
