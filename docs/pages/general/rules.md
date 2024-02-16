@@ -96,3 +96,12 @@ Source Orbit does not support embedded SQL (`exec sql`) used in a C spec. - no p
      FPSBORDS   IF   E           K DISK    USROPN
      FPMESSGS   IF   E           K DISK    USROPN
 ```
+
+### Terminology
+
+| Term              | Definitions                                                                                                    |
+| ----------------- | -------------------------------------------------------------------------------------------------------------- |
+| Pseudo            | CL source code to build an object that doesn't typically have source code (like a MSGF, DTAARA, etc)           |
+| Referenced object | An object where the source is not contained in the project, but does exist at build time (in the library list) |
+| Incremental build | The building on only specific objects, not the entire project                                                  |
+| Full build        | The build of the entire project                                                                                |
