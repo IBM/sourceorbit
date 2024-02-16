@@ -161,7 +161,7 @@ async function main() {
 	const referenceFile = path.join(cwd, referencesFileName);
 	if (existsSync(referenceFile)) {
 		infoOut(`Found reference file: ${referenceFile}`);
-		targets.handleRefsFile(path.join(cwd, referenceFile));
+		targets.handleRefsFile(referenceFile);
 	}
 
 	targets.loadObjectsFromPaths(files);
