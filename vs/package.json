@@ -3,7 +3,7 @@
 	"description": "Object dependency management",
 	"author": "IBM",
 	"license": "MIT",
-	"version": "1.1.0",
+	"version": "1.2.2",
 	"publisher": "IBM",
 	"categories": ["Programming Languages", "Other"],
 	"keywords": [
@@ -19,7 +19,6 @@
 		"onStartupFinished"
 	],
 	"extensionDependencies": [
-		"IBM.vscode-ibmi-projectexplorer",
 		"vscode.git"
 	],
 	"main": "./out/extension",
@@ -66,23 +65,20 @@
 			{
 				"command": "vscode-sourceorbit.objects.loadProject",
 				"category": "Source Orbit",
-				"title": "Reload Project"
+				"title": "Reload Project",
+				"enablement": "vscode-sourceorbit:projectExplorerLoaded == true"
+			},
+			{
+				"command": "vscode-sourceorbit.objects.autoFix",
+				"category": "Source Orbit",
+				"title": "Autofix",
+				"enablement": "vscode-sourceorbit:projectExplorerLoaded == true"
 			},
 			{
 				"command": "vscode-sourceorbit.objects.goToFile",
 				"icon": "$(go-to-file)",
 				"category": "Source Orbit",
 				"title": "Go to file"
-			},
-			{
-				"command": "vscode-sourceorbit.objects.autoFix",
-				"category": "Source Orbit",
-				"title": "Autofix"
-			},
-			{
-				"command": "vscode-sourceorbit.objects.autoFix",
-				"category": "Source Orbit",
-				"title": "Autofix"
 			},
 			{
 				"command": "vscode-sourceorbit.generateBuildFile",
@@ -103,6 +99,18 @@
 				},
 				{
 					"command": "vscode-sourceorbit.autoFix",
+					"when": "never"
+				},
+				{
+					"command": "vscode-sourceorbit.objects.loadProject",
+					"when": "never"
+				},
+				{
+					"command": "vscode-sourceorbit.objects.autoFix",
+					"when": "never"
+				},
+				{
+					"command": "vscode-sourceorbit.objects.goToFile",
 					"when": "never"
 				}
 			],
@@ -126,7 +134,7 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
+		"vscode:prepublish": "npm run webpack",
 		"package": "vsce package",
 		"compile": "tsc -b",
 		"clean": "rimraf out && rimraf client/out && rimraf server/out",

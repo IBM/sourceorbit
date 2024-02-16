@@ -1,5 +1,6 @@
 
 import { readFileSync } from 'fs';
+import * as path from 'path';
 
 import Parser from "vscode-rpgle/language/parser";
 import { Targets } from './targets';
@@ -15,7 +16,14 @@ export function setupParser(targets: Targets): Parser {
 		}
 
 		if (includeFile.includes(`,`)) {
-			includeFile = includeFile.split(`,`)[1] + `.*`;
+			// If the member include path is qualified with a source file
+			// then we should convert to be a unix style path so we can
+			// search the explicit directories.
+			includeFile = includeFile.replace(/,/g, `/`) + `.*`;
+		} else if (!includeFile.includes(`/`)) {
+			const parent = path.basename(path.dirname(baseFile));
+			console.log(parent);
+			includeFile = `${parent}/${includeFile}`;
 		}
 
 		const file = targets.resolveLocalFile(includeFile);

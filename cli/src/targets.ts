@@ -212,7 +212,7 @@ export class Targets {
 	/**
 	 * Resolves a search to an object. Use `systemName` parameter for short and long name.
 	 */
-	public searchForObject(lookFor: ILEObject, currentObject: ILEObject) {
+	public searchForObject(lookFor: ILEObject) {
 		return this.getResolvedObjects().find(o => (o.systemName === lookFor.systemName || o.systemName === lookFor.longName) && o.type === lookFor.type);
 	}
 
@@ -274,6 +274,8 @@ export class Targets {
 			case `sqludt`:
 			case `sqlalias`:
 			case `sqlseq`:
+			case `sequence`:
+			case `msgf`:
 				return "FILE";
 
 			case `dtaara`:
@@ -492,7 +494,6 @@ export class Targets {
 	 * Handles all DDS types: pf, lf, dspf
 	 */
 	private createDdsFileTarget(localPath: string, dds: dds, options: FileOptions = {}) {
-		const sourceName = path.basename(localPath);
 		const ileObject = this.resolvePathToObject(localPath, options.text);
 		const target: ILEObjectTarget = {
 			...ileObject,
@@ -501,46 +502,71 @@ export class Targets {
 
 		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
 
+		// We have a local cache of refs found so we don't keep doing global lookups
+		// on objects we already know to depend on in this object.
+		
+		let alreadyFoundRefs: string[] = [];
+
+		const handleObjectPath = (currentKeyword: string, recordFormat: any, value: string) => {
+			const qualified = value.split(`/`);
+
+			let objectName: string | undefined;
+			if (qualified.length === 2 && qualified[0].toLowerCase() === `*libl`) {
+				objectName = qualified[1];
+			} else if (qualified.length === 1) {
+				objectName = qualified[0];
+			}
+
+			if (objectName) {
+				const upperName = objectName.toUpperCase();
+				if (alreadyFoundRefs.includes(upperName)) return;
+
+				const resolvedPath = this.searchForObject({ systemName: upperName, type: `FILE` });
+				if (resolvedPath) {
+					target.deps.push(resolvedPath);
+					alreadyFoundRefs.push(upperName);
+				}
+				else {
+					this.logger.fileLog(ileObject.relativePath, {
+						message: `no object found for reference '${objectName}'`,
+						type: `warning`,
+						line: recordFormat.range.start
+					});
+				}
+			} else {
+				this.logger.fileLog(ileObject.relativePath, {
+					message: `${currentKeyword} reference not included as possible reference to library found.`,
+					type: `info`,
+					line: recordFormat.range.start
+				});
+			}
+		}
+
+		// PFILE -> https://www.ibm.com/docs/en/i/7.5?topic=80-pfile-physical-file-keywordlogical-files-only
+		// REF -> https://www.ibm.com/docs/en/i/7.5?topic=80-ref-reference-keywordphysical-files-only
+
 		const ddsRefKeywords = [`PFILE`, `REF`, `JFILE`];
 
 		for (const recordFormat of dds.formats) {
 
+			// Look through this record format keywords for the keyword we're looking for
 			for (const keyword of ddsRefKeywords) {
-				// Look through this record format keywords for the keyword we're looking for
 				const keywordObj = recordFormat.keywords.find(k => k.name === keyword);
 				if (keywordObj) {
 					const wholeValue: string = keywordObj.value;
 					const parts = wholeValue.split(` `).filter(x => x.length > 0);
-					for (const value of parts) {
-						const qualified = value.split(`/`);
 
-						let objectName: string | undefined;
-						if (qualified.length === 2 && qualified[0].toLowerCase() === `*libl`) {
-							objectName = qualified[1];
-						} else if (qualified.length === 1) {
-							objectName = qualified[0];
-						}
+					// JFILE can have multiple files referenced in it, whereas 
+					// REF and PFILE can only have one at the first element
+					const pathsToCheck = (keyword === `JFILE` ? parts.length : 1);
 
-						if (objectName) {
-							const resolvedPath = this.searchForObject({ systemName: objectName.toUpperCase(), type: `FILE` }, ileObject);
-							if (resolvedPath) target.deps.push(resolvedPath);
-							else {
-								this.logger.fileLog(ileObject.relativePath, {
-									message: `no object found for reference '${objectName}'`,
-									type: `warning`,
-									line: recordFormat.range.start
-								});
-							}
-						} else {
-							this.logger.fileLog(ileObject.relativePath, {
-								message: `${keyword} reference not included as possible reference to library found.`,
-								type: `info`,
-								line: recordFormat.range.start
-							});
-						}
+					for (let i = 0; i < pathsToCheck; i++) {
+						handleObjectPath(keyword, recordFormat, parts[i]);
 					}
 				}
 			}
+
+			// REFFLD -> https://www.ibm.com/docs/en/i/7.5?topic=80-reffld-referenced-field-keywordphysical-files-only
 
 			// Then, let's loop through the fields in this format and see if we can find REFFLD
 			for (const field of recordFormat.fields) {
@@ -550,36 +576,7 @@ export class Targets {
 					const [fieldRef, fileRef] = refFld.value.trim().split(` `);
 
 					if (fileRef) {
-						const qualified = fileRef.split(`/`);
-
-						let objectName: string | undefined;
-						if (qualified.length === 2 && qualified[0].toLowerCase() === `*libl`) {
-							objectName = qualified[1];
-						} else if (qualified.length === 1) {
-							objectName = qualified[0];
-						}
-
-						if (objectName) {
-							const resolvedPath = this.searchForObject({ systemName: objectName.toUpperCase(), type: `FILE` }, ileObject);
-							if (resolvedPath) {
-								if (!target.deps.some(d => d.systemName === resolvedPath.systemName && d.type === resolvedPath.type)) {
-									target.deps.push(resolvedPath);
-								}
-							}
-							else {
-								this.logger.fileLog(ileObject.relativePath, {
-									message: `no object found for reference '${objectName}'`,
-									type: `warning`,
-									line: recordFormat.range.start
-								});
-							}
-						} else {
-							this.logger.fileLog(ileObject.relativePath, {
-								message: `REFFLD reference not included as possible reference to library found.`,
-								type: `info`,
-								line: recordFormat.range.start
-							});
-						}
+						handleObjectPath(`REFFLD`, recordFormat, fileRef);
 					}
 				}
 			}
@@ -662,7 +659,7 @@ export class Targets {
 				} else {
 					if (ignoredObjects.includes(possibleObject.name.toUpperCase())) return;
 
-					const resolvedPath = this.searchForObject({ systemName: possibleObject.name.toUpperCase(), type: `FILE` }, ileObject);
+					const resolvedPath = this.searchForObject({ systemName: possibleObject.name.toUpperCase(), type: `FILE` });
 					if (resolvedPath) target.deps.push(resolvedPath);
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -693,7 +690,7 @@ export class Targets {
 
 					if (ignoredObjects.includes(name.toUpperCase())) return;
 
-					const resolvedPath = this.searchForObject({ systemName: name.toUpperCase(), type: `PGM` }, ileObject);
+					const resolvedPath = this.searchForObject({ systemName: name.toUpperCase(), type: `PGM` });
 					if (resolvedPath) target.deps.push(resolvedPath);
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -719,7 +716,7 @@ export class Targets {
 		});
 
 		// We also look to see if there is a `.cmd` object with the same name
-		const possibleCommandObject = this.searchForObject({ systemName: ileObject.systemName, type: `CMD` }, ileObject);
+		const possibleCommandObject = this.searchForObject({ systemName: ileObject.systemName, type: `CMD` });
 		if (possibleCommandObject) this.createOrAppend(possibleCommandObject, target);
 
 		if (target.deps.length > 0)
@@ -1061,7 +1058,7 @@ export class Targets {
 		if (cache.keyword[`BNDDIR`]) {
 			this.logger.fileLog(ileObject.relativePath, {
 				message: `has the BNDDIR keyword. 'binders' property in iproj.json should be used instead.`,
-				type: `warning`,
+				type: `info`,
 			});
 		}
 
@@ -1088,7 +1085,7 @@ export class Targets {
 				// Don't add itself
 				if (ref.lookup === ileObject.systemName) return;
 
-				const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `PGM` }, ileObject);
+				const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `PGM` });
 				if (resolvedObject) {
 					// because of legacy fixed CALL, there can be dupliicate EXTPGMs with the same name :(
 					if (!target.deps.some(d => d.systemName === resolvedObject.systemName && d.type && resolvedObject.type)) {
@@ -1123,7 +1120,7 @@ export class Targets {
 					};
 				})
 				.forEach((ref: RpgLookup) => {
-					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` }, ileObject);
+					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -1145,13 +1142,13 @@ export class Targets {
 						possibleName = trimQuotes(extNameValue).split(`:`)[0]
 					}
 
-					if (possibleName === `*extdesc`) {
+					if (possibleName.toLowerCase() === `*extdesc`) {
 						const extDescValue = keyword[`EXTDESC`];
 						if (extDescValue) {
 							possibleName = trimQuotes(extDescValue);
 						} else {
 							this.logger.fileLog(ileObject.relativePath, {
-								message: `*EXTDESC is used for '${file.name}' but EXTDESC keyword not found/`,
+								message: `*EXTDESC is used for '${file.name}' but EXTDESC keyword not found`,
 								type: `warning`,
 							});
 						}
@@ -1165,7 +1162,7 @@ export class Targets {
 				.forEach((ref: RpgLookup) => {
 					if (ignoredObjects.includes(ref.lookup)) return;
 
-					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` }, ileObject);
+					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -1186,7 +1183,7 @@ export class Targets {
 				.forEach((ref: RpgLookup) => {
 					const previouslyScanned = target.deps.some((r => r.systemName === ref.lookup && r.type === `FILE`));
 					if (previouslyScanned) return;
-					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` }, ileObject);
+					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -1217,7 +1214,7 @@ export class Targets {
 				.forEach((ref: RpgLookup) => {
 					if (ignoredObjects.includes(ref.lookup.toUpperCase())) return;
 
-					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` }, ileObject);
+					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -1245,7 +1242,7 @@ export class Targets {
 					};
 				})
 				.forEach((ref: RpgLookup) => {
-					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` }, ileObject);
+					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
 						this.logger.fileLog(ileObject.relativePath, {
@@ -1259,7 +1256,7 @@ export class Targets {
 
 		// TODO: did we duplicate this?
 		// We also look to see if there is a `.cmd` object with the same name
-		const resolvedObject = this.searchForObject({ systemName: ileObject.systemName, type: `CMD` }, ileObject);
+		const resolvedObject = this.searchForObject({ systemName: ileObject.systemName, type: `CMD` });
 		if (resolvedObject) this.createOrAppend(resolvedObject, target);
 
 		// define internal imports

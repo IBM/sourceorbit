@@ -26,9 +26,9 @@ describe.skipIf(files.length === 0)(`pseudo tests`, () => {
   });
 
   test(`Test objects exists`, () => {
-    expect(targets.searchForObject({ systemName: `MYTHING`, type: `DTAARA` }, undefined)).toBeDefined();
-    expect(targets.searchForObject({ systemName: `MSTDSP`, type: `FILE` }, undefined)).toBeDefined();
-  });
+    expect(targets.searchForObject({ systemName: `MYTHING`, type: `DTAARA` })).toBeDefined();
+    expect(targets.searchForObject({ systemName: `MSTDSP`, type: `FILE` })).toBeDefined();
+  })
 
   test(`Program depends on DTAARA`, () => {
     const programTarget = targets.getTarget({ systemName: `TESTER`, type: `PGM` });
