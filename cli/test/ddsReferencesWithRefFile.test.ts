@@ -5,7 +5,7 @@ import path from 'path';
 import { MakeProject } from '../src/builders/make';
 import { getFiles } from '../src/utils';
 import { setupFixture } from './fixtures/projects';
-import { scanGlob } from '../src/extensions';
+import { referencesFileName, scanGlob } from '../src/extensions';
 import { writeFileSync } from 'fs';
 
 const cwd = setupFixture(`dds_refs_with_refs`);
@@ -19,7 +19,7 @@ describe.skipIf(files.length === 0)(`dds_refs tests with reference file`, () => 
   targets.setSuggestions({renames: true, includes: true})
   
   beforeAll(async () => {
-    targets.handleRefsFile(path.join(cwd, `.sorefs`));
+    targets.handleRefsFile(path.join(cwd, referencesFileName));
     targets.loadObjectsFromPaths(files);
     const parsePromises = files.map(f => targets.parseFile(f));
     await Promise.all(parsePromises);
