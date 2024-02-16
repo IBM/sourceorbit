@@ -140,7 +140,7 @@ export function getPseudoObjectsFrom(content: string) {
 				systemName: objectParts[0],
 				type: objectParts[1] as ObjectType, //TODO: validate type
 				exports: [],
-				pseudo: true,
+				reference: true,
 			}
 
 			pseudoObjects.push(currentObject);

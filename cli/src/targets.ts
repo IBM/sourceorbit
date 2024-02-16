@@ -12,7 +12,7 @@ import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensi
 import Parser from "vscode-rpgle/language/parser";
 import { setupParser } from './parser';
 import { Logger } from './logger';
-import { asPosix, getPseudoObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
+import { asPosix, getPseudoObjectsFrom as getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -40,7 +40,7 @@ export interface ILEObject {
 	relativePath?: string;
 	extension?: string;
 
-	pseudo?: boolean;
+	reference?: boolean;
 
 	/** exported functions */
 	exports?: string[];
@@ -158,15 +158,15 @@ export class Targets {
 	 * before loadObjectsFromPaths and parseFile are called.
 	 * @param filePath Fully qualified path to the file. Assumed to exist.
 	 */
-	public async handlePseudoFile(filePath: string) {
+	public async handleRefsFile(filePath: string) {
 		const content = await fs.readFile(filePath, { encoding: `utf-8` });
 
-		const pseudoObjects = getPseudoObjectsFrom(content);
+		const pseudoObjects = getReferenceObjectsFrom(content);
 
 		pseudoObjects.forEach(ileObject => {
 			if (!this.searchForObject(ileObject)) {
 				const key = `/${ileObject.systemName}.${ileObject.type}`;
-				ileObject.pseudo = true;
+				ileObject.reference = true;
 				this.resolvedObjects[key] = ileObject;
 			}
 		});
