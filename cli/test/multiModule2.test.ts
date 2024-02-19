@@ -55,4 +55,14 @@ describe.skipIf(files.length === 0)(`multi_module_two tests`, () => {
     expect(deps.some(d => d.systemName === `CUSTOMER`)).toBeTruthy();
     expect(deps.some(d => d.systemName === `DATA`)).toBeTruthy();
   });
+
+  test(`Check makefile result`, async () => {
+    const project = new MakeProject(cwd, targets);
+
+    const targetContent = project.getMakefile();
+
+    expect(targetContent).toContain(`$(PREPATH)/RUNNER.PGM: $(PREPATH)/DB.MODULE $(PREPATH)/RUNNER.MODULE $(PREPATH)/DATA.MODULE`);
+    expect(targetContent).toContain(`\tsystem "CRTPGM PGM($(BIN_LIB)/RUNNER) ENTMOD(RUNNER) MODULE(DB RUNNER DATA) TGTRLS(*CURRENT) BNDDIR($(BNDDIR)) ACTGRP(*NEW)" > .logs/runner.splf`);
+    expect(targetContent).toContain(`$(PREPATH)/RUNNER.MODULE: rpgle/runner.pgm.rpgle`);
+  });
 });

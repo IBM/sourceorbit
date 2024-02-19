@@ -1473,7 +1473,8 @@ export class Targets {
 			imports: currentTarget.imports,
 			exports: [],
 			type: `MODULE`,
-			relativePath: basePath
+			relativePath: basePath,
+			extension: path.extname(basePath).substring(1)
 		};
 
 		// Replace the old resolved object with the module
