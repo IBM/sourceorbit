@@ -1,0 +1,19 @@
+-- https://www.ibm.com/docs/en/i/7.3?topic=tables-employee-table-employee
+
+CREATE OR REPLACE TABLE CUSTOMER
+      (CUSNO       integer not null GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1),
+       FIRSTNME    VARCHAR(12)     NOT NULL,
+       LASTNAME    VARCHAR(15)     NOT NULL,
+       PHONENO     CHAR(4)         NOT NULL,
+       CREATED     DATE            NOT NULL DEFAULT CURRENT_DATE,
+       ADDR1      VARCHAR(30)     NOT NULL,
+       ADDR2      VARCHAR(30)    NOT NULL,
+       CITY      VARCHAR(20)     NOT NULL,
+       STATE    CHAR(2)         NOT NULL,
+       ZIP      CHAR(5)         NOT NULL,
+       PRIMARY KEY (CUSNO)
+       ) RCDFMT CUSTFMT;
+
+ALTER TABLE CUSTOMER
+      ADD CONSTRAINT NUMBER
+      CHECK (PHONENO >= '0000' AND PHONENO <= '9998');
