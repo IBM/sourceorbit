@@ -1390,7 +1390,7 @@ export class Targets {
 							newImports.push(possibleSrvPgmDep);
 						}
 
-					} else if (currentTarget.type === `PGM`) {
+					} else if ([`PGM`, `MODULE`].includes(currentTarget.type)) {
 						// Perhaps we're looking at a program object, which actually should be a multi
 						// module program, so we do a lookup for additional modules.
 						const possibleModuleDep = allModules.find(mod => mod.exports && mod.exports.includes(importName.toUpperCase()))
@@ -1414,6 +1414,20 @@ export class Targets {
 						// to be a program made up of many modules, usually done with CRTPGM
 						if (currentTarget.deps.some(d => d.type === `MODULE`)) {
 							this.convertBoundProgramToMultiModuleProgram(currentTarget);
+
+							// Then, also include any of the modules dep modules into the currentTarget deps!!
+							const depTargets = currentTarget.deps
+								.filter(d => d.type === `MODULE`)
+								.map(m => this.getTarget(m));
+
+							// Confusing names, it means: dependencies of the dependencies that are modules
+							const depDeps = depTargets .map(m => m?.deps).flat().filter(d => d.type === `MODULE`);
+
+							for (const newDep of depDeps) {
+								if (newDep && !currentTarget.deps.some(d => d.systemName === newDep.systemName && d.type === newDep.type)) {
+									currentTarget.deps.push(newDep);
+								}
+							}
 						}
 					}
 				}

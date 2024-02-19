@@ -133,7 +133,7 @@ test(`Multi-module program and service program`, () => {
     '$(PREPATH)/MYWEBAPP.PGM: ',
     '\tliblist -c $(BIN_LIB);\\',
     '\tliblist -a $(LIBL);\\',
-    '\tsystem "CRTPGM PGM($(BIN_LIB)/MYWEBAPP) ENTRY(MYWEBAPP) MODULES(HANDLERA HANDLERB MYWEBAPP) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*NO)" > .logs/mywebapp.splf'
+    '\tsystem "CRTPGM PGM($(BIN_LIB)/MYWEBAPP) ENTMOD(MYWEBAPP) MODULE(HANDLERA HANDLERB MYWEBAPP) TGTRLS(*CURRENT) BNDDIR($(BNDDIR)) ACTGRP(*NEW)" > .logs/mywebapp.splf'
   ].join());
 
   const webappMod = targets.getTarget({systemName: `MYWEBAPP`, type: `MODULE`});
