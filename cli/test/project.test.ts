@@ -317,7 +317,16 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     const allTarget = headerContent.find(l => l.startsWith(`all:`));
     expect(allTarget).toBeDefined();
 
-    expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/EMPLOYEES.PGM $(PREPATH)/DEPTS.PGM $(PREPATH)/SHOWEMPS.PGM $(PREPATH)/GETTOTSAL.SRVPGM`);
+    const allTargets = allTarget.substring(5).split(` `);
+    expect(allTargets.length).toBe(8);
+    expect(allTargets[0]).toBe(`.logs`);
+    expect(allTargets[1]).toBe(`.evfevent`);
+    expect(allTargets[2]).toBe(`library`);
+    expect(allTargets).toContain(`$(PREPATH)/EMPLOYEE.FILE`);
+    expect(allTargets).toContain(`$(PREPATH)/EMPLOYEES.PGM`);
+    expect(allTargets).toContain(`$(PREPATH)/DEPTS.PGM`);
+    expect(allTargets).toContain(`$(PREPATH)/SHOWEMPS.PGM`);
+    expect(allTargets).toContain(`$(PREPATH)/GETTOTSAL.SRVPGM`);
     
     const deptsTargetDeps = headerContent.find(l => l.startsWith(`$(PREPATH)/DEPTS.PGM:`));
     expect(deptsTargetDeps).toBeDefined();
@@ -334,10 +343,19 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     // Generate targets on it's own will have BNDDIR, PGM, etc
     const headerContent = project.generateTargets([deptsFile]);
 
-    const allTarget = headerContent.find(l => l.startsWith(`all:`));
+    const allTarget = headerContent.find(l => l.startsWith(`all: `));
     expect(allTarget).toBeDefined();
 
-    expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/EMPLOYEES.PGM $(PREPATH)/DEPTS.PGM $(PREPATH)/SHOWEMPS.PGM $(PREPATH)/GETTOTSAL.SRVPGM`);
+    const allTargets = allTarget.substring(5).split(` `);
+    expect(allTargets.length).toBe(8);
+    expect(allTargets[0]).toBe(`.logs`);
+    expect(allTargets[1]).toBe(`.evfevent`);
+    expect(allTargets[2]).toBe(`library`);
+    expect(allTargets).toContain(`$(PREPATH)/EMPLOYEE.FILE`);
+    expect(allTargets).toContain(`$(PREPATH)/EMPLOYEES.PGM`);
+    expect(allTargets).toContain(`$(PREPATH)/DEPTS.PGM`);
+    expect(allTargets).toContain(`$(PREPATH)/SHOWEMPS.PGM`);
+    expect(allTargets).toContain(`$(PREPATH)/GETTOTSAL.SRVPGM`);
     
     const deptsTargetDeps = headerContent.find(l => l.startsWith(`$(PREPATH)/DEPTS.PGM:`));
     expect(deptsTargetDeps).toBeUndefined();

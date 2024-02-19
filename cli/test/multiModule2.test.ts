@@ -61,7 +61,14 @@ describe.skipIf(files.length === 0)(`multi_module_two tests`, () => {
 
     const targetContent = project.getMakefile();
 
-    expect(targetContent).toContain(`$(PREPATH)/RUNNER.PGM: $(PREPATH)/DB.MODULE $(PREPATH)/RUNNER.MODULE $(PREPATH)/DATA.MODULE`);
+    const runnerTarget = targetContent.find(t => t.startsWith(`$(PREPATH)/RUNNER.PGM: `) && t.length > 50);
+    expect(runnerTarget).toBeDefined();
+    const runnerDepsString = runnerTarget.substring(runnerTarget.indexOf(`: `) + 2).split(` `);
+    expect(runnerDepsString.length).toBe(3);
+    expect(runnerDepsString).toContain(`$(PREPATH)/DB.MODULE`);
+    expect(runnerDepsString).toContain(`$(PREPATH)/RUNNER.MODULE`);
+    expect(runnerDepsString).toContain(`$(PREPATH)/DATA.MODULE`);
+
     expect(targetContent).toContain(`\tsystem "CRTPGM PGM($(BIN_LIB)/RUNNER) ENTMOD(RUNNER) MODULE(DB RUNNER DATA) TGTRLS(*CURRENT) BNDDIR($(BNDDIR)) ACTGRP(*NEW)" > .logs/runner.splf`);
     expect(targetContent).toContain(`$(PREPATH)/RUNNER.MODULE: rpgle/runner.pgm.rpgle`);
   });
