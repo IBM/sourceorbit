@@ -67,12 +67,11 @@ export class MakeProject {
 					command: `CRTPGM`,
 					parameters: {
 						pgm: `$(BIN_LIB)/$*`,
-						entry: `$*`,
-						modules: `*MODULES`,
+						entmod: `$*`,
+						module: `*MODULES`,
 						tgtrls: `*CURRENT`,
-						tgtccsid: `*JOB`,
 						bnddir: `$(BNDDIR)`,
-						dftactgrp: `*NO`
+						actgrp: `*NEW`
 					}
 				},
 				"pgm.rpgle": {
