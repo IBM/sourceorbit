@@ -44,4 +44,13 @@ describe.skipIf(files.length === 0)(`sql long name lookup`, () => {
     expect(moduleLogs).toBeUndefined();
   });
 
+  test(`Ensure deps are correct`, async () => {
+    const trans = targets.getTarget({ systemName: `DB`, type: `MODULE` });
+    expect(trans).toBeDefined();
+
+    expect(trans.deps.length).toBe(1);
+    expect(trans.deps[0].systemName).toBe(`TRANS`);
+    expect(trans.deps[0].longName).toBe(`TRANSACTION`);
+  });
+
 });

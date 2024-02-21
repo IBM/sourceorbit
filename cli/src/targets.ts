@@ -1214,6 +1214,9 @@ export class Targets {
 				.forEach((ref: RpgLookup) => {
 					if (ignoredObjects.includes(ref.lookup)) return;
 
+					const previouslyScanned = target.deps.some((r => (ref.lookup === r.systemName || ref.lookup === r.longName?.toUpperCase()) && r.type === `FILE`));
+					if (previouslyScanned) return;
+
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
@@ -1233,7 +1236,7 @@ export class Targets {
 					line: ref.position ? ref.position.line : undefined
 				}))
 				.forEach((ref: RpgLookup) => {
-					const previouslyScanned = target.deps.some((r => r.systemName === ref.lookup && r.type === `FILE`));
+					const previouslyScanned = target.deps.some((r => (ref.lookup === r.systemName || ref.lookup === r.longName?.toUpperCase()) && r.type === `FILE`));
 					if (previouslyScanned) return;
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
 					if (resolvedObject) target.deps.push(resolvedObject)
