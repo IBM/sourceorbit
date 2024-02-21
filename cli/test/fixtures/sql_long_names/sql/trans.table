@@ -1,3 +1,5 @@
+-- https://www.ibm.com/docs/en/i/7.3?topic=tables-employee-table-employee
+
 CREATE OR REPLACE TABLE TRANSACTION FOR SYSTEM NAME TRANS
       (TRID        integer not null GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1),
        TDESC       VARCHAR(50)     NOT NULL,
