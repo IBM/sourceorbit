@@ -1,13 +1,14 @@
 import glob from 'glob';
 import path from 'path';
 import fs from 'fs/promises';
+import fss from 'fs';
 import Cache from "vscode-rpgle/language/models/cache";
 import { IncludeStatement } from "vscode-rpgle/language/parserTypes";
 import { infoOut, warningOut } from './cli';
 import { DefinitionType, File, Module, CLParser } from 'vscode-clle/language';
 import { DisplayFile as dds } from "vscode-displayfile/src/dspf";
 import Document from "vscode-db2i/src/language/sql/document";
-import { StatementType } from 'vscode-db2i/src/language/sql/types';
+import { ObjectRef, StatementType } from 'vscode-db2i/src/language/sql/types';
 import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensions, cmdExtensions } from './extensions';
 import Parser from "vscode-rpgle/language/parser";
 import { setupParser } from './parser';
@@ -148,6 +149,16 @@ export class Targets {
 			extension
 		};
 
+		// If this file is an SQL file, we need to look to see if it has a long name as we need to resolve all names here
+		if (sqlExtensions.includes(extension.toLowerCase())) {
+			const ref = this.sqlObjectDataFromPath(localPath);
+			if (ref) {
+				if (ref.object.system)  theObject.systemName = ref.object.system.toUpperCase();
+				if (ref.object.name) theObject.longName = ref.object.name;
+				// theObject.type = ref.type;
+			}
+		}
+
 		this.storeResolved(localPath, theObject);
 
 		return theObject;
@@ -224,7 +235,7 @@ export class Targets {
 	 * Resolves a search to an object. Use `systemName` parameter for short and long name.
 	 */
 	public searchForObject(lookFor: ILEObject) {
-		return this.getResolvedObjects().find(o => (o.systemName === lookFor.systemName || o.systemName === lookFor.longName) && o.type === lookFor.type);
+		return this.getResolvedObjects().find(o => (lookFor.systemName === o.systemName || (o.longName && lookFor.systemName === o.longName)) && o.type === lookFor.type);
 	}
 
 	public searchForAnyObject(lookFor: { name: string, types: ObjectType[] }) {
@@ -322,6 +333,7 @@ export class Targets {
 	}
 
 	public loadObjectsFromPaths(paths: string[]) {
+		// optimiseFileList(paths); //Ensure we load SQL files first
 		paths.forEach(p => this.resolvePathToObject(p));
 	}
 
@@ -1202,6 +1214,9 @@ export class Targets {
 				.forEach((ref: RpgLookup) => {
 					if (ignoredObjects.includes(ref.lookup)) return;
 
+					const previouslyScanned = target.deps.some((r => (ref.lookup === r.systemName || ref.lookup === r.longName?.toUpperCase()) && r.type === `FILE`));
+					if (previouslyScanned) return;
+
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
@@ -1221,7 +1236,7 @@ export class Targets {
 					line: ref.position ? ref.position.line : undefined
 				}))
 				.forEach((ref: RpgLookup) => {
-					const previouslyScanned = target.deps.some((r => r.systemName === ref.lookup && r.type === `FILE`));
+					const previouslyScanned = target.deps.some((r => (ref.lookup === r.systemName || ref.lookup === r.longName?.toUpperCase()) && r.type === `FILE`));
 					if (previouslyScanned) return;
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
 					if (resolvedObject) target.deps.push(resolvedObject)
@@ -1585,6 +1600,50 @@ export class Targets {
 		return currentItem;
 	}
 
+	/**
+	 * This is used when loading in all objects.
+	 * SQL sources can have two object names: a system name and a long name
+	 * Sadly the long name is not typically part of the path name, so we need to
+	 * find the name inside of the source code.
+	 */
+	sqlObjectDataFromPath(fullPath: string): ObjectRef|undefined {
+		const relativePath = this.getRelative(fullPath);
+
+		if (fss.existsSync(fullPath)) {
+			const content = fss.readFileSync(fullPath, { encoding: `utf-8` });
+			const document = new Document(content);
+
+			const groups = document.getStatementGroups();
+
+			if (groups.length === 0) {
+				this.logger.fileLog(relativePath, {
+					message: `No SQL statements found in file.`,
+					type: `info`
+				});
+
+				return;
+			}
+
+			const createCount = groups.filter(g => g.statements[0].type === StatementType.Create).length;
+
+			if (createCount > 1) {
+				this.logger.fileLog(relativePath, {
+					message: `Includes multiple create statements. They should be in individual sources. This file will not be parsed.`,
+					type: `warning`,
+				});
+			}
+
+			const firstGroup = groups[0];
+			const create = firstGroup.statements.find(s => s.type === StatementType.Create);
+
+			if (create) {
+				const defs = create.getObjectReferences();
+				const mainDef = defs.find(d => d.createType);
+
+				return mainDef;
+			}
+		}
+	}
 }
 
 function trimQuotes(input: string, value = `'`) {
