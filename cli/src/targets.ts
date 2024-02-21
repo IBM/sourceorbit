@@ -224,7 +224,7 @@ export class Targets {
 	 * Resolves a search to an object. Use `systemName` parameter for short and long name.
 	 */
 	public searchForObject(lookFor: ILEObject) {
-		return this.getResolvedObjects().find(o => (o.systemName === lookFor.systemName || o.systemName === lookFor.longName) && o.type === lookFor.type);
+		return this.getResolvedObjects().find(o => (lookFor.systemName === o.systemName || (o.longName && lookFor.systemName === o.longName)) && o.type === lookFor.type);
 	}
 
 	public searchForAnyObject(lookFor: { name: string, types: ObjectType[] }) {

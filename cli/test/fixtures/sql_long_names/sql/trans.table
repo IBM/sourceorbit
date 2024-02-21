@@ -1,0 +1,7 @@
+CREATE OR REPLACE TABLE TRANSACTION FOR SYSTEM NAME TRANS
+      (TRID        integer not null GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1),
+       TDESC       VARCHAR(50)     NOT NULL,
+       TCUS        integer         NOT NULL, -- reference to customers
+       TAMT        numeric(10,2)   NOT NULL default 0,
+       TWHEN       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+       PRIMARY KEY (TRID)) RCDFMT TRANSFMT;
