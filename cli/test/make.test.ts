@@ -142,8 +142,10 @@ test(`Multi-module program and service program`, () => {
     '$(PREPATH)/MYWEBAPP.MODULE: qrpglesrc/mywebapp.pgm.rpgle',
     '\tliblist -c $(BIN_LIB);\\',
     '\tliblist -a $(LIBL);\\',
-    `\tsystem "CRTRPGMOD MODULE($(BIN_LIB)/MYWEBAPP) SRCSTMF('qrpglesrc/mywebapp.pgm.rpgle') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB)" > .logs/mywebapp.splf`,
-    `\tsystem "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/MYWEBAPP.MBR') TOSTMF('.evfevent/mywebapp.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
+    [
+      `\tsystem "CRTRPGMOD MODULE($(BIN_LIB)/MYWEBAPP) SRCSTMF('qrpglesrc/mywebapp.pgm.rpgle') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB)" > .logs/mywebapp.splf || \\`,
+      `\t(system "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/MYWEBAPP.MBR') TOSTMF('.evfevent/mywebapp.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"; $(SHELL) -c 'exit 1')`,
+    ].join('\n')
   ].join());
 
   const utilsSrvpgm = targets.getTarget({systemName: `UTILS`, type: `SRVPGM`});

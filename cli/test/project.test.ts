@@ -201,8 +201,10 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
       '$(PREPATH)/MYPGM.PGM: qrpglesrc/mypgm.pgm.rpgle',
       '\tliblist -c $(BIN_LIB);\\',
       '\tliblist -a $(LIBL);\\',
-      `\tsystem "CRTBNDRPG PGM($(BIN_LIB)/MYPGM) SRCSTMF('qrpglesrc/mypgm.pgm.rpgle') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*NO)" > .logs/mypgm.splf`,
-      `\tsystem "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/MYPGM.MBR\') TOSTMF(\'.evfevent/mypgm.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
+      [
+        `\tsystem "CRTBNDRPG PGM($(BIN_LIB)/MYPGM) SRCSTMF('qrpglesrc/mypgm.pgm.rpgle') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*NO)" > .logs/mypgm.splf || \\`,
+        `\t(system "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/MYPGM.MBR\') TOSTMF(\'.evfevent/mypgm.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"; $(SHELL) -c 'exit 1')`,
+      ].join('\n')
     ].join());
   });
 
@@ -214,8 +216,10 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
       '$(PREPATH)/DEPTS.PGM: qrpglesrc/depts.pgm.sqlrpgle',
       '\tliblist -c $(BIN_LIB);\\',
       '\tliblist -a $(LIBL);\\',
-      `\tsystem "CRTSQLRPGI OBJ($(BIN_LIB)/DEPTS) SRCSTMF('qrpglesrc/depts.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)')" > .logs/depts.splf`,
-      `\tsystem "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/DEPTS.MBR\') TOSTMF(\'.evfevent/depts.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
+      [
+        `\tsystem "CRTSQLRPGI OBJ($(BIN_LIB)/DEPTS) SRCSTMF('qrpglesrc/depts.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)')" > .logs/depts.splf || \\`,
+        `\t(system "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/DEPTS.MBR') TOSTMF('.evfevent/depts.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"; $(SHELL) -c 'exit 1')`,
+      ].join('\n')
     ].join());
   });
 
@@ -229,8 +233,10 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
       `\tsystem "CPYFRMSTMF FROMSTMF('qddssrc/depts.dspf') TOMBR('$(PREPATH)/qddssrc.FILE/DEPTS.MBR') MBROPT(*REPLACE)"`,
       '\tliblist -c $(BIN_LIB);\\',
       '\tliblist -a $(LIBL);\\',
-      '\tsystem "CRTDSPF FILE($(BIN_LIB)/DEPTS) SRCFILE($(BIN_LIB)/qddssrc) SRCMBR(DEPTS) OPTION(*EVENTF)" > .logs/depts.splf',
-      `\tsystem "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/DEPTS.MBR\') TOSTMF(\'.evfevent/depts.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`
+      [
+        `\tsystem "CRTDSPF FILE($(BIN_LIB)/DEPTS) SRCFILE($(BIN_LIB)/qddssrc) SRCMBR(DEPTS) OPTION(*EVENTF)" > .logs/depts.splf || \\`,
+        `\t(system "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/DEPTS.MBR\') TOSTMF(\'.evfevent/depts.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"; $(SHELL) -c 'exit 1')`,
+      ].join('\n')
     ].join());
   });
 

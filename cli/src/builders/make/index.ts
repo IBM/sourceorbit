@@ -560,12 +560,11 @@ export class MakeProject {
 				[
 					`\tliblist -c $(BIN_LIB);\\`,
 					`\tliblist -a $(LIBL);\\`,
-					`\tsystem "${resolvedCommand}" > .logs/${ileObject.systemName.toLowerCase()}.splf` // TODO: write the spool file somewhere?
+					`\tsystem "${resolvedCommand}" > .logs/${ileObject.systemName.toLowerCase()}.splf${resolvedCommand.includes(`*EVENTF`) ? ` || \\\n\t(system "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/${ileObject.systemName}.MBR') TOSTMF('.evfevent/${ileObject.systemName.toLowerCase()}.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"; $(SHELL) -c 'exit 1')` : ``}`
 				]
 				: []
 			),
 			...(data.postCommands ? data.postCommands.map(cmd => `\t${resolve(cmd)}`) : []),
-			...(resolvedCommand.includes(`*EVENTF`) ? [`\tsystem "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/${ileObject.systemName}.MBR') TOSTMF('.evfevent/${ileObject.systemName.toLowerCase()}.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"`] : []),
 		);
 
 		return lines;

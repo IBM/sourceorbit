@@ -46,7 +46,10 @@ describe.skipIf(files.length === 0)(`pseudo tests`, () => {
     // Rules.mk rules
     const testerProgram = makefile.findIndex(l => l.startsWith(`$(PREPATH)/TESTER.PGM: qrpglesrc/tester.pgm.rpgle`));
     expect(testerProgram).toBeGreaterThan(-1);
-    expect(makefile[testerProgram + 3]).toBe(`\tsystem "CRTBNDRPG PGM($(BIN_LIB)/TESTER) SRCSTMF('qrpglesrc/tester.pgm.rpgle') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(273) BNDDIR(MYBND) DFTACTGRP(*NO) TEXT('My program')" > .logs/tester.splf`);
+    expect(makefile[testerProgram + 3]).toBe([
+      `\tsystem "CRTBNDRPG PGM($(BIN_LIB)/TESTER) SRCSTMF('qrpglesrc/tester.pgm.rpgle') OPTION(*EVENTF) DBGVIEW(*SOURCE) TGTRLS(*CURRENT) TGTCCSID(273) BNDDIR(MYBND) DFTACTGRP(*NO) TEXT('My program')" > .logs/tester.splf || \\`,
+      `\t(system "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/TESTER.MBR') TOSTMF('.evfevent/tester.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"; $(SHELL) -c 'exit 1')`
+    ].join('\n'));
 
     // Covers:
     // Rules.mk rules
@@ -62,7 +65,10 @@ describe.skipIf(files.length === 0)(`pseudo tests`, () => {
     // .ibmi.json -> tgtCcsid -> updating COMPILEOPT
     const testerProgram = makefile.findIndex(l => l.startsWith(`$(PREPATH)/OTHER.PGM: qrpglesrc/other.pgm.sqlrpgle`));
     expect(testerProgram).toBeGreaterThan(-1);
-    expect(makefile[testerProgram + 3]).toBe(`\tsystem "CRTSQLRPGI OBJ($(BIN_LIB)/OTHER) SRCSTMF('qrpglesrc/other.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(273) BNDDIR($(BNDDIR)) DFTACTGRP(*no)')" > .logs/other.splf`);
+    expect(makefile[testerProgram + 3]).toBe([
+      `\tsystem "CRTSQLRPGI OBJ($(BIN_LIB)/OTHER) SRCSTMF('qrpglesrc/other.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(273) BNDDIR($(BNDDIR)) DFTACTGRP(*no)')" > .logs/other.splf || \\`,
+      `\t(system "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/OTHER.MBR') TOSTMF('.evfevent/other.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"; $(SHELL) -c 'exit 1')`
+    ].join('\n'));
   });
 
   test(`Ensure TGTCCSID is applied to CRTSRCPF CCSID`, () => {
