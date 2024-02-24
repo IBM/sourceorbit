@@ -8,7 +8,12 @@ describe("include local tests", () => {
   parser.setIncludeResolver(resolveInclude);
 
   it("should not crash", () => {
-    const result = parser.expand(getSourcePath("simpleMain.c"));
-    console.log(result);
+    parser.expand(getSourcePath("simpleMain.c"));
+  });
+
+  it("ifndef", () => {
+    const result = parser.expand(getSourcePath("simpleMain2.c"));
+    const preprocess = parser.preprocess(result);
+    console.log(preprocess.map((t) => t.value).join(" "));
   });
 });

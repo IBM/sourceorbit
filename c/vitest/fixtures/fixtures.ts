@@ -6,8 +6,6 @@ export function getSourcePath(name: string) {
 }
 
 export function resolveInclude(name: string) {
-  console.log(__dirname);
-  
   const fullPath = getSourcePath(name);
   if (existsSync(fullPath)) {
     return fullPath;
