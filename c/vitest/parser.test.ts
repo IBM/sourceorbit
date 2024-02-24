@@ -28,7 +28,26 @@ describe("include local tests", () => {
     const result = parser.expand(getSourcePath("generic.c"));
     const preprocess = parser.preprocess(result);
     const functions = parser.getMethods(preprocess);
+    expect(functions).toMatchObject([
+      { name: '__memicmp', type: 'import' },
+      { name: '__stricmp', type: 'import' },
+      { name: '__strnicmp', type: 'import' },
+      { name: '__strdup', type: 'import' },
+      { name: 'ensureOpenXlate', type: 'export' },
+      { name: 'c2s', type: 'export' },
+      { name: 'strTrim', type: 'export' },
+      { name: 'hex', type: 'export' },
+      { name: 'findchr', type: 'export' },
+      { name: 'xlateMem', type: 'export' },
+      { name: 'xlatecpy', type: 'export' },
+      { name: 'iconvWrite', type: 'import' }
+    ]);
+  });
+
+  it("complicated module with imports and static and inline prototypes", () => {
+    const result = parser.expand(getSourcePath("datainto.c"));
+    const preprocess = parser.preprocess(result);
+    const functions = parser.getMethods(preprocess);
     console.log(functions);
-    expect(functions.length).toBe(12);
   });
 });

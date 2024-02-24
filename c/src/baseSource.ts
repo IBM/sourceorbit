@@ -154,16 +154,19 @@ export class CParser {
         const possibleBodyI = findNextNot(tokens, `newline`, i+3);
         const possibleBody = tokens[possibleBodyI];
 
+        const isStatic = staticToken && staticToken.type === `word` && staticToken.value === `static`;
+
         if (typeToken.type === `word` && !ignoredKeywords.includes(typeToken.value!) && nameToken.type === `word` && listBlock.type === `block` && listBlock.blockType === BlockType.List && possibleBody) {
           if (possibleBody.type === `block` && possibleBody.blockType === BlockType.Body) {
             // Function found?
-            if (staticToken && staticToken.type === `word` && staticToken.value === `static`) {
+            if (isStatic) {
               results.push({name: nameToken.value!, type: `static`});
             } else {
               results.push({name: nameToken.value!, type: `export`});
             }
           } else {
-            // Function import found?
+            if (isStatic) continue; // We don't care about static imports. This means the function is not exported generally.
+
             results.push({name: nameToken.value!, type: `import`});
           }
         }
