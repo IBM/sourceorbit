@@ -1,8 +1,10 @@
 import { readFileSync } from "fs";
 import CTokens from "./tokens";
-import { Token } from "./types";
+import { BlockType, Token } from "./types";
 
-export type IncludeResolveFunction = (path: string) => string;
+export type IncludeResolveFunction = (path: string) => string|undefined;
+
+const ignoredKeywords = [`typedef`];
 
 export class CParser {
   private parser: CTokens = new CTokens();
@@ -36,7 +38,9 @@ export class CParser {
 
               if (resolvedPath) {
                 const documentTokens = this.expand(resolvedPath);
-                tokens.splice(i, endIndex, ...documentTokens);
+                tokens.splice(i, endIndex - i, ...documentTokens);
+              } else {
+                console.log(`Could not resolve include: ${nextToken.value}`);
               }
             }
           }
@@ -72,6 +76,10 @@ export class CParser {
             if (nextToken && nextToken.value) {
               delete defines[nextToken.value];
             }
+            break;
+
+          case `#IF`:
+            throw new Error(`#IF not implemented`);
             break;
 
           case `#IFDEF`:
@@ -133,6 +141,47 @@ export class CParser {
 
     return tokens;
   }
+
+  getMethods(tokens: Token[]) {
+    let results: {name: string, type: "import"|"export"|"static"}[] = [];
+
+    for (let i = 0; i < tokens.length; i++) {
+      if (i + 3 < tokens.length) {
+        const staticToken = tokens[i - 1];
+        const typeToken = tokens[i];
+        const nameToken = tokens[i + 1];
+        const listBlock = tokens[i + 2];
+        const possibleBodyI = findNextNot(tokens, `newline`, i+3);
+        const possibleBody = tokens[possibleBodyI];
+
+        if (typeToken.type === `word` && !ignoredKeywords.includes(typeToken.value!) && nameToken.type === `word` && listBlock.type === `block` && listBlock.blockType === BlockType.List && possibleBody) {
+          if (possibleBody.type === `block` && possibleBody.blockType === BlockType.Body) {
+            // Function found?
+            if (staticToken && staticToken.type === `word` && staticToken.value === `static`) {
+              results.push({name: nameToken.value!, type: `static`});
+            } else {
+              results.push({name: nameToken.value!, type: `export`});
+            }
+          } else {
+            // Function import found?
+            results.push({name: nameToken.value!, type: `import`});
+          }
+        }
+      }
+    }
+
+    return results;
+  }
+}
+
+function findNextNot(tokens: Token[], nottype: string, start: number) {
+  for (let i = start; i < tokens.length; i++) {
+    if (tokens[i].type !== nottype) {
+      return i;
+    }
+  }
+
+  return tokens.length;
 }
 
 function findNextOrEnd(tokens: Token[], type: string, start: number) {

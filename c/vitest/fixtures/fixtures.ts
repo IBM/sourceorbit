@@ -9,7 +9,7 @@ export function resolveInclude(name: string) {
   const fullPath = getSourcePath(name);
   if (existsSync(fullPath)) {
     return fullPath;
+  } else {
+    return undefined;
   }
-
-  throw new Error(`File not found: ${name}`);
 }
