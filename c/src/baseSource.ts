@@ -40,7 +40,7 @@ export class CParser {
                 const documentTokens = this.expand(resolvedPath);
                 tokens.splice(i, endIndex - i, ...documentTokens);
               } else {
-                console.log(`Could not resolve include: ${nextToken.value}`);
+                //TODO: logger console.log(`Could not resolve include: ${nextToken.value}`);
               }
             }
           }
@@ -143,33 +143,46 @@ export class CParser {
   }
 
   getMethods(tokens: Token[]) {
-    let results: {name: string, type: "import"|"export"|"static"}[] = [];
+    let results: {name: string, type: "import"|"export"|"static"|"extern"}[] = [];
 
     for (let i = 0; i < tokens.length; i++) {
       if (i + 3 < tokens.length) {
-        const staticToken = tokens[i - 1];
+        const prefixToken = tokens[i - 1];
         const typeToken = tokens[i];
         const nameToken = tokens[i + 1];
         const listBlock = tokens[i + 2];
         const possibleBodyI = findNextNot(tokens, `newline`, i+3);
         const possibleBody = tokens[possibleBodyI];
 
-        const isStatic = staticToken && staticToken.type === `word` && staticToken.value === `static`;
+        const isStatic = prefixToken && prefixToken.type === `deftype` && prefixToken.value === `static`;
+        const isExtern = prefixToken && prefixToken.type === `deftype` && prefixToken.value === `extern`;
 
-        if (typeToken.type === `word` && !ignoredKeywords.includes(typeToken.value!) && nameToken.type === `word` && listBlock.type === `block` && listBlock.blockType === BlockType.List && possibleBody) {
-          if (possibleBody.type === `block` && possibleBody.blockType === BlockType.Body) {
-            // Function found?
-            if (isStatic) {
-              results.push({name: nameToken.value!, type: `static`});
+        if (typeToken.type === `word` && !ignoredKeywords.includes(typeToken.value!) && nameToken.type === `word`) {
+          if (listBlock.type === `block` && listBlock.blockType === BlockType.List && possibleBody) {
+            if (possibleBody.type === `block` && possibleBody.blockType === BlockType.Body) {
+              // Function found?
+              if (isStatic) {
+                results.push({name: nameToken.value!, type: `static`});
+              } else {
+                results.push({name: nameToken.value!, type: `export`});
+              }
             } else {
-              results.push({name: nameToken.value!, type: `export`});
-            }
-          } else {
-            if (isStatic) continue; // We don't care about static imports. This means the function is not exported generally.
+              if (isStatic) continue; // We don't care about static imports. This means the function is not exported generally.
 
-            results.push({name: nameToken.value!, type: `import`});
+              results.push({name: nameToken.value!, type: `import`});
+            }
+          } else if (isExtern) {
+            const endStatement = findNextOrEnd(tokens, `semicolon`, i);
+            
+            // Usually a comma seperated list.
+            for (let j = i+1; j < endStatement; j++) {
+              if (tokens[j].type === `word`) {
+                results.push({name: tokens[j].value!, type: `extern`});
+              }
+            }
           }
-        }
+      }
+        //TODO: isExtern
       }
     }
 

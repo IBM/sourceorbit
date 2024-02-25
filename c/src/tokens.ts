@@ -29,6 +29,11 @@ export default class CTokens {
       name: `DIRECTIVE`,
       match: [{ type: `hash` }, { type: `word` }],
       becomes: `directive`,
+    },
+    {
+      name: `deftype`,
+      match: [{ type: `word`, match: (w: string) => [`extern`, `static`].includes(w) }],
+      becomes: `deftype`,
     }
   ];
   static readonly spaces = [`\t`, ` `];
@@ -124,32 +129,34 @@ export default class CTokens {
         currentText += content[i];
 
       } else {
+        const isEscaped = content[i - 1] === `\\`;
         switch (content[i]) {
           // When it's the string character..
           case CTokens.charCharacter:
-            if (state === ReadState.IN_CHARACTER) {
-              currentText += content[i];
+            if (!isEscaped) {
+              if (state === ReadState.IN_CHARACTER) {
+                currentText += content[i];
+                result.push({ value: currentText, type: `string`, range: { start: startsAt, end: startsAt + currentText.length } });
+                currentText = ``;
+              } else {
+                startsAt = i;
+              }
+
+              // @ts-ignore
+              state = (state === ReadState.IN_CHARACTER ? ReadState.NORMAL : ReadState.IN_CHARACTER);
+            }
+            break;
+
+          case CTokens.stringCharacter:
+            if (state === ReadState.IN_STRING && !isEscaped) {
               result.push({ value: currentText, type: `string`, range: { start: startsAt, end: startsAt + currentText.length } });
               currentText = ``;
             } else {
               startsAt = i;
-              currentText += content[i];
             }
 
             // @ts-ignore
-            state = (state === ReadState.IN_CHARACTER ? ReadState.NORMAL : ReadState.IN_CHARACTER);
-            break;
-
-          case CTokens.stringCharacter:
-            if (state === ReadState.IN_STRING) {
-              result.push({ value: currentText, type: `string`, range: { start: startsAt+1, end: startsAt + currentText.length } });
-              currentText = ``;
-            } else {
-              startsAt = i;
-            }
-
-            // @ts-ignore
-            state = (state === ReadState.IN_STRING ? ReadState.NORMAL : ReadState.IN_STRING);
+            state = (state === ReadState.IN_STRING && !isEscaped ? ReadState.NORMAL : ReadState.IN_STRING);
             break;
 
           // When it's any other character...
