@@ -77,7 +77,10 @@ describe("include local tests", () => {
 
   // TODO: don't run this test if source doesn't exist. We don't include it in the git repo
   it("cpp classes", () => {
-    const result = parser.expand(getSourcePath("AbstractDOMParser.cpp"));
+    const cppTestPath = resolveInclude("AbstractDOMParser.cpp");
+    if (!cppTestPath) return;
+
+    const result = parser.expand(cppTestPath);
     const preprocess = parser.preprocess(result);
     const symbols = parser.getMethods(preprocess, true);
     expect(symbols).toMatchObject([
