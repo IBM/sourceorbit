@@ -74,4 +74,23 @@ describe("include local tests", () => {
       { name: 'jx_dataInto', type: 'export' }
     ]);
   });
+
+  // TODO: don't run this test if source doesn't exist. We don't include it in the git repo
+  it("cpp classes", () => {
+    const result = parser.expand(getSourcePath("AbstractDOMParser.cpp"));
+    const preprocess = parser.preprocess(result);
+    const symbols = parser.getMethods(preprocess, true);
+    expect(symbols).toMatchObject([
+      { name: 'XMLPScanToken', type: 'import', isClass: true },
+      { name: 'XMLScanner', type: 'import', isClass: true },
+      { name: 'XMLValidator', type: 'import', isClass: true },
+      { name: 'DOMDocumentImpl', type: 'import', isClass: true },
+      { name: 'DOMDocumentTypeImpl', type: 'import', isClass: true },
+      { name: 'DOMElement', type: 'import', isClass: true },
+      { name: 'GrammarResolver', type: 'import', isClass: true },
+      { name: 'XMLGrammarPool', type: 'import', isClass: true },
+      { name: 'PSVIHandler', type: 'import', isClass: true },
+      { name: 'AbstractDOMParser', type: 'export', isClass: true }
+    ]);
+  });
 });

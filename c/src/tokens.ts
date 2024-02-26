@@ -32,12 +32,17 @@ export default class CTokens {
     },
     {
       name: `deftype`,
-      match: [{ type: `word`, match: (w: string) => [`extern`, `static`].includes(w) }],
+      match: [{ type: `word`, match: (w: string) => [`extern`, `static`, `class`].includes(w) }],
       becomes: `deftype`,
+    },
+    {
+      name: `linker`,
+      match: [{ type: `colon` }, { type: `colon` }],
+      becomes: `linker`,
     }
   ];
   static readonly spaces = [`\t`, ` `];
-  static readonly splitParts: string[] = [`(`, `)`, `{`, `}`, `[`, `]`, `/`, `.`, `*`, `-`, `+`, `;`, `"`, `&`, `#`, `%`, `,`, `|`, `?`, `:`, `\n`, `\r`, ...this.spaces];
+  static readonly splitParts: string[] = [`(`, `)`, `{`, `}`, `[`, `]`, `<`, `>`,`/`, `.`, `*`, `-`, `+`, `;`, `"`, `&`, `#`, `%`, `,`, `|`, `?`, `:`, `\n`, `\r`, ...this.spaces];
   static readonly blockTypes: {[char: string]: BlockType} = {
     '{': BlockType.Body,
     '(': BlockType.List,
@@ -53,6 +58,8 @@ export default class CTokens {
     ')': `closebracket`,
     '}': `closebracket`,
     ']': `closebracket`,
+    '<': `opengeneric`,
+    '>': `closegeneric`,
     '/': `forwardslash`,
     '.': `dot`,
     '*': `asterisk`,
