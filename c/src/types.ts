@@ -17,3 +17,10 @@ export interface Token {
   blockType?: BlockType;
   range: IRange;
 }
+
+export type IncludeResolveFunction = (path: string) => string | undefined;
+
+export interface IncludeResolveResult {
+  fullPath: string;
+  state: "resolved" | "notfound";
+}

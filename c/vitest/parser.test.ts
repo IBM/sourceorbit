@@ -8,27 +8,26 @@ describe("include local tests", () => {
   parser.setIncludeResolver(resolveInclude);
 
   it("should not crash", () => {
-    parser.expand(getSourcePath("simpleMain.c"));
+    parser.getDocument(getSourcePath("simpleMain.c"));
   });
 
-  it("preprocess", () => {
-    const result = parser.expand(getSourcePath("simpleMain2.c"));
-    const preprocess = parser.preprocess(result);
-    // console.log(preprocess.map((t) => t.value).join(" "));
+  it("preprocess doesn't crash", () => {
+    const result = parser.getDocument(getSourcePath("simpleMain2.c"));
+    result.preprocess();
   });
 
   it("simple main function", () => {
-    const result = parser.expand(getSourcePath("simpleMain2.c"));
-    const preprocess = parser.preprocess(result);
-    const functions = parser.getMethods(preprocess);
-    expect(functions.length).toBe(1);
+    const doc = parser.getDocument(getSourcePath("simpleMain2.c"));
+    doc.preprocess();
+    const symbols = doc.getSymbols();
+    expect(symbols.length).toBe(1);
   });
 
   it("complicated module with imports, extern and exports", () => {
-    const result = parser.expand(getSourcePath("generic.c"));
-    const preprocess = parser.preprocess(result);
-    const functions = parser.getMethods(preprocess);
-    expect(functions).toMatchObject([
+    const doc = parser.getDocument(getSourcePath("generic.c"));
+    doc.preprocess();
+    const symbols = doc.getSymbols();
+    expect(symbols).toMatchObject([
       { name: '__memicmp', type: 'import' },
       { name: '__stricmp', type: 'import' },
       { name: '__strnicmp', type: 'import' },
@@ -58,10 +57,10 @@ describe("include local tests", () => {
   });
 
   it("complicated module with imports, static, inline prototypes and export", () => {
-    const result = parser.expand(getSourcePath("datainto.c"));
-    const preprocess = parser.preprocess(result);
-    const functions = parser.getMethods(preprocess);
-    expect(functions).toMatchObject([
+    const doc = parser.getDocument(getSourcePath("datainto.c"));
+    doc.preprocess();
+    const symbols = doc.getSymbols();
+    expect(symbols).toMatchObject([
       { name: '__memicmp', type: 'import' },
       { name: '__stricmp', type: 'import' },
       { name: '__strnicmp', type: 'import' },
@@ -80,9 +79,9 @@ describe("include local tests", () => {
     const cppTestPath = resolveInclude("AbstractDOMParser.cpp");
     if (!cppTestPath) return;
 
-    const result = parser.expand(cppTestPath);
-    const preprocess = parser.preprocess(result);
-    const symbols = parser.getMethods(preprocess, true);
+    const doc = parser.getDocument(cppTestPath);
+    doc.preprocess();
+    const symbols = doc.getSymbols();
     expect(symbols).toMatchObject([
       { name: 'XMLPScanToken', type: 'import', isClass: true },
       { name: 'XMLScanner', type: 'import', isClass: true },
