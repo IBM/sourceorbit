@@ -170,7 +170,7 @@ export default class CTokens {
         currentText += content[i];
 
       } else {
-        const isEscaped = content[i - 1] === `\\`;
+        const isEscaped = content[i - 1] === `\\` && content[i - 2] !== `\\`;
         switch (content[i]) {
           // When it's the string character..
           case CTokens.charCharacter:
@@ -302,6 +302,7 @@ export default class CTokens {
 
           if (level === 0) {
             if (blockType !== CTokens.blockTypes[tokens[i].value!]) {
+              console.log(tokens[i]);
               throw new Error(`Mismatched brackets`);
             }
 

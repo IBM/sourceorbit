@@ -8,9 +8,15 @@ describe("simple", () => {
     const tokens = new CTokens();
     const result = tokens.tokenise([`int main() {`, `\treturn 0;`, ` }`].join(`\n`));
   });
+
   it("block test", () => {
     const tokens = new CTokens();
     const result = tokens.tokenise(readFileSync(getSourcePath(`block.c`), {encoding: `utf8`}));
     expect(result.length).toBe(3);
+  });
+
+  it("block test 2", () => {
+    const tokens = new CTokens();
+    const result = tokens.tokenise(readFileSync(getSourcePath(`reader.c`), {encoding: `utf8`}));
   });
 });
