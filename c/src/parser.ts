@@ -55,11 +55,7 @@ export class CParser {
     }
   }
 
-  private expandDepth = -1;
-
-  private expand(fullPath: string): ExpandResult {
-    this.expandDepth += 1;
-
+  private expand(fullPath: string, headers: IncludeResolveResult[] = []): ExpandResult {
     if (this.useExpandCache && this.expandCache[fullPath]) {
       return {
         tokens: this.expandCache[fullPath].tokens.slice(),
@@ -68,7 +64,6 @@ export class CParser {
     }
 
     const tokens = this.parser.tokenise(CParser.readContent(fullPath));
-    const headers: IncludeResolveResult[] = [];
 
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
@@ -85,11 +80,14 @@ export class CParser {
                 const resolvedPath = this.resolveToPath(  nextToken.value);
 
                 if (resolvedPath) {
-                  headers.push({ fullPath: resolvedPath, state: `resolved` });
-                  const newStream = this.getCachedExpantion(fullPath) || this.expand(resolvedPath);
-                  headers.push(...newStream.includes);
-                  tokens.splice(i, endIndex - i, ...newStream.tokens);
-                  i += newStream.tokens.length;
+                  if (headers.some(x => x.fullPath === resolvedPath)) {
+                    tokens.splice(i, endIndex - i);
+                  } else {
+                    headers.push({ fullPath: resolvedPath, state: `resolved` });
+                    const newStream = this.getCachedExpantion(resolvedPath) || this.expand(resolvedPath, headers);
+                    tokens.splice(i, endIndex - i, ...newStream.tokens);
+                    i += newStream.tokens.length;
+                  }
                 } else {
                   headers.push({ fullPath: nextToken.value, state: `notfound` });
                 }
@@ -103,12 +101,14 @@ export class CParser {
                 const resolvedPath = this.resolveToPath(includeString);
 
                 if (resolvedPath) {
-                  headers.push({ fullPath: resolvedPath, state: `resolved` });
-                  console.log(`${fullPath}: ${resolvedPath}`);
-                  const newStream = this.getCachedExpantion(fullPath) || this.expand(resolvedPath);
-                  headers.push(...newStream.includes);
-                  tokens.splice(i, endIndex - i, ...newStream.tokens);
-                  i += newStream.tokens.length;
+                  if (headers.some(x => x.fullPath === resolvedPath)) {
+                    tokens.splice(i, endIndex - i);
+                  } else {
+                    headers.push({ fullPath: resolvedPath, state: `resolved` });
+                    const newStream = this.getCachedExpantion(resolvedPath) || this.expand(resolvedPath, headers);
+                    tokens.splice(i, endIndex - i, ...newStream.tokens);
+                    i += newStream.tokens.length;
+                  }
                 } else {
                   // We don't throw for unfound includes, as this is a common case for system level headers
                 }
