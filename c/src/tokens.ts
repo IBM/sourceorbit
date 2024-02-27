@@ -72,7 +72,7 @@ export default class CTokens {
     }
   ];
   static readonly spaces = [`\t`, ` `];
-  static readonly splitParts: string[] = [`(`, `)`, `{`, `}`, `[`, `]`, `<`, `>`,`/`, `\\`, `.`, `*`, `-`, `+`, `;`, `"`, `&`, `#`, `%`, `,`, `|`, `?`, `:`, `=`, `\n`, `\r`, ...this.spaces];
+  static readonly splitParts: string[] = [`(`, `)`, `{`, `}`, `[`, `]`, `<`, `>`,`/`, `\\`, `.`, `*`, `-`, `+`, `;`, `"`, `&`, `#`, `%`, `,`, `|`, `?`, `!`, `:`, `=`, `\n`, `\r`, ...this.spaces];
   static readonly blockTypes: {[char: string]: BlockType} = {
     '{': BlockType.Body,
     '(': BlockType.List,
@@ -106,6 +106,7 @@ export default class CTokens {
     ',': `comma`,
     '|': `pipe`,
     '?': `questionmark`,
+    '!': `exclamationmark`,
     ':': `colon`,
     '=': `equal`,
     '\n': `newline`,

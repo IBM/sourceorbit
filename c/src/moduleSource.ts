@@ -65,6 +65,7 @@ export class ModuleSource {
       }
     }
 
+    let negate = false;
     let currentValue: ValueResult|undefined = undefined;
     let lastValue: string|undefined = undefined;
     let nextValue: string|undefined = undefined;
@@ -73,6 +74,10 @@ export class ModuleSource {
       const token = tokens[i];
 
       switch (token.type) {
+        case `exclamationmark`:
+          negate = true;
+          continue;
+
         case `block`:
           conditionMet = this.handleIf(token.block!);
 
@@ -152,6 +157,11 @@ export class ModuleSource {
           }
 
           break;
+      }
+
+      if (negate) {
+        conditionMet = !conditionMet;
+        negate = false;
       }
     }
 
