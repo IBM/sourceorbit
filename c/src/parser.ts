@@ -126,8 +126,6 @@ export class CParser {
       };
     }
 
-    this.expandDepth -= 1;
-
     return {
       tokens: tokens,
       includes: headers,
