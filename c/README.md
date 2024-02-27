@@ -1,3 +1,3 @@
 # C
 
-This is supposed to be a terrible parser, handing some pre-processing and others.
+This is supposed to be a terrible parser, handling some pre-processing and others.
