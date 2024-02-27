@@ -274,6 +274,14 @@ export class ModuleSource {
   getSymbols(): CompiledSymbol[] {
     let results: CompiledSymbol[] = [];
 
+    function removeImport(name: string) {
+      const index = results.findIndex(x => x.name === name && x.type === `import`);
+
+      if (index > -1) {
+        results.splice(index, 1);
+      }
+    }
+
     for (let i = 0; i < this.tokens.length; i++) {
       if (i + 3 < this.tokens.length) {
         const prefixToken = this.tokens[i - 1];
@@ -294,6 +302,8 @@ export class ModuleSource {
                 if (isStatic) {
                   results.push({ name: nameToken.value!, type: `static` });
                 } else {
+                  removeImport(nameToken.value!);
+
                   results.push({ name: nameToken.value!, type: `export` });
                 }
               } else {
@@ -332,11 +342,7 @@ export class ModuleSource {
 
             // If it is the ctor, add add it to the results
             if (className && memberName && className === memberName) {
-              const alreadyExistsIndex = results.findIndex(x => x.name === className && x.isClass && x.type === `import`);
-
-              if (alreadyExistsIndex > -1) {
-                results.splice(alreadyExistsIndex, 1);
-              }
+              removeImport(className);
 
               results.push({ name: className, type: `export`, isClass: true });
             }
