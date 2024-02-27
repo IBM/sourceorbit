@@ -67,6 +67,29 @@ describe("include local tests", () => {
       { name: '__stricmp', type: 'import' },
       { name: '__strnicmp', type: 'import' },
       { name: '__strdup', type: 'import' },
+      { name: 'vcTrimRight', type: 'import' },
+      { name: 'str2vc', type: 'import' },
+      { name: 'vc2strtrim', type: 'import' },
+      { name: 'substr2vc', type: 'import' },
+      { name: 'vc2strcpy', type: 'import' },
+      { name: 'vc2str', type: 'import' },
+      { name: 'vccpy', type: 'import' },
+      { name: 'vccatstr', type: 'import' },
+      { name: 'vccatc', type: 'import' },
+      { name: 'vccatvc', type: 'import' },
+      { name: 'vccatmem', type: 'import' },
+      { name: 'vcprintf', type: 'import' },
+      { name: 'vccatf', type: 'import' },
+      { name: 'vc2varpuchar', type: 'import' },
+      { name: 'str2varpuchar', type: 'import' },
+      { name: 'vcListNew', type: 'import' },
+      { name: 'vcListAdd', type: 'import' },
+      { name: 'vcListFree', type: 'import' },
+      { name: 'vcListFirst', type: 'import' },
+      { name: 'vcListNext', type: 'import' },
+      { name: 'vpc2string', type: 'import' },
+      { name: 'vpcSetString', type: 'import' },
+      { name: 'vpcIsEqual', type: 'import' },
       { name: 'InputCcsid', type: 'extern' },
       { name: 'OutputCcsid', type: 'extern' },
       { name: 'xlateEto1208', type: 'extern' },
@@ -89,6 +112,12 @@ describe("include local tests", () => {
       { name: 'unicode2ebcdic', type: 'export' },
       { name: 'parsehex', type: 'export' }
     ]);
+
+    // ensure no dupes are found
+    for (const symbol of symbols) {
+      const found = symbols.filter(s => s.name === symbol.name);
+      expect(found.length).toBe(1);
+    }
   });
 
   it("complicated module with imports, static, inline prototypes and export", () => {
@@ -100,6 +129,29 @@ describe("include local tests", () => {
       { name: '__stricmp', type: 'import' },
       { name: '__strnicmp', type: 'import' },
       { name: '__strdup', type: 'import' },
+      { name: 'vcTrimRight', type: 'import' },
+      { name: 'str2vc', type: 'import' },
+      { name: 'vc2strtrim', type: 'import' },
+      { name: 'substr2vc', type: 'import' },
+      { name: 'vc2strcpy', type: 'import' },
+      { name: 'vc2str', type: 'import' },
+      { name: 'vccpy', type: 'import' },
+      { name: 'vccatstr', type: 'import' },
+      { name: 'vccatc', type: 'import' },
+      { name: 'vccatvc', type: 'import' },
+      { name: 'vccatmem', type: 'import' },
+      { name: 'vcprintf', type: 'import' },
+      { name: 'vccatf', type: 'import' },
+      { name: 'vc2varpuchar', type: 'import' },
+      { name: 'str2varpuchar', type: 'import' },
+      { name: 'vcListNew', type: 'import' },
+      { name: 'vcListAdd', type: 'import' },
+      { name: 'vcListFree', type: 'import' },
+      { name: 'vcListFirst', type: 'import' },
+      { name: 'vcListNext', type: 'import' },
+      { name: 'vpc2string', type: 'import' },
+      { name: 'vpcSetString', type: 'import' },
+      { name: 'vpcIsEqual', type: 'import' },
       { name: 'jx_dataIntoMapObject', type: 'static' },
       { name: 'jx_dataIntoMapArray', type: 'static' },
       { name: 'jx_dataIntoMapValue', type: 'static' },
@@ -107,6 +159,12 @@ describe("include local tests", () => {
       { name: 'jx_dataIntoMapper', type: 'static' },
       { name: 'jx_dataInto', type: 'export' }
     ]);
+
+    // ensure no dupes are found
+    for (const symbol of symbols) {
+      const found = symbols.filter(s => s.name === symbol.name);
+      expect(found.length).toBe(1);
+    }
   });
 
   // TODO: don't run this test if source doesn't exist. We don't include it in the git repo
@@ -129,5 +187,48 @@ describe("include local tests", () => {
       { name: 'PSVIHandler', type: 'import', isClass: true },
       { name: 'AbstractDOMParser', type: 'export', isClass: true }
     ]);
+  });
+
+  // TODO: don't run this test if source doesn't exist. We don't include it in the git repo
+  it("overriding prototypes", () => {
+    const doc = parser.getDocument(resolveInclude("varchar.c")!);
+    doc.preprocess();
+    const symbols = doc.getSymbols();
+    
+    expect(symbols).toMatchObject([
+      { name: '__memicmp', type: 'import' },
+      { name: '__stricmp', type: 'import' },
+      { name: '__strnicmp', type: 'import' },
+      { name: '__strdup', type: 'import' },
+      { name: 'str2varpuchar', type: 'export' },
+      { name: 'vc2varpuchar', type: 'export' },
+      { name: 'vc2str', type: 'export' },
+      { name: 'vc2strtrim', type: 'export' },
+      { name: 'vc2strcpy', type: 'export' },
+      { name: 'vccatstr', type: 'export' },
+      { name: 'vccatc', type: 'export' },
+      { name: 'vccatvc', type: 'export' },
+      { name: 'vccatmem', type: 'export' },
+      { name: 'vccpy', type: 'export' },
+      { name: 'vcTrimRight', type: 'export' },
+      { name: 'str2vc', type: 'export' },
+      { name: 'substr2vc', type: 'export' },
+      { name: 'vcprintf', type: 'export' },
+      { name: 'vccatf', type: 'export' },
+      { name: 'vcListNew', type: 'export' },
+      { name: 'vcListAdd', type: 'export' },
+      { name: 'vcListFree', type: 'export' },
+      { name: 'vcListFirst', type: 'export' },
+      { name: 'vcListNext', type: 'export' },
+      { name: 'vpc2string', type: 'export' },
+      { name: 'vpcSetString', type: 'export' },
+      { name: 'vpcIsEqual', type: 'export' }
+    ]);
+
+    // ensure no dupes are found
+    for (const symbol of symbols) {
+      const found = symbols.filter(s => s.name === symbol.name);
+      expect(found.length).toBe(1);
+    }
   });
 });
