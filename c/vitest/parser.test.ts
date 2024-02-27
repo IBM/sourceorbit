@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { CParser } from "../src/baseSource";
+import { CParser } from "../src/parser";
 import { getSourcePath, resolveInclude } from "./fixtures/fixtures";
 
 describe("include local tests", () => {

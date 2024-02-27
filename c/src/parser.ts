@@ -13,7 +13,22 @@ export class CParser {
   private parser: CTokens = new CTokens();
   private resolveToPath: IncludeResolveFunction | undefined = undefined;
 
+  private useExpandCache: boolean = false;
+  private expandCache: { [fullPath: string]: ExpandResult } = {};
+
   constructor() {
+  }
+
+  enableCache() {
+    this.useExpandCache = true;
+  }
+
+  destoryCache(fullPath?: string) {
+    if (fullPath) {
+      delete this.expandCache[fullPath];
+    } else {
+      this.expandCache = {};
+    }
   }
 
   setIncludeResolver(resolver: IncludeResolveFunction) {
@@ -32,6 +47,13 @@ export class CParser {
   }
 
   private expand(fullPath: string): ExpandResult {
+    if (this.useExpandCache && this.expandCache[fullPath]) {
+      return {
+        tokens: this.expandCache[fullPath].tokens.slice(),
+        includes: this.expandCache[fullPath].includes,
+      };
+    }
+
     const tokens = this.parser.tokenise(CParser.readContent(fullPath));
     const headers: IncludeResolveResult[] = [];
 
@@ -81,8 +103,15 @@ export class CParser {
       }
     }
 
+    if (this.useExpandCache) {
+      this.expandCache[fullPath] = {
+        tokens: tokens.slice(),
+        includes: headers,
+      };
+    }
+
     return {
-      tokens,
+      tokens: tokens,
       includes: headers,
     };
   }
