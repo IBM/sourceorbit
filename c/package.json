@@ -8,9 +8,9 @@
     "test": "vitest",
     "build": "tsc -b"
   },
-  "name": "clang",
+  "name": "ileclang",
   "description": "",
   "version": "1.0.0",
-  "main": "dist/index.js",
-  "author": "IBM"
+  "author": "LA, IBM",
+  "main": "dist/index.js"
 }
