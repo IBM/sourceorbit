@@ -1464,7 +1464,8 @@ export class Targets {
 
 					// Make sure we can resolve to this service program
 					target.exports.forEach(e => {
-						this.resolvedExports[e.toUpperCase()] = target;
+						//@ts-ignore
+						this.resolvedExports[e.toUpperCase()] = { ...target, deps: undefined};
 					});
 				} else {
 					// This service program target doesn't have any deps... so, it's not used?

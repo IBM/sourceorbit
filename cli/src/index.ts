@@ -222,7 +222,7 @@ async function main() {
 
 		case `json`:
 			const outJson = {
-				targets: targets.getTargets(),
+				targets: targets.getTargets().map(t => ({...t, deps: t.deps.map(d => ({...d, deps: []}))})),
 				resolved: targets.getResolvedObjects(),
 				exports: targets.getExports(),
 				messages: targets.logger.getAllLogs()
