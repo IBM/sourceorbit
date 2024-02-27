@@ -221,10 +221,20 @@ async function main() {
 			break;
 
 		case `json`:
+			let exported = targets.getExports();
+			let exports = {};
+
+			for (const name in exported) {
+				exports[name] = {
+					...exported[name],
+					exports: undefined
+				};
+			}
+
 			const outJson = {
-				targets: targets.getTargets().map(t => ({...t, deps: t.deps.map(d => ({...d, deps: []}))})),
+				targets: targets.getTargets().map(t => ({...t, deps: t.deps.map(d => ({...d, deps: undefined, imports: undefined, exports: undefined}))})),
 				resolved: targets.getResolvedObjects(),
-				exports: targets.getExports(),
+				exports: exports,
 				messages: targets.logger.getAllLogs()
 			};
 
