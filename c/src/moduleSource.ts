@@ -181,7 +181,39 @@ export class ModuleSource {
       }
 
       return currentCond;
-    } 
+    }
+
+    const handleifClose = (i: number, endIndex: number) => {
+      const block = ifBlocks.pop();
+
+      let itemsRemoved = 0;
+
+      if (block) {
+
+        if (block.conditionMet) {
+          if (block.elseBlock) {
+            // If the condition is was met, remove the else block
+            itemsRemoved += this.tokens.splice(block.elseBlock.start, endIndex - block.elseBlock.start).length;
+          } else {
+            // If the condition was met, remove the endif
+            itemsRemoved += this.tokens.splice(i, endIndex - i).length;
+          }
+
+          // Also remove the ifxdef
+          itemsRemoved += this.tokens.splice(block.startBlock.start, block.startBlock.end - block.startBlock.start).length;
+        } else {
+          // Also remove the endif
+          itemsRemoved += this.tokens.splice(i, endIndex - i).length;
+
+          if (block.elseBlock) {
+            // If the condition was not met, remove the if block
+            itemsRemoved += this.tokens.splice(block.startBlock.start, (block.elseBlock.end) - block.startBlock.start).length;
+          }
+        }
+      }
+
+      return itemsRemoved;
+    }
 
     for (let i = 0; i < this.tokens.length; i++) {
       const token = this.tokens[i];
@@ -213,7 +245,14 @@ export class ModuleSource {
             break;
 
           case `#ELIF`:
-            throw new Error(`#ELIF not implemented`);
+            if (ifBlocks.length) {
+              ifBlocks[ifBlocks.length - 1].endToken = i;
+              const lastConditionMet = ifBlocks[ifBlocks.length - 1].conditionMet;
+              i -= handleifClose(i, i);
+
+              const block = CTokens.createBlocks(this.tokens.slice(i+1, endIndex));
+              ifBlocks.push({ startBlock: { start: i+1, end: endIndex }, conditionMet: lastConditionMet === false && this.handleIf(block)});
+            }
             break;
 
           case `#IFDEF`:
@@ -238,35 +277,7 @@ export class ModuleSource {
             if (ifBlocks.length) {
               ifBlocks[ifBlocks.length - 1].endToken = i;
 
-              const block = ifBlocks.pop();
-
-              if (block) {
-
-                let itemsRemoved = 0;
-
-                if (block.conditionMet) {
-                  if (block.elseBlock) {
-                    // If the condition is was met, remove the else block
-                    itemsRemoved += this.tokens.splice(block.elseBlock.start, endIndex - block.elseBlock.start).length;
-                  } else {
-                    // If the condition was met, remove the endif
-                    itemsRemoved += this.tokens.splice(i, endIndex - i).length;
-                  }
-
-                  // Also remove the ifxdef
-                  itemsRemoved += this.tokens.splice(block.startBlock.start, block.startBlock.end - block.startBlock.start).length;
-                } else {
-                  // Also remove the endif
-                  itemsRemoved += this.tokens.splice(i, endIndex - i).length;
-
-                  if (block.elseBlock) {
-                    // If the condition was not met, remove the if block
-                    itemsRemoved += this.tokens.splice(block.startBlock.start, (block.elseBlock.end) - block.startBlock.start).length;
-                  }
-                }
-
-                i -= itemsRemoved;
-              }
+              i -= handleifClose(i, endIndex);
             }
             break;
         }

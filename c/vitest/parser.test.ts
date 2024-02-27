@@ -54,7 +54,7 @@ describe("include local tests", () => {
     const macros = doc.getMacros();
 
     expect(Object.keys(macros)).toMatchObject([
-      `RLS`, `SOGOOD`, `SICKMATE`, `NICE`, `COOLNESS`, `NOICE`
+      `RLS`, `SOGOOD`, `SICKMATE`, `NICE`, `COOLNESS`, `NOICE`, `ACTUALLYGOOD`
     ])
   });
 

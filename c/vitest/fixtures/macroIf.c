@@ -25,6 +25,14 @@
    #define NOICE
 #endif
 
+#if RLA > 5
+   #define BAD
+#elif RLA < 5
+   #define ALSOBAD
+#else
+   #define ACTUALLYGOOD
+#endif
+
 int main()
 {
     printf("Hello, World!\n");
