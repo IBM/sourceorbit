@@ -231,4 +231,9 @@ describe("include local tests", () => {
       expect(found.length).toBe(1);
     }
   });
+
+  it("block test with defines", () => {
+    const doc = parser.getDocument(resolveInclude("complexTokens.cpp")!);
+    doc.preprocess();
+  });
 });

@@ -12,7 +12,8 @@ describe("simple", () => {
   it("block test", () => {
     const tokens = new CTokens();
     const result = tokens.tokenise(readFileSync(getSourcePath(`block.c`), {encoding: `utf8`}));
-    expect(result.length).toBe(3);
+    const withBlocks = CTokens.createBlocks(result);
+    expect(withBlocks.length).toBe(3);
   });
 
   it("block test 2", () => {

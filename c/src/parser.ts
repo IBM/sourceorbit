@@ -46,7 +46,20 @@ export class CParser {
     return module;
   }
 
+  private getCachedExpantion(fullPath: string): ExpandResult | undefined {
+    if (this.useExpandCache && this.expandCache[fullPath]) {
+      return {
+        tokens: this.expandCache[fullPath].tokens.slice(),
+        includes: this.expandCache[fullPath].includes,
+      };
+    }
+  }
+
+  private expandDepth = -1;
+
   private expand(fullPath: string): ExpandResult {
+    this.expandDepth += 1;
+
     if (this.useExpandCache && this.expandCache[fullPath]) {
       return {
         tokens: this.expandCache[fullPath].tokens.slice(),
@@ -69,15 +82,16 @@ export class CParser {
             if (nextToken) {
               // Application headers
               if (nextToken.type === `string` && nextToken.value) {
-                const resolvedPath = this.resolveToPath(nextToken.value);
+                const resolvedPath = this.resolveToPath(  nextToken.value);
 
                 if (resolvedPath) {
                   headers.push({ fullPath: resolvedPath, state: `resolved` });
-                  const newStream = this.expand(resolvedPath);
+                  const newStream = this.getCachedExpantion(fullPath) || this.expand(resolvedPath);
                   headers.push(...newStream.includes);
                   tokens.splice(i, endIndex - i, ...newStream.tokens);
+                  i += newStream.tokens.length;
                 } else {
-                  headers.push({ fullPath: nextToken.value, state: `resolved` });
+                  headers.push({ fullPath: nextToken.value, state: `notfound` });
                 }
 
               // System headers
@@ -90,9 +104,11 @@ export class CParser {
 
                 if (resolvedPath) {
                   headers.push({ fullPath: resolvedPath, state: `resolved` });
-                  const newStream = this.expand(resolvedPath);
+                  console.log(`${fullPath}: ${resolvedPath}`);
+                  const newStream = this.getCachedExpantion(fullPath) || this.expand(resolvedPath);
                   headers.push(...newStream.includes);
                   tokens.splice(i, endIndex - i, ...newStream.tokens);
+                  i += newStream.tokens.length;
                 } else {
                   // We don't throw for unfound includes, as this is a common case for system level headers
                 }
@@ -109,6 +125,8 @@ export class CParser {
         includes: headers,
       };
     }
+
+    this.expandDepth -= 1;
 
     return {
       tokens: tokens,

@@ -11,7 +11,7 @@
 			"cwd": "${workspaceFolder:cli}",
 			"program": "${workspaceFolder:cli}/dist/index.js",
 			"sourceMaps": true,
-			"args": ["-d", "/Users/barry/Downloads/arcad-example", "--verbose"],
+			"args": ["-d", "/Users/barry/Downloads/xt2/xsl4C", "--verbose"],
 			"preLaunchTask": {
 				"type": "npm",
 				"script": "webpack:dev"

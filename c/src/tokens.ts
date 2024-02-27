@@ -228,7 +228,6 @@ export default class CTokens {
     }
 
     result = this.fixStatement(result);
-    result = CTokens.createBlocks(result);
 
     return result;
   }

@@ -2,6 +2,7 @@ import { i } from "vitest/dist/index-6e18a03a";
 import { IncludeResolveResult } from "./types";
 import { Token, BlockType } from "./types";
 import { findNextMatch, findNextNot, findNextOrEnd } from "./utils";
+import CTokens from "./tokens";
 
 const ignoredKeywords = [`typedef`];
 
@@ -193,7 +194,8 @@ export class ModuleSource {
           case `#DEFINE`:
             if (currentBlockIsTrue(i)) {
               if (nextToken && nextToken.value) {
-                this.macros[nextToken.value] = endIndex > (i+2) ? this.tokens.slice(i+2, endIndex) : true;
+                const block = CTokens.createBlocks(this.tokens.slice(i+2, endIndex));
+                this.macros[nextToken.value] = block.length > 0 ? block : true;
               }
             }
             break;
@@ -206,7 +208,8 @@ export class ModuleSource {
 
           case `#IF`:
             // throw new Error(`#IF not implemented`);
-            ifBlocks.push({ startBlock: { start: i, end: endIndex }, conditionMet: this.handleIf(this.tokens.slice(i+1, endIndex))});
+            const block = CTokens.createBlocks(this.tokens.slice(i+1, endIndex));
+            ifBlocks.push({ startBlock: { start: i, end: endIndex }, conditionMet: this.handleIf(block)});
             break;
 
           case `#ELIF`:
@@ -269,6 +272,8 @@ export class ModuleSource {
         }
       }
     }
+
+    CTokens.createBlocks(this.tokens);
   }
 
   getSymbols(): CompiledSymbol[] {
