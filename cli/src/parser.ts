@@ -4,10 +4,11 @@ import * as path from 'path';
 
 import Parser from "vscode-rpgle/language/parser";
 import { Targets } from './targets';
+import { CParser } from 'ileclang/src/parser';
 
 let includeFileCache: { [path: string]: string } = {};
 
-export function setupParser(targets: Targets): Parser {
+export function setupRpgParser(targets: Targets): Parser {
 	const parser = new Parser();
 
 	parser.setIncludeFileFetch(async (baseFile: string, includeFile: string) => {
@@ -22,7 +23,6 @@ export function setupParser(targets: Targets): Parser {
 			includeFile = includeFile.replace(/,/g, `/`) + `.*`;
 		} else if (!includeFile.includes(`/`)) {
 			const parent = path.basename(path.dirname(baseFile));
-			console.log(parent);
 			includeFile = `${parent}/${includeFile}`;
 		}
 
@@ -58,5 +58,14 @@ export function setupParser(targets: Targets): Parser {
 		return [];
 	});
 
+	return parser;
+}
+
+export function setupCParser(targets: Targets) {
+	const parser = new CParser();
+	parser.enableCache();
+	parser.setIncludeResolver((includeRef: string) => {
+		return targets.resolveLocalFile(includeRef);
+	});
 	return parser;
 }

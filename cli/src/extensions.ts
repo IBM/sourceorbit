@@ -6,8 +6,9 @@ export const sqlExtensions = [`sql`, `table`, `view`, `index`, `alias`, `sqlprc`
 export const srvPgmExtensions = [`binder`, `bnd`];
 export const cmdExtensions = [`cmd`];
 export const objectExtensions = [`dtaara`, `mnucmd`, `msgf`, `dtaq`];
+export const cExtensions = [`c`, `cpp`];
 
-export const allExtensions = [...rpgExtensions, ...clExtensions, ...ddsExtension, ...sqlExtensions, ...srvPgmExtensions, ...cmdExtensions, ...objectExtensions];
+export const allExtensions = [...rpgExtensions, ...clExtensions, ...ddsExtension, ...sqlExtensions, ...srvPgmExtensions, ...cmdExtensions, ...objectExtensions, ...cExtensions];
 export const scanGlob = `**/*.{${allExtensions.join(`,`)},${allExtensions.map(e => e.toUpperCase()).join(`,`)}}`;
 
 export const referencesFileName = `.objrefs`;

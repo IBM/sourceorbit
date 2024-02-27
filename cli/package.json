@@ -38,6 +38,7 @@
     "webpack-cli": "^4.5.0"
   },
   "dependencies": {
-    "crc-32": "https://cdn.sheetjs.com/crc-32-latest/crc-32-latest.tgz"
+    "crc-32": "https://cdn.sheetjs.com/crc-32-latest/crc-32-latest.tgz",
+    "ileclang": "file:../c"
   }
 }

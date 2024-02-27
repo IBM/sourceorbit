@@ -9,11 +9,13 @@ import { DefinitionType, File, Module, CLParser } from 'vscode-clle/language';
 import { DisplayFile as dds } from "vscode-displayfile/src/dspf";
 import Document from "vscode-db2i/src/language/sql/document";
 import { ObjectRef, StatementType } from 'vscode-db2i/src/language/sql/types';
-import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensions, cmdExtensions } from './extensions';
+import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensions, cmdExtensions, cExtensions } from './extensions';
 import Parser from "vscode-rpgle/language/parser";
-import { setupParser } from './parser';
+import { setupCParser, setupRpgParser } from './parser';
 import { Logger } from './logger';
 import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
+
+import { CParser, ModuleSource } from 'ileclang';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -88,6 +90,7 @@ interface FileOptions {
 
 export class Targets {
 	private rpgParser: Parser;
+	private cParser: CParser;
 
 	/* pathCache and resolvedSearches are used for file resolving. */
 	private pathCache: { [path: string]: true | string[] } | undefined;
@@ -103,7 +106,8 @@ export class Targets {
 	public logger: Logger;
 
 	constructor(private cwd: string) {
-		this.rpgParser = setupParser(this);
+		this.rpgParser = setupRpgParser(this);
+		this.cParser = setupCParser(this);
 		this.logger = new Logger();
 	}
 
@@ -310,6 +314,8 @@ export class Targets {
 			case `sqlrpgle`:
 			case `clle`:
 			case `cl`:
+			case `c`:
+			case `cpp`:
 				return "MODULE";
 
 			case `binder`:
@@ -387,6 +393,11 @@ export class Targets {
 						this.createRpgTarget(filePath, rpgDocs, options);
 					}
 
+				}
+				else if (cExtensions.includes(ext)) {
+					const cDocs = this.cParser.getDocument(filePath);
+					cDocs.preprocess();
+					this.createCTarget(filePath, cDocs, options);
 				}
 				else if (clExtensions.includes(ext)) {
 					const clDocs = new CLParser();
@@ -965,6 +976,91 @@ export class Targets {
 				}
 			}
 		}
+	}
+
+	private createCTarget(localPath: string, module: ModuleSource, options: FileOptions = {}) {
+		const pathDetail = path.parse(localPath);
+		const ileObject = this.resolvePathToObject(localPath, options.text);
+
+		const symbols = module.getSymbols();
+		const hasEntryPoint = symbols.find(s => s.name === `main`);
+
+		// This usually means .pgm is in the name
+		if (ileObject.type === `PGM` && !hasEntryPoint) {
+			const possibleName = pathDetail.name.toLowerCase().endsWith(`.pgm`) ? pathDetail.name.substring(0, pathDetail.name.length - 4) : pathDetail.name;
+
+			if (this.suggestions.renames) {
+				this.logger.fileLog(ileObject.relativePath, {
+					message: `Rename suggestion`,
+					type: `rename`,
+					change: {
+						rename: {
+							path: localPath,
+							newName: possibleName + pathDetail.ext
+						}
+					}
+				})
+			} else {
+				this.logger.fileLog(ileObject.relativePath, {
+					message: `type detected as ${ileObject.type} but no main function found.`,
+					type: `warning`,
+				});
+			}
+		}
+
+		// This usually means it's source name is a module (no .pgm) but doesn't have a main function
+		if (ileObject.type === `MODULE` && hasEntryPoint) {
+			if (this.suggestions.renames) {
+				this.logger.fileLog(ileObject.relativePath, {
+					message: `Rename suggestion`,
+					type: `rename`,
+					change: {
+						rename: {
+							path: localPath,
+							newName: pathDetail.name + `.pgm` + pathDetail.ext
+						}
+					}
+				});
+			} else {
+				this.logger.fileLog(ileObject.relativePath, {
+					message: `type detected as ${ileObject.type} but NOMAIN keyword was not found. Is it possible the extension should include '.pgm'?`,
+					type: `warning`,
+				});
+			}
+		}
+
+		ileObject.imports = symbols.filter(s => s.type === `import`).map(s => s.name);
+
+		if (!hasEntryPoint) {
+			ileObject.exports = symbols.filter(s => s.type === `export`).map(s => s.name);
+		}
+
+		const importRefs = module.getResolvedIncludes();
+
+		for (const ref of importRefs) {
+			if (ref.state === `resolved`) {
+				this.logger.fileLog(ileObject.relativePath, {
+					message: `Include found to path '${this.getRelative(ref.fullPath)}'`,
+					type: `info`,
+				});
+			} else {
+				this.logger.fileLog(ileObject.relativePath, {
+					message: `Include found to path '${this.getRelative(ref.fullPath)}' but not resolved.`,
+					type: `warning`,
+				});
+			}
+		}
+
+		const target: ILEObjectTarget = {
+			...ileObject,
+			deps: []
+		};
+
+		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
+
+		// Unlike RPG, we don't do any object resolving here.
+
+		this.addNewTarget(target);
 	}
 
 	private createRpgTarget(localPath: string, cache: Cache, options: FileOptions = {}) {
