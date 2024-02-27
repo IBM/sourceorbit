@@ -71,10 +71,15 @@ async function main() {
 				cliSettings.userBranch = parms[i+1];
 				i++;
 				break;
+				
 			case `-f`:
 			case `--files`:
 			case `-l`:
 				cliSettings.fileList = true;
+				break;
+
+			case `-df`:
+			  cliSettings.debugFiles = true;
 				break;
 
 			case `-h`:
@@ -152,7 +157,11 @@ async function main() {
 	let files: string[];
 
 	try {
-		files = getFiles(cwd, scanGlob);
+		if (cliSettings.debugFiles) {
+			files = cliSettings.lookupFiles.map(f => path.join(cwd, f));
+		} else {
+			files = getFiles(cwd, scanGlob);
+		}
 	} catch (e) {
 		error(e.message || e);
 		process.exit(1);
