@@ -81,7 +81,7 @@ export class CParser {
                 }
 
               // System headers
-              } else if (nextToken.type === `opengeneric` && tokens[endIndex-1].type === `closegeneric`) {
+              } else if (nextToken.type === `lessthan` && tokens[endIndex-1].type === `morethan`) {
                 // The join here is a hack.
                 // This is because we don't have access to the original document to substring it out.
                 // TODO: improve this

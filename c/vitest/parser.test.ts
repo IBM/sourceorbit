@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { CParser } from "../src/parser";
 import { getSourcePath, resolveInclude } from "./fixtures/fixtures";
+import { Token } from "../src/types";
 
 describe("include local tests", () => {
   const parser = new CParser();
@@ -21,6 +22,40 @@ describe("include local tests", () => {
     doc.preprocess();
     const symbols = doc.getSymbols();
     expect(symbols.length).toBe(1);
+
+    const macros = doc.getMacros();
+
+    expect(Object.keys(macros)).toMatchObject(
+      [ 'OSTYPES_H', 'SICKMATE', 'COOL', 'GOOD' ]
+    )
+  });
+
+  it("macros test", () => {
+    const doc = parser.getDocument(getSourcePath("simpleMacro.c"));
+    doc.preprocess();
+    const macros = doc.getMacros();
+
+    const maxMacro = macros.MAX as Token[];
+    expect(maxMacro).toBeDefined();
+    expect(maxMacro[0].type).toBe(`block`);
+    expect(maxMacro[0].blockType).toBe(`list`);
+    expect(maxMacro[1].type).toBe(`block`);
+    expect(maxMacro[1].blockType).toBe(`body`);
+    
+    expect(macros.COOL).toBe(true);
+    expect(macros.AWESOME).toMatchObject(
+      [ { value: '1337', type: 'word', range: {start: 119, end: 123} } ]
+    );
+  });
+
+  it("macro expression test (A)", () => {
+    const doc = parser.getDocument(getSourcePath("macroIf.c"));
+    doc.preprocess();
+    const macros = doc.getMacros();
+
+    expect(Object.keys(macros)).toMatchObject([
+      `RLS`, `SOGOOD`, `SICKMATE`, `NICE`, `COOLNESS`, `NOICE`
+    ])
   });
 
   it("complicated module with imports, extern and exports", () => {

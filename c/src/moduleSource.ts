@@ -1,3 +1,4 @@
+import { i } from "vitest/dist/index-6e18a03a";
 import { IncludeResolveResult } from "./types";
 import { Token, BlockType } from "./types";
 import { findNextMatch, findNextNot, findNextOrEnd } from "./utils";
@@ -11,7 +12,7 @@ export interface CompiledSymbol {
 }
 
 export class ModuleSource {
-  private macros: { [key: string]: string | boolean } = {};
+  private macros: { [key: string]: Token[]|boolean } = {};
   private resolvedIncludes: IncludeResolveResult[] = [];
   private isCpp = false;
 
@@ -27,23 +28,173 @@ export class ModuleSource {
     return this.resolvedIncludes;
   }
 
+  getMacros() {
+    return this.macros;
+  }
+
+  handleIf(tokens: Token[]): boolean {
+    let conditionMet = false;
+
+    interface ValueResult {asStr: string, skipBlock: boolean};
+
+    const getValue = (i: number): ValueResult => {
+      const token = tokens[i];
+      const blockToken = tokens[i+1];
+      let skipBlock = false;
+      let tempValue: any;
+
+      if (token.value === `DEFINED` && blockToken && blockToken.blockType === `list`) {
+        const blockValue = blockToken.block && blockToken.block.length > 0 ? blockToken.block[0].value : undefined;
+
+        if (blockValue) {
+          tempValue = this.macros[blockValue];
+        }
+        
+        skipBlock = true;
+      } else {
+        tempValue = this.macros[token.value!];
+      }
+
+      if (Array.isArray(tempValue)) {
+        return {asStr: tempValue[0]?.value, skipBlock};
+      } else if (tempValue) {
+        return {asStr: tempValue, skipBlock};
+      } else {
+        return {asStr: token.value!, skipBlock};
+      }
+    }
+
+    let currentValue: ValueResult|undefined = undefined;
+    let lastValue: string|undefined = undefined;
+    let nextValue: string|undefined = undefined;
+
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+
+      switch (token.type) {
+        case `block`:
+          conditionMet = this.handleIf(token.block!);
+
+        case `word`:
+          currentValue = getValue(i);
+          lastValue = currentValue.asStr;
+          
+          conditionMet = lastValue !== undefined;
+          if (currentValue.skipBlock) {i++};
+          break;
+
+        case `morethan`:
+          currentValue = getValue(i + 1);
+          nextValue = currentValue.asStr;
+
+          if (currentValue.skipBlock) {i++};
+          i++;
+
+          if (lastValue && nextValue) {
+            conditionMet = Number(lastValue) > Number(nextValue);
+          } else {
+            conditionMet = false;
+          }
+          break;
+
+        case `lessthan`:
+          currentValue = getValue(i + 1);
+          nextValue = currentValue.asStr;
+          
+          if (currentValue.skipBlock) {i++};
+          i++;
+
+          if (lastValue && nextValue) {
+            conditionMet = Number(lastValue) < Number(nextValue);
+          } else {
+            conditionMet = false;
+          }
+          break;
+
+        case `mte`:
+          currentValue = getValue(i + 1);
+          nextValue = currentValue.asStr;
+          
+          if (currentValue.skipBlock) {i++};
+          i++;
+
+          if (lastValue && nextValue) {
+            conditionMet = Number(lastValue) >= Number(nextValue);
+          } else {
+            conditionMet = false;
+          }
+          break;
+
+        case `lte`:
+          currentValue = getValue(i + 1);
+          nextValue = currentValue.asStr;
+          
+          if (currentValue.skipBlock) {i++};
+          i++;
+
+          if (lastValue && nextValue) {
+            conditionMet = Number(lastValue) <= Number(nextValue);
+          } else {
+            conditionMet = false;
+          }
+          break;
+
+        case `and`:
+          if (!conditionMet) {
+            return false;
+          }
+          break;
+
+        case `or`:
+          if (conditionMet) {
+            return true;
+          }
+
+          break;
+      }
+    }
+
+    return conditionMet;
+  
+  }
+
   preprocess() {
     let ifBlocks: { conditionMet: boolean, startBlock: { start: number, end: number }, elseBlock?: { start: number, end: number }, endToken?: number }[] = [];
+
+    const currentBlockIsTrue = (i: number, lastIf?: number): boolean => {
+      const currentIfI = lastIf !== undefined ? lastIf : ifBlocks.length - 1;
+      const currentIf = ifBlocks[currentIfI];
+      let currentCond = true;
+      if (currentIf) {
+        let inElseBlock = currentIf.elseBlock !== undefined;
+
+        if (!inElseBlock) {
+          currentCond = currentIf.conditionMet;
+        } else {
+          currentCond = !currentIf.conditionMet;
+        }
+
+        if (currentCond) currentCond = currentBlockIsTrue(i, currentIfI-1);
+      } else {
+        return true;
+      }
+
+      return currentCond;
+    } 
 
     for (let i = 0; i < this.tokens.length; i++) {
       const token = this.tokens[i];
 
       if (token.type === `directive`) {
         const endIndex = findNextOrEnd(this.tokens, `newline`, i + 1);
-        const statementTokens = this.tokens.slice(i, endIndex);
         const nextToken = this.tokens[i + 1];
 
         switch (token.value?.toUpperCase()) {
           case `#DEFINE`:
-            if (nextToken && nextToken.value) {
-              const valueToken = this.tokens[i + 2];
-
-              this.macros[nextToken.value] = valueToken?.value || true;
+            if (currentBlockIsTrue(i)) {
+              if (nextToken && nextToken.value) {
+                this.macros[nextToken.value] = endIndex > (i+2) ? this.tokens.slice(i+2, endIndex) : true;
+              }
             }
             break;
 
@@ -55,6 +206,11 @@ export class ModuleSource {
 
           case `#IF`:
             // throw new Error(`#IF not implemented`);
+            ifBlocks.push({ startBlock: { start: i, end: endIndex }, conditionMet: this.handleIf(this.tokens.slice(i+1, endIndex))});
+            break;
+
+          case `#ELIF`:
+            throw new Error(`#ELIF not implemented`);
             break;
 
           case `#IFDEF`:

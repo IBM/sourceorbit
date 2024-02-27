@@ -31,6 +31,16 @@ export default class CTokens {
       becomes: `directive`,
     },
     {
+      name: `AND`,
+      match: [{ type: `ampersand` }, { type: `ampersand` }],
+      becomes: `and`,
+    },
+    {
+      name: `OR`,
+      match: [{ type: `pipe` }, { type: `pipe` }],
+      becomes: `or`,
+    },
+    {
       name: `deftype`,
       match: [{ type: `word`, match: (w: string) => [`extern`, `static`, `class`].includes(w) }],
       becomes: `deftype`,
@@ -39,10 +49,30 @@ export default class CTokens {
       name: `linker`,
       match: [{ type: `colon` }, { type: `colon` }],
       becomes: `linker`,
+    },
+    {
+      name: `continuation`,
+      match: [{ type: `backslash` }, { type: `newline` }],
+      becomes: `continuation`,
+    },
+    {
+      name: `continuation`,
+      match: [{ type: `backslash` }, { type: `newliner` }, { type: `newline` }],
+      becomes: `continuation`,
+    },
+    {
+      name: `mte`,
+      match: [{ type: `morethan` }, { type: `equal` }],
+      becomes: `mte`,
+    },
+    {
+      name: `lte`,
+      match: [{ type: `lessthan` }, { type: `equal` }],
+      becomes: `lte`,
     }
   ];
   static readonly spaces = [`\t`, ` `];
-  static readonly splitParts: string[] = [`(`, `)`, `{`, `}`, `[`, `]`, `<`, `>`,`/`, `.`, `*`, `-`, `+`, `;`, `"`, `&`, `#`, `%`, `,`, `|`, `?`, `:`, `\n`, `\r`, ...this.spaces];
+  static readonly splitParts: string[] = [`(`, `)`, `{`, `}`, `[`, `]`, `<`, `>`,`/`, `\\`, `.`, `*`, `-`, `+`, `;`, `"`, `&`, `#`, `%`, `,`, `|`, `?`, `:`, `=`, `\n`, `\r`, ...this.spaces];
   static readonly blockTypes: {[char: string]: BlockType} = {
     '{': BlockType.Body,
     '(': BlockType.List,
@@ -52,15 +82,18 @@ export default class CTokens {
     ']': BlockType.Index,
   }
   static readonly types: { [part: string]: string } = {
+    '>=': `mte`,
+    '<=': `lte`,
     '(': `openbracket`,
     '{': `openbracket`,
     '[': `openbracket`,
     ')': `closebracket`,
     '}': `closebracket`,
     ']': `closebracket`,
-    '<': `opengeneric`,
-    '>': `closegeneric`,
+    '<': `lessthan`,
+    '>': `morethan`,
     '/': `forwardslash`,
+    '\\': `backslash`,
     '.': `dot`,
     '*': `asterisk`,
     '-': `minus`,
@@ -74,6 +107,7 @@ export default class CTokens {
     '|': `pipe`,
     '?': `questionmark`,
     ':': `colon`,
+    '=': `equal`,
     '\n': `newline`,
     '\r': `newliner`,
   };
