@@ -12,7 +12,7 @@ import { allExtensions, referencesFileName } from "./extensions";
 import { getBranchLibraryName } from "./builders/environment";
 import { getFiles, renameFiles, replaceIncludes } from './utils';
 
-const isCli = process.argv.length >= 2 && process.argv[1].endsWith(`so`);
+const isCli = process.argv.length >= 2 && (process.argv[1].endsWith(`so`) || process.argv[1].endsWith(`index.js`));
 
 if (isCli || process.env.VSCODE_INSPECTOR_OPTIONS) {
 	cliSettings.cliMode = true;
