@@ -32,6 +32,7 @@ export interface Action {
   name: string;
   command: string;
   extensions?: string[];
+  environment?: "ile";
 }
 
 export function getBranchLibraryName(currentBranch: string) {

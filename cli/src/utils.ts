@@ -6,6 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os"
 import { ILEObject, ObjectType } from "./targets";
+import { CommandParameters } from "./builders/environment";
 
 export function getSystemNameFromPath(inputName: string) {
 
@@ -156,13 +157,54 @@ export function getReferenceObjectsFrom(content: string) {
 	return pseudoObjects;
 }
 
+export function fromCl(cl: string): {command: string, parameters: CommandParameters} {
+	let gotCommandnName = false;
+	let parmDepth = 0;
+
+	let currentCommand = ``;
+	let currentParmName = ``;
+	let currentParmValue = ``;
+	let parameters: CommandParameters = {};
+
+	for (const c of cl.split(``)) {
+		if (c === `(`) {
+			parmDepth++;
+			if (parmDepth === 1) {
+			}
+		} else if (c === `)`) {
+			if (parmDepth === 1) {
+				parameters[currentParmName.toLowerCase()] = currentParmValue;
+				currentParmValue = ``;
+				currentParmName = ``;
+			}
+			parmDepth--;
+		} else if (c === ` ` && !gotCommandnName) {
+			gotCommandnName = true;
+			currentCommand = currentCommand.trim();
+		} else if (c === ` ` && gotCommandnName) {
+			currentParmName = currentParmName.trim();
+		} else if (parmDepth > 0) {
+			currentParmValue += c;
+		} else if (gotCommandnName) {
+			currentParmName += c;
+		} else {
+			currentCommand += c;
+		}
+	}
+
+	return {
+		command: currentCommand,
+		parameters
+	}
+}
+
 /**
  * 
  * @param command Optionally qualified CL command
  * @param parameters A key/value object of parameters
  * @returns Formatted CL string
  */
-export function toCl(command: string, parameters?: { [parameter: string]: string }) {
+export function toCl(command: string, parameters?: CommandParameters) {
 	let cl = command;
 
 	if (parameters) {

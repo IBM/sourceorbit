@@ -1,6 +1,6 @@
 import { assert, describe, expect, test } from 'vitest'
 import { getBranchLibraryName } from '../src/builders/environment';
-import { getReferenceObjectsFrom, getSystemNameFromPath } from '../src/utils';
+import { fromCl, getReferenceObjectsFrom, getSystemNameFromPath } from '../src/utils';
 
 describe(`Deterministic branch name`, () => {
   test('Basic name', () => {
@@ -62,6 +62,30 @@ describe(`Deterministic system name`, () => {
   test('Bob prefix name B', () => {
     expect(getSystemNameFromPath(`ART200D-Work_with_Article`)).toBe(`ART200D`);
   })
+});
+
+describe(`CL parser`, () => {
+  test('Basic command', () => {
+    const cl = `CRTCLPGM PGM(MYLIB/MYCL) SRCFILE(MYLIB/QCLSRC) SRCMBR(MYCL)`;
+    const parsed = fromCl(cl);
+
+    console.log(parsed);
+    expect(parsed.command).toBe(`CRTCLPGM`);
+    expect(parsed.parameters).toMatchObject({
+      pgm: `MYLIB/MYCL`,
+      srcfile: `MYLIB/QCLSRC`,
+      srcmbr: `MYCL`
+    });
+  });
+
+  test('Just command', () => {
+    const cl = `CRTCLPGM`;
+    const parsed = fromCl(cl);
+
+    console.log(parsed);
+    expect(parsed.command).toBe(`CRTCLPGM`);
+    expect(parsed.parameters).toMatchObject({});
+  });
 });
 
 describe(`Reference files`, () => {
