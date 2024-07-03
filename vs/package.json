@@ -117,17 +117,17 @@
 			"view/item/context": [
 				{
 					"command": "vscode-sourceorbit.objects.goToFile",
-					"when": "viewItem == ileObject",
+					"when": "view =~ /^(activeImpactView|gitImpactView|projectExplorer)$/ && viewItem == ileObject",
 					"group": "inline"
 				},
 				{
 					"command": "vscode-sourceorbit.objects.loadProject",
-					"when": "viewItem == objectsView",
+					"when": "view == projectExplorer && viewItem == objectsView",
 					"group": "inline"
 				},
 				{
 					"command": "vscode-sourceorbit.objects.autoFix",
-					"when": "viewItem == objectsView",
+					"when": "view == projectExplorer && viewItem == objectsView",
 					"group": "inline"
 				}
 			]
