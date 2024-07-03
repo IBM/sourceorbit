@@ -10,8 +10,6 @@ import { writeFileSync } from 'fs';
 
 const cwd = setupMultiModule();
 
-const makeDefaults = MakeProject.getDefaultSettings();
-
 let files = getFiles(cwd, scanGlob);
 
 describe.skipIf(files.length === 0)(`multi_module tests`, () => {

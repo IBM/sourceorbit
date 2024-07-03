@@ -82,7 +82,7 @@ test('applySettings (binder)', () => {
 
   const project = new MakeProject(cwd, targets);
 
-  project.applySettings({
+  project.getSettings().applySettings({
     binders: [`TESTING`]
   });
 
@@ -105,7 +105,7 @@ test(`Multi-module program and service program`, () => {
   const project = new MakeProject(cwd, targets);
   const settings = project.getSettings();
 
-  project.applySettings({
+  settings.applySettings({
     binders: [`ILEASTIC`, `NOXDB`]
   });
 

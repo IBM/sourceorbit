@@ -7,10 +7,11 @@ import { getFiles } from '../src/utils';
 import { setupCompanySystem } from './fixtures/projects';
 import { scanGlob } from '../src/extensions';
 import { writeFileSync } from 'fs';
+import { getDefaultCompiles } from '../src/builders/environment';
 
 const cwd = setupCompanySystem();
 
-const makeDefaults = MakeProject.getDefaultSettings();
+const compileDefaults = getDefaultCompiles();
 
 let files = getFiles(cwd, scanGlob);
 
@@ -195,7 +196,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
   test(`Check mypgm RPGLE target`, async () => {
     const myPgm = targets.getTarget({systemName: `MYPGM`, type: `PGM`});
-    const lines = MakeProject.generateSpecificTarget(makeDefaults.compiles[`pgm.rpgle`], myPgm);
+    const lines = MakeProject.generateSpecificTarget(compileDefaults[`pgm.rpgle`], myPgm);
 
     expect(lines.join()).toBe([
       '$(PREPATH)/MYPGM.PGM: qrpglesrc/mypgm.pgm.rpgle',
@@ -210,7 +211,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
   test(`Check depts SQLRPGLE target (with CHGATR)`, async () => {
     const myPgm = targets.getTarget({systemName: `DEPTS`, type: `PGM`});
-    const lines = MakeProject.generateSpecificTarget(makeDefaults.compiles[`pgm.sqlrpgle`], myPgm);
+    const lines = MakeProject.generateSpecificTarget(compileDefaults[`pgm.sqlrpgle`], myPgm);
 
     expect(lines.join()).toBe([
       '$(PREPATH)/DEPTS.PGM: qrpglesrc/depts.pgm.sqlrpgle',
@@ -225,7 +226,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
   test(`Check depts DSPF target (member)`, async () => {
     const myPgm = targets.getTarget({systemName: `DEPTS`, type: `FILE`});
-    const lines = MakeProject.generateSpecificTarget(makeDefaults.compiles[`dspf`], myPgm);
+    const lines = MakeProject.generateSpecificTarget(compileDefaults[`dspf`], myPgm);
 
     expect(lines.join()).toBe([
       '$(PREPATH)/DEPTS.FILE: qddssrc/depts.dspf',
@@ -242,7 +243,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
   test(`Check utils SRVPGM target (from binder source, *MODULES variable)`, async () => {
     const myPgm = targets.getTarget({systemName: `UTILS`, type: `SRVPGM`});
-    const lines = MakeProject.generateSpecificTarget(makeDefaults.compiles[`bnd`], myPgm);
+    const lines = MakeProject.generateSpecificTarget(compileDefaults[`bnd`], myPgm);
 
     expect(lines.join()).toBe([
       '$(PREPATH)/UTILS.SRVPGM: qsrvsrc/utils.bnd',
@@ -256,7 +257,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
   test(`Check banking SRVPGM target (no binder source)`, async () => {
     const myPgm = targets.getTarget({systemName: `BANKING`, type: `SRVPGM`});
-    const lines = MakeProject.generateSpecificTarget(makeDefaults.compiles[`srvpgm`], myPgm);
+    const lines = MakeProject.generateSpecificTarget(compileDefaults[`srvpgm`], myPgm);
 
     expect(lines.join()).toBe([
       '$(PREPATH)/BANKING.SRVPGM: qsrvsrc/banking.bnd',
@@ -436,7 +437,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     // expect(logs[0].message).toBe(`Extension should be based on type. Suggested name is 'getTotalSalary.sqludf'`);
     // expect(logs[0].type).toBe(`warning`);
 
-    const functionMake = MakeProject.generateSpecificTarget(makeDefaults.compiles[`sqludf`], resolvedObject);
+    const functionMake = MakeProject.generateSpecificTarget(compileDefaults[`sqludf`], resolvedObject);
     expect(functionMake.length).toBe(4);
     expect(functionMake[0]).toBe(`$(PREPATH)/GETTOTSAL.SRVPGM: qsqlsrc/getTotalSalary.sqludf`);
     expect(functionMake[3]).toBe(`\tsystem "RUNSQLSTM SRCSTMF('qsqlsrc/getTotalSalary.sqludf') COMMIT(*NONE)" > .logs/gettotsal.splf`);

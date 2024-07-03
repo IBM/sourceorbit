@@ -6,260 +6,20 @@ import { warningOut } from '../../cli';
 import { name } from '../../../webpack.config';
 import { FolderOptions, getFolderOptions } from './folderSettings';
 import { readAllRules } from './customRules';
-
-// Always try and store parmId as lowercase
-type CommandParameters = {[parmId: string]: string};
-
-interface CompileData {
-	/** indicates what type of object will be built from this source */
-	becomes: ObjectType;
-	/** will copy the source to a temp member first */
-	member?: boolean,
-	/** `preCommands` do not respect the library list and is run before 'command' */
-	preCommands?: string[]
-	/** `command` does respect the library list */
-	command?: string;
-	
-	parameters?: CommandParameters;
-	/** Used if the commands are built up from source. Usually means `command` and `commands` is blank */
-	commandSource?: boolean;
-	/** `postCommands` do not respect the library list and is run after 'command' */
-	postCommands?: string[];
-
-	/** if the object can be built without source, flag this true so it builds generic rules */
-	sourceOptional?: boolean;
-	/** if the non-source object now requires source. Use make generic name like `qbndsrc/%.bnd` */
-	targetSource?: string;
-};
-
-interface iProject {
-	includePaths?: string[];
-	compiles?: { [ext: string]: CompileData },
-	binders?: string[];
-	objectAttributes?: {
-		[object: string]: CommandParameters
-	}
-}
+import { CompileData, CommandParameters } from '../environment';
+import { iProject } from '../iProject';
 
 export class MakeProject {
 	private noChildren: boolean = false;
-	private settings: iProject;
+	private settings: iProject = new iProject();
 	private folderSettings: {[folder: string]: FolderOptions} = {};
 
 	constructor(private cwd: string, private targets: Targets) {
-		this.settings = MakeProject.getDefaultSettings();
-
 		this.setupSettings();
 	}
 
 	public setNoChildrenInBuild(noChildren: boolean) {
 		this.noChildren = noChildren;
-	}
-
-	public static getDefaultSettings(): iProject {
-		return {
-			binders: [],
-			includePaths: [],
-			objectAttributes: {},
-			compiles: {
-				"pgm": {
-					becomes: `PGM`,
-					command: `CRTPGM`,
-					parameters: {
-						pgm: `$(BIN_LIB)/$*`,
-						entmod: `$*`,
-						module: `*MODULES`,
-						tgtrls: `*CURRENT`,
-						bnddir: `$(BNDDIR)`,
-						actgrp: `*NEW`
-					}
-				},
-				"pgm.rpgle": {
-					becomes: `PGM`,
-					command: `CRTBNDRPG`,
-					parameters: {
-						pgm: `$(BIN_LIB)/$*`,
-						srcstmf: `'$<'`,
-						option: `*EVENTF`,
-						dbgview: `*SOURCE`,
-						tgtrls: `*CURRENT`,
-						tgtccsid: `*JOB`,
-						bnddir: `$(BNDDIR)`,
-						dftactgrp: `*NO`
-					}
-				},
-				"pgm.sqlrpgle": {
-					becomes: "PGM",
-					command: `CRTSQLRPGI`,
-					parameters: {
-						obj: `$(BIN_LIB)/$*`,
-						srcstmf: `'$<'`,
-						commit: `*NONE`,
-						dbgview: `*SOURCE`,
-						option: `*EVENTF`,
-						rpgppopt: `*LVL2`,
-						compileopt: `TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)`
-					}
-				},
-				"rpgle": {
-					becomes: `MODULE`,
-					command: `CRTRPGMOD`,
-					parameters: {
-						module: `$(BIN_LIB)/$*`,
-						srcstmf: `'$<'`,
-						option: `*EVENTF`,
-						dbgview: `*SOURCE`,
-						tgtrls: `*CURRENT`,
-						tgtccsid: `*JOB`
-					}
-				},
-				"sqlrpgle": {
-					becomes: "MODULE",
-					command: `CRTSQLRPGI`,
-					parameters: {
-						obj: `$(BIN_LIB)/$*`,
-						srcstmf: `'$<'`,
-						commit: `*NONE`,
-						dbgview: `*SOURCE`,
-						compileopt: `'TGTCCSID(*JOB)'`,
-						rpgppopt: `*LVL2`,
-						option: `*EVENTF`,
-						objtype: `*MODULE`
-					}
-				},
-				"pgm.clle": {
-					becomes: `PGM`,
-					command: `CRTBNDCL`,
-					parameters: {
-						pgm: `$(BIN_LIB)/$*`,
-						srcstmf: `'$<'`,
-						option: `*EVENTF`,
-						dbgview: `*SOURCE`,
-						tgtrls: `*CURRENT`,
-						dftactgrp: `*NO`
-					}
-				},
-				dspf: {
-					becomes: "FILE",
-					member: true,
-					command: "CRTDSPF",
-					parameters: {
-						file: `$(BIN_LIB)/$*`,
-						srcfile: `$(BIN_LIB)/$(SRCPF)`,
-						srcmbr: `$*`,
-						option: `*EVENTF`
-					}
-				},
-				prtf: {
-					becomes: "FILE",
-					member: true,
-					command: "CRTPRTF",
-					parameters: {
-						file: `$(BIN_LIB)/$*`,
-						srcfile: `$(BIN_LIB)/$(SRCPF)`,
-						srcmbr: `$*`,
-						option: `*EVENTF`
-					}
-				},
-				cmd: {
-					becomes: "CMD",
-					member: true,
-					command: "CRTCMD",
-					parameters: {
-						cmd: `$(BIN_LIB)/$*`,
-						pgm: `$(BIN_LIB)/$*`,
-						srcfile: `$(BIN_LIB)/$(SRCPF)`,
-						option: `*EVENTF`
-					}
-				},
-				sql: {
-					becomes: `FILE`,
-					command: `RUNSQLSTM`,
-					parameters: {
-						srcstmf: `'$<'`,
-						commit: `*NONE`
-					}
-				},
-				sqludf: {
-					becomes: `SRVPGM`,
-					command: `RUNSQLSTM`,
-					parameters: {
-						srcstmf: `'$<'`,
-						commit: `*NONE`
-					}
-				},
-				table: {
-					becomes: `FILE`,
-					command: `RUNSQLSTM`,
-					parameters: {
-						srcstmf: `'$<'`,
-						commit: `*NONE`
-					}
-				},
-				binder: binderSourceCompile,
-				bnd: binderSourceCompile,
-				srvpgm: {
-					becomes: `SRVPGM`,
-					preCommands: [
-						`-system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/$(APP_BNDDIR))"`,
-						`-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/$*))"`,
-						`-system "DLTOBJ OBJ($(BIN_LIB)/$*) OBJTYPE(*SRVPGM)"`
-					],
-					command: `CRTSRVPGM`,
-					parameters: {
-						srvpgm: `$(BIN_LIB)/$*`,
-						module: `*MODULES`,
-						srcstmf: `'$<'`,
-						bnddir: `$(BNDDIR)`
-					},
-					postCommands: [
-						`-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/$* *SRVPGM *IMMED))"`
-					]
-				},
-				bnddir: {
-					sourceOptional: true,
-					becomes: `BNDDIR`,
-					preCommands: [
-						`-system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/$*)"`,
-						`-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$*) OBJ($(patsubst %.SRVPGM,(*LIBL/% *SRVPGM *IMMED),$(notdir $^)))"`
-					]
-				},
-				dtaara: {
-					becomes: `DTAARA`,
-					commandSource: true
-				},
-				mnucmd: {
-					becomes: `MENU`,
-					member: true,
-					command: `CRTMNU`,
-					parameters: {
-						menu: `$(BIN_LIB)/$*`,
-						type: `*DSPF`,
-						dspf: `$(BIN_LIB)/$*`
-					}
-				},
-				pf: {
-					becomes: `FILE`,
-					member: true,
-					command: `CRTPF`,
-					parameters: {
-						file: `$(BIN_LIB)/$*`,
-						srcfile: `$(BIN_LIB)/$(SRCPF)`,
-						option: `*EVENTF`
-					}
-				},
-				lf: {
-					becomes: `FILE`,
-					member: true,
-					command: `CRTLF`,
-					parameters: {
-						file: `$(BIN_LIB)/$*`,
-						srcfile: `$(BIN_LIB)/$(SRCPF)`,
-						option: `*EVENTF`
-					}
-				}
-			}
-		};
 	}
 
 	private setupSettings() {
@@ -268,7 +28,7 @@ export class MakeProject {
 			const content = readFileSync(path.join(this.cwd, `iproj.json`), { encoding: `utf-8` });
 			const asJson: iProject = JSON.parse(content);
 
-			this.applySettings(asJson);
+			this.settings.applySettings(asJson);
 			warningOut(`make: Loaded project settings.`);
 		} catch (e) {
 			warningOut(`make: Failed to read 'iproj.json'.`);
@@ -281,27 +41,6 @@ export class MakeProject {
 
 	public getSettings() {
 		return this.settings;
-	}
-
-	public applySettings(input: iProject) {
-		if (input.includePaths && input.includePaths.length > 0) {
-			this.settings.includePaths = input.includePaths;
-		}
-
-		if (input.binders && input.binders.length > 0) {
-			this.settings.binders = input.binders;
-		}
-
-		if (input.compiles) {
-			for (const [ext, data] of Object.entries(input.compiles)) {
-				// We don't want to fully overwrite the default settings,
-				// perhaps the user is only changing the `dir`?
-				this.settings.compiles[ext] = {
-					...(this.settings.compiles[ext] || {}),
-					...data
-				};
-			}
-		}
 	}
 
 	public getObjectAttributes(compileData: CompileData, ileObject: ILEObject): CommandParameters {
@@ -570,23 +309,3 @@ export class MakeProject {
 		return lines;
 	}
 }
-
-const binderSourceCompile: CompileData = {
-	becomes: `SRVPGM`,
-	preCommands: [
-		`-system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/$(APP_BNDDIR))"`,
-		// `-system -q "RMVBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ(($(BIN_LIB)/$*))"`,
-		// `-system "DLTOBJ OBJ($(BIN_LIB)/$*) OBJTYPE(*SRVPGM)"`
-	],
-	command: `CRTSRVPGM`,
-	parameters: {
-		srvpgm: `$(BIN_LIB)/$*`,
-		module: `*MODULES`,
-		srcstmf: `'$<'`,
-		bnddir: `$(BNDDIR)`,
-		replace: `*YES`
-	},
-	postCommands: [
-		`-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/$* *SRVPGM *IMMED))"`
-	]
-};
