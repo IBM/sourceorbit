@@ -14,6 +14,7 @@ import Parser from "vscode-rpgle/language/parser";
 import { setupParser } from './parser';
 import { Logger } from './logger';
 import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
+import { getObjectType } from './builders/environment';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -282,54 +283,18 @@ export class Targets {
 	}
 
 	private getObjectType(relativePath: string, ext: string): ObjectType {
-		switch (ext.toLowerCase()) {
-			case `dspf`:
-			case `prtf`:
-			case `pf`:
-			case `lf`:
-			case `sql`:
-			case `table`:
-			case `view`:
-			case `index`:
-			case `alias`:
-			case `sqludf`:
-			case `sqludt`:
-			case `sqlalias`:
-			case `sqlseq`:
-			case `sequence`:
-			case `msgf`:
-				return "FILE";
+		const objType = getObjectType(ext);
 
-			case `dtaara`:
-				return "DTAARA";
+		if (!objType) {
+			this.logger.fileLog(relativePath, {
+				type: `warning`,
+				message: `'${ext}' not found a matching object type. Defaulting to '${ext}'`
+			});
 
-			case `cmd`:
-				return "CMD";
-
-			case `rpgle`:
-			case `sqlrpgle`:
-			case `clle`:
-			case `cl`:
-				return "MODULE";
-
-			case `binder`:
-			case `bnd`:
-			case `function`:
-				return `SRVPGM`;
-
-			case `procedure`:
-			case `trigger`:
-			case `sqlprc`:
-			case `sqltrg`:
-				return `PGM`;
-
-			default:
-				this.logger.fileLog(relativePath, {
-					type: `warning`,
-					message: `'${ext}' not found a matching object type. Defaulting to '${ext}'`
-				});
-				return (ext.toUpperCase() as ObjectType);
+			return (ext.toUpperCase() as ObjectType);
 		}
+
+		return objType;
 	}
 
 	public loadObjectsFromPaths(paths: string[]) {
@@ -1104,7 +1069,6 @@ export class Targets {
 					type: `warning`,
 				});
 			}
-
 		}
 
 		if (cache.keyword[`BNDDIR`]) {

@@ -28,8 +28,60 @@ export interface CompileData {
   targetSource?: string;
 };
 
+export interface Action {
+  name: string;
+  command: string;
+  extensions?: string[];
+}
+
 export function getBranchLibraryName(currentBranch: string) {
   return `VS${(str(currentBranch, 0) >>> 0).toString(16).toUpperCase()}`;
+}
+
+export function getObjectType(ext: string): ObjectType {
+  switch (ext.toLowerCase()) {
+    case `dspf`:
+    case `prtf`:
+    case `pf`:
+    case `lf`:
+    case `sql`:
+    case `table`:
+    case `view`:
+    case `index`:
+    case `alias`:
+    case `sqludf`:
+    case `sqludt`:
+    case `sqlalias`:
+    case `sqlseq`:
+    case `sequence`:
+    case `msgf`:
+      return "FILE";
+
+    case `dtaara`:
+      return "DTAARA";
+
+    case `cmd`:
+      return "CMD";
+
+    case `rpgle`:
+    case `sqlrpgle`:
+    case `clle`:
+    case `cl`:
+      return "MODULE";
+
+    case `binder`:
+    case `bnd`:
+    case `function`:
+      return `SRVPGM`;
+
+    case `procedure`:
+    case `trigger`:
+    case `sqlprc`:
+    case `sqltrg`:
+      return `PGM`;
+  }
+
+  return undefined;
 }
 
 export function getDefaultCompiles(): CompileAttribute {
