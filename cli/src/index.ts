@@ -9,8 +9,9 @@ import { BuildFiles, cliSettings, error, infoOut, warningOut } from './cli';
 import { BobProject } from "./builders/bob";
 import { ImpactMarkdown } from "./builders/imd";
 import { allExtensions, referencesFileName } from "./extensions";
-import { getBranchLibraryName } from "./builders/environment";
+import { getBranchLibraryName, getDefaultCompiles } from "./builders/environment";
 import { getFiles, renameFiles, replaceIncludes } from './utils';
+import { iProject } from './builders/iProject';
 
 const isCli = process.argv.length >= 2 && (process.argv[1].endsWith(`so`) || process.argv[1].endsWith(`index.js`));
 
@@ -238,7 +239,7 @@ function initProject(cwd) {
 
 	const iprojPath = path.join(cwd, `iproj.json`);
 
-	let base = {};
+	let base: Partial<iProject> = {};
 	const iprojExists = existsSync(iprojPath);
 
 	if (iprojExists) {
@@ -253,7 +254,7 @@ function initProject(cwd) {
 
 	base = {
 		...base,
-		...MakeProject.getDefaultSettings()
+		compiles: getDefaultCompiles()
 	};
 
 	writeFileSync(iprojPath, JSON.stringify(base, null, 2));
