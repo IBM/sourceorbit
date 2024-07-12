@@ -198,7 +198,7 @@ async function main() {
 	
 	if (cliSettings.lookupFiles && cliSettings.buildFile === `none`) {
 		for (const value of cliSettings.lookupFiles) {
-			listDeps(cwd, targets, value);
+			printParents(cwd, targets, value);
 		}
 	}
 
@@ -209,16 +209,21 @@ async function main() {
 			const extension = path.extname(filename).toLowerCase().replace(`.`, ``);
 			const fullPath = path.join(cwd, filename);
 			if (extension && getObjectType(extension)) {
+				let deleted = false;
+
 				switch (event) {
 					case `change`:
-						targets.parseFile(fullPath);
+						await targets.parseFile(fullPath);
+						console.log(`Changed: ${filename}`);
 						break;
 					case `rename`:
 						if (existsSync(fullPath)) {
-							targets.parseFile(fullPath);
+							console.log(`Adding to targets: ${filename}`);
+							await targets.parseFile(fullPath);
 						} else {
-							infoOut(`Removing from targets: ${filename}`);
+							console.log(`Removing from targets: ${filename}`);
 							targets.removeObjectByPath(fullPath);
+							deleted = true;
 						}
 				}
 
@@ -296,7 +301,7 @@ function initProject(cwd) {
 /**
  * @param query Can be object (ABCD.PGM) or relative path
  */
-function listDeps(cwd: string, targets: Targets, query: string) {
+function printParents(cwd: string, targets: Targets, query: string) {
 	const fullPath = path.join(cwd, query);
 
 	let [name, type] = query.split(`.`);

@@ -11,7 +11,7 @@
 			"cwd": "${workspaceFolder:cli}",
 			"program": "${workspaceFolder:cli}/dist/index.js",
 			"sourceMaps": true,
-			"args": ["-d", "/Users/barry/Downloads/noxDB", "--verbose", "--watch"],
+			"args": ["-d", "/Users/barry/Downloads/ibmi-company_system", "--watch", "--verbose"],
 			"preLaunchTask": {
 				"type": "npm",
 				"script": "webpack:dev"
