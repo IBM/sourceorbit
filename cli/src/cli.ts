@@ -10,7 +10,8 @@ export let cliSettings = {
 	fileList: false,
 	lookupFiles: [] as string[],
 	userBranch: ``,
-	makeFileNoChildren: false
+	makeFileNoChildren: false,
+	watchMode: false
 };
 
 export function infoOut(message: string) {

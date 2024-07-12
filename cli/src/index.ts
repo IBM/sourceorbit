@@ -1,6 +1,6 @@
 
 
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, watch } from 'fs';
 
 import { ILEObject, Targets } from './targets';
 import { MakeProject } from './builders/make';
@@ -9,7 +9,7 @@ import { BuildFiles, cliSettings, error, infoOut, warningOut } from './cli';
 import { BobProject } from "./builders/bob";
 import { ImpactMarkdown } from "./builders/imd";
 import { allExtensions, referencesFileName } from "./extensions";
-import { getBranchLibraryName, getDefaultCompiles } from "./builders/environment";
+import { getBranchLibraryName, getDefaultCompiles, getObjectType } from "./builders/environment";
 import { getFiles, renameFiles, replaceIncludes } from './utils';
 import { iProject } from './builders/iProject';
 
@@ -76,6 +76,10 @@ async function main() {
 			case `--files`:
 			case `-l`:
 				cliSettings.fileList = true;
+				break;
+
+			case `--watch`:
+				cliSettings.watchMode = true;
 				break;
 
 			case `-h`:
@@ -198,27 +202,54 @@ async function main() {
 		}
 	}
 
+	generateBuildFile(targets);
+
+	if (cliSettings.watchMode) {
+		watch(cwd, { recursive: true, persistent: true }, async (event, filename) => {
+			const extension = path.extname(filename).toLowerCase().replace(`.`, ``);
+			const fullPath = path.join(cwd, filename);
+			if (extension && getObjectType(extension)) {
+				switch (event) {
+					case `change`:
+						targets.parseFile(fullPath);
+						break;
+					case `rename`:
+						if (existsSync(fullPath)) {
+							targets.parseFile(fullPath);
+						} else {
+							infoOut(`Removing from targets: ${filename}`);
+							targets.removeObjectByPath(fullPath);
+						}
+				}
+
+				generateBuildFile(targets);
+			}
+		});
+	}
+}
+
+function generateBuildFile(targets: Targets) {
 	switch (cliSettings.buildFile) {
 		case `bob`:
 			const bobProj = new BobProject(targets);
 			const outFiles = bobProj.createRules();
 
 			for (const filePath in outFiles) {
-				writeFileSync(path.join(cwd, filePath), outFiles[filePath]);
+				writeFileSync(path.join(targets.getCwd(), filePath), outFiles[filePath]);
 			}
 
 			break;
 		case `make`:
-			const makeProj = new MakeProject(cwd, targets);
+			const makeProj = new MakeProject(targets.getCwd(), targets);
 			makeProj.setNoChildrenInBuild(cliSettings.makeFileNoChildren);
 
-			let specificObjects: ILEObject[] | undefined = cliSettings.fileList ? cliSettings.lookupFiles.map(f => targets.getResolvedObject(path.join(cwd, f))).filter(o => o) : undefined;
-			writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile(specificObjects).join(`\n`));
-			
+			let specificObjects: ILEObject[] | undefined = cliSettings.fileList ? cliSettings.lookupFiles.map(f => targets.getResolvedObject(path.join(targets.getCwd(), f))).filter(o => o) : undefined;
+			writeFileSync(path.join(targets.getCwd(), `makefile`), makeProj.getMakefile(specificObjects).join(`\n`));
+
 			break;
 		case `imd`:
-			const impactMarkdown = new ImpactMarkdown(cwd, targets, cliSettings.lookupFiles);
-			writeFileSync(path.join(cwd, `impact.md`), impactMarkdown.getContent().join(`\n`));
+			const impactMarkdown = new ImpactMarkdown(targets.getCwd(), targets, cliSettings.lookupFiles);
+			writeFileSync(path.join(targets.getCwd(), `impact.md`), impactMarkdown.getContent().join(`\n`));
 			break;
 
 		case `json`:
@@ -229,7 +260,7 @@ async function main() {
 				messages: targets.logger.getAllLogs()
 			};
 
-			writeFileSync(path.join(cwd, `sourceorbit.json`), JSON.stringify(outJson, null, 2));
+			writeFileSync(path.join(targets.getCwd(), `sourceorbit.json`), JSON.stringify(outJson, null, 2));
 			break;
 	}
 }
