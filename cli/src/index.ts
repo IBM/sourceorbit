@@ -148,6 +148,7 @@ async function main() {
 	}
 
 	const targets = new Targets(cwd);
+	const referenceFile = path.join(cwd, referencesFileName);
 
 	targets.setSuggestions({
 		includes: cliSettings.fixIncludes,
@@ -163,11 +164,7 @@ async function main() {
 		process.exit(1);
 	}
 
-	const referenceFile = path.join(cwd, referencesFileName);
-	if (existsSync(referenceFile)) {
-		infoOut(`Found reference file: ${referenceFile}`);
-		targets.handleRefsFile(referenceFile);
-	}
+	handleRefsFile(targets, referenceFile);
 
 	targets.loadObjectsFromPaths(files);
 
@@ -202,39 +199,61 @@ async function main() {
 		}
 	}
 
-	generateBuildFile(targets);
+	generateBuildFile(targets, cliSettings.buildFile);
 
 	if (cliSettings.watchMode) {
+		console.log(`Watch mode enabled. Press Ctrl+C to exit. Listening for changes...`);
+		console.log(``);
+
 		watch(cwd, { recursive: true, persistent: true }, async (event, filename) => {
+			const isRefsFile = filename === referencesFileName;
+
+			if (isRefsFile) {
+				console.log(`Changed ${referencesFileName}! It is recommended to restart watch mode.`)
+				handleRefsFile(targets, referenceFile);
+			}
+
 			const extension = path.extname(filename).toLowerCase().replace(`.`, ``);
 			const fullPath = path.join(cwd, filename);
 			if (extension && getObjectType(extension)) {
-				let deleted = false;
+				let createBuildFile = true;
 
 				switch (event) {
 					case `change`:
-						await targets.parseFile(fullPath);
 						console.log(`Changed: ${filename}`);
+						console.log(``);
+						createBuildFile = await targets.parseFile(fullPath);
 						break;
 					case `rename`:
 						if (existsSync(fullPath)) {
 							console.log(`Adding to targets: ${filename}`);
-							await targets.parseFile(fullPath);
+							console.log(``);
+							createBuildFile = await targets.parseFile(fullPath);
 						} else {
 							console.log(`Removing from targets: ${filename}`);
+							console.log(``);
 							targets.removeObjectByPath(fullPath);
-							deleted = true;
 						}
+						break;
 				}
 
-				generateBuildFile(targets);
+				if (createBuildFile) {
+					generateBuildFile(targets, cliSettings.buildFile);
+				}
 			}
 		});
 	}
 }
 
-function generateBuildFile(targets: Targets) {
-	switch (cliSettings.buildFile) {
+function handleRefsFile(targets: Targets, referenceFile: string) {
+	if (existsSync(referenceFile)) {
+		infoOut(`Found reference file: ${referenceFile}`);
+		targets.handleRefsFile(referenceFile);
+	}
+}
+
+function generateBuildFile(targets: Targets, buildTool: BuildFiles) {
+	switch (buildTool) {
 		case `bob`:
 			const bobProj = new BobProject(targets);
 			const outFiles = bobProj.createRules();
