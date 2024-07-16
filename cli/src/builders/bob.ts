@@ -37,15 +37,14 @@ export class BobProject {
 		for (const subdir in this.dirTargets) {
 			const targets = this.dirTargets[subdir];
 			const currentRulesFile = path.join(subdir, `Rules.mk`);
+			const currentFullPath = path.join(this.targets.getCwd(), currentRulesFile);
 			let rulesContent: string[] = [];
 
-			if (existsSync(path.join(this.targets.getCwd(), currentRulesFile))) {
-				rulesContent = readFileSync(currentRulesFile, { encoding: `utf-8` }).split(`\n`);
+			if (existsSync(currentFullPath)) {
+				rulesContent = readFileSync(currentFullPath, { encoding: `utf-8` }).split(`\n`);
 			}
 
 			const rulesFile = new RulesFile(subdir, rulesContent);
-
-			let lines: string[] = [];
 
 			for (let target of targets) {
 				rulesFile.applyRule(target);
@@ -86,7 +85,7 @@ class RulesFile {
 
 		const existingLine = this.parsed.find(r => r.target === objName && r.isSetting !== true);
 
-		const lineContent = `${path.relative(this.subdir, target.relativePath)} ${target.deps.filter(d => d.reference !== true).map(d => `${d.systemName}.${d.type}`).join(` `)}`;
+		const lineContent = `${path.relative(this.subdir, target.relativePath)} ${target.deps.filter(d => d.reference !== true).map(d => `${d.systemName}.${d.type}`).join(` `)}`.trimEnd();
 
 		if (existingLine) {
 			existingLine.ogLine = `${objName}: ${lineContent}`;
