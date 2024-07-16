@@ -61,7 +61,7 @@ interface Rule {
 	ogLine: string;
 	target?: String,
 	content?: String,
-	isSetting?: boolean,
+	isUserWritten?: boolean,
 };
 
 class RulesFile {
@@ -73,7 +73,7 @@ class RulesFile {
 				const [target, content] = line.split(`:`);
 				currentRule.target = target.trim().toUpperCase();
 				currentRule.content = content.trim();
-				currentRule.isSetting = content.includes(`=`);
+				currentRule.isUserWritten = content.includes(`=`) || content.trimStart().startsWith(`#`);
 			}
 
 			this.parsed.push(currentRule);
@@ -83,7 +83,7 @@ class RulesFile {
 	applyRule(target: ILEObjectTarget) {
 		const objName = `${target.systemName}.${target.type}`;
 
-		const existingLine = this.parsed.find(r => r.target === objName && r.isSetting !== true);
+		const existingLine = this.parsed.find(r => r.target === objName && r.isUserWritten !== true);
 
 		const lineContent = `${path.relative(this.subdir, target.relativePath)} ${target.deps.filter(d => d.reference !== true).map(d => `${d.systemName}.${d.type}`).join(` `)}`.trimEnd();
 
