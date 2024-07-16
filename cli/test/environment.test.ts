@@ -69,7 +69,6 @@ describe(`CL parser`, () => {
     const cl = `CRTCLPGM PGM(MYLIB/MYCL) SRCFILE(MYLIB/QCLSRC) SRCMBR(MYCL)`;
     const parsed = fromCl(cl);
 
-    console.log(parsed);
     expect(parsed.command).toBe(`CRTCLPGM`);
     expect(parsed.parameters).toMatchObject({
       pgm: `MYLIB/MYCL`,
@@ -82,7 +81,6 @@ describe(`CL parser`, () => {
     const cl = `CRTCLPGM`;
     const parsed = fromCl(cl);
 
-    console.log(parsed);
     expect(parsed.command).toBe(`CRTCLPGM`);
     expect(parsed.parameters).toMatchObject({});
   });

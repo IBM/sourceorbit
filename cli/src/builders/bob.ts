@@ -26,6 +26,8 @@ export class BobProject {
 		return list;
 	}
 
+	public 
+
 	public createRules(): OutFiles {
 		let output: OutFiles = {};
 		const subdirs = Object.keys(this.dirTargets);
@@ -34,15 +36,66 @@ export class BobProject {
 
 		for (const subdir in this.dirTargets) {
 			const targets = this.dirTargets[subdir];
-			let lines: string[] = [];
+			const currentRulesFile = path.join(subdir, `Rules.mk`);
+			const currentFullPath = path.join(this.targets.getCwd(), currentRulesFile);
+			let rulesContent: string[] = [];
 
-			for (let target of targets) {
-				lines.push(`${target.systemName}.${target.type}: ${path.relative(subdir, target.relativePath)} ${target.deps.filter(d => d.reference !== true).map(d => `${d.systemName}.${d.type}`).join(` `)}`);
+			if (existsSync(currentFullPath)) {
+				rulesContent = readFileSync(currentFullPath, { encoding: `utf-8` }).split(`\n`);
 			}
 
-			output[path.join(subdir, `Rules.mk`)] = lines.join(`\n`);
+			const rulesFile = new RulesFile(subdir, rulesContent);
+
+			for (let target of targets) {
+				rulesFile.applyRule(target);
+			}
+
+			output[currentRulesFile] = rulesFile.getContent();
 		}
 
 		return output;
+	}
+}
+
+interface Rule {
+	ogLine: string;
+	target?: String,
+	content?: String,
+	isUserWritten?: boolean,
+};
+
+class RulesFile {
+	private parsed: Rule[] = [];
+	constructor(private subdir: string, lines: string[]) {
+		for (let line of lines) {
+			let currentRule: Rule = { ogLine: line };
+			if (line.includes(`:`)) {
+				const [target, content] = line.split(`:`);
+				currentRule.target = target.trim().toUpperCase();
+				currentRule.content = content.trim();
+				currentRule.isUserWritten = content.includes(`=`) || content.trimStart().startsWith(`#`);
+			}
+
+			this.parsed.push(currentRule);
+		}
+	}
+
+	applyRule(target: ILEObjectTarget) {
+		const objName = `${target.systemName}.${target.type}`;
+
+		const existingLine = this.parsed.find(r => r.target === objName && r.isUserWritten !== true);
+
+		const lineContent = `${path.relative(this.subdir, target.relativePath)} ${target.deps.filter(d => d.reference !== true).map(d => `${d.systemName}.${d.type}`).join(` `)}`.trimEnd();
+
+		if (existingLine) {
+			existingLine.ogLine = `${objName}: ${lineContent}`;
+			existingLine.content = lineContent;
+		} else {
+			this.parsed.push({ ogLine: `${objName}: ${lineContent}`, target: objName, content: lineContent });
+		}
+	}
+
+	getContent() {
+		return this.parsed.map(r => r.ogLine).join(`\n`);
 	}
 }
