@@ -14,7 +14,7 @@ import Parser from "vscode-rpgle/language/parser";
 import { setupParser } from './parser';
 import { Logger } from './logger';
 import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
-import { getObjectType } from './builders/environment';
+import { extCanBeProgram, getObjectType } from './builders/environment';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -94,6 +94,8 @@ export class Targets {
 	private pathCache: { [path: string]: true | string[] } | undefined;
 	private resolvedSearches: { [query: string]: string } = {};
 
+	private assumePrograms = false;
+
 	private resolvedObjects: { [localPath: string]: ILEObject } = {};
 	private resolvedExports: { [name: string]: ILEObject } = {};
 	private targets: { [name: string]: ILEObjectTarget } = {};
@@ -110,6 +112,10 @@ export class Targets {
 
 	public getCwd() {
 		return this.cwd;
+	}
+
+	public setAssumePrograms(assumePrograms: boolean) {
+		this.assumePrograms = assumePrograms;
 	}
 
 	public setSuggestions(newSuggestions: TargetSuggestions) {
@@ -137,9 +143,10 @@ export class Targets {
 		const detail = path.parse(localPath);
 		const relativePath = this.getRelative(localPath);
 
-		const isProgram = detail.name.toUpperCase().endsWith(`.PGM`);
-		const name = getSystemNameFromPath(isProgram ? detail.name.substring(0, detail.name.length - 4) : detail.name);
 		const extension = detail.ext.length > 1 ? detail.ext.substring(1) : detail.ext;
+		const hasProgramAttribute = detail.name.toUpperCase().endsWith(`.PGM`);
+		const isProgram = this.assumePrograms ? extCanBeProgram(extension) : hasProgramAttribute;
+		const name = getSystemNameFromPath(hasProgramAttribute ? detail.name.substring(0, detail.name.length - 4) : detail.name);
 		const type: ObjectType = (isProgram ? "PGM" : this.getObjectType(relativePath, extension));
 
 		const theObject: ILEObject = {
@@ -960,6 +967,7 @@ export class Targets {
 	
 		// define exported functions
 		if (cache.keyword[`NOMAIN`]) {
+			ileObject.type = `MODULE`;
 			ileObject.exports = cache.procedures
 				.filter((proc: any) => proc.keyword[`EXPORT`])
 				.map(ref => ref.name.toUpperCase());

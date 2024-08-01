@@ -39,6 +39,10 @@ export function getBranchLibraryName(currentBranch: string) {
   return `VS${(str(currentBranch, 0) >>> 0).toString(16).toUpperCase()}`;
 }
 
+export function extCanBeProgram(ext: string): boolean {
+  return ([`MODULE`, `PGM`].includes(getObjectType(ext)));
+}
+
 export function getObjectType(ext: string): ObjectType {
   switch (ext.toLowerCase()) {
     case `dspf`:
