@@ -1,6 +1,6 @@
 
 
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, watch } from 'fs';
 
 import { ILEObject, Targets } from './targets';
 import { MakeProject } from './builders/make';
@@ -9,7 +9,7 @@ import { BuildFiles, cliSettings, error, infoOut, warningOut } from './cli';
 import { BobProject } from "./builders/bob";
 import { ImpactMarkdown } from "./builders/imd";
 import { allExtensions, referencesFileName } from "./extensions";
-import { getBranchLibraryName, getDefaultCompiles } from "./builders/environment";
+import { getBranchLibraryName, getDefaultCompiles, getObjectType } from "./builders/environment";
 import { getFiles, renameFiles, replaceIncludes } from './utils';
 import { iProject } from './builders/iProject';
 
@@ -78,6 +78,10 @@ async function main() {
 				cliSettings.fileList = true;
 				break;
 
+			case `--watch`:
+				cliSettings.watchMode = true;
+				break;
+
 			case `-h`:
 			case `--help`:
 				console.log(``);
@@ -144,6 +148,7 @@ async function main() {
 	}
 
 	const targets = new Targets(cwd);
+	const referenceFile = path.join(cwd, referencesFileName);
 
 	targets.setSuggestions({
 		includes: cliSettings.fixIncludes,
@@ -159,11 +164,7 @@ async function main() {
 		process.exit(1);
 	}
 
-	const referenceFile = path.join(cwd, referencesFileName);
-	if (existsSync(referenceFile)) {
-		infoOut(`Found reference file: ${referenceFile}`);
-		targets.handleRefsFile(referenceFile);
-	}
+	handleRefsFile(targets, referenceFile);
 
 	targets.loadObjectsFromPaths(files);
 
@@ -194,31 +195,85 @@ async function main() {
 	
 	if (cliSettings.lookupFiles && cliSettings.buildFile === `none`) {
 		for (const value of cliSettings.lookupFiles) {
-			listDeps(cwd, targets, value);
+			printParents(cwd, targets, value);
 		}
 	}
 
-	switch (cliSettings.buildFile) {
+	generateBuildFile(targets, cliSettings.buildFile);
+
+	if (cliSettings.watchMode) {
+		console.log(`Watch mode enabled. Press Ctrl+C to exit. Listening for changes...`);
+		console.log(``);
+
+		watch(cwd, { recursive: true, persistent: true }, async (event, filename) => {
+			const isRefsFile = filename === referencesFileName;
+
+			if (isRefsFile) {
+				console.log(`Changed ${referencesFileName}! It is recommended to restart watch mode.`)
+				handleRefsFile(targets, referenceFile);
+			}
+
+			const extension = path.extname(filename).toLowerCase().replace(`.`, ``);
+			const fullPath = path.join(cwd, filename);
+			if (extension && getObjectType(extension)) {
+				let createBuildFile = true;
+
+				switch (event) {
+					case `change`:
+						console.log(`Changed: ${filename}`);
+						console.log(``);
+						createBuildFile = await targets.parseFile(fullPath);
+						break;
+					case `rename`:
+						if (existsSync(fullPath)) {
+							console.log(`Adding to targets: ${filename}`);
+							console.log(``);
+							createBuildFile = await targets.parseFile(fullPath);
+						} else {
+							console.log(`Removing from targets: ${filename}`);
+							console.log(``);
+							targets.removeObjectByPath(fullPath);
+						}
+						break;
+				}
+
+				if (createBuildFile) {
+					generateBuildFile(targets, cliSettings.buildFile);
+				}
+			}
+		});
+	}
+}
+
+function handleRefsFile(targets: Targets, referenceFile: string) {
+	if (existsSync(referenceFile)) {
+		infoOut(`Found reference file: ${referenceFile}`);
+		targets.handleRefsFile(referenceFile);
+	}
+}
+
+function generateBuildFile(targets: Targets, buildTool: BuildFiles) {
+	switch (buildTool) {
 		case `bob`:
 			const bobProj = new BobProject(targets);
 			const outFiles = bobProj.createRules();
 
 			for (const filePath in outFiles) {
-				writeFileSync(path.join(cwd, filePath), outFiles[filePath]);
+				writeFileSync(path.join(targets.getCwd(), filePath), outFiles[filePath]);
 			}
 
 			break;
 		case `make`:
-			const makeProj = new MakeProject(cwd, targets);
+			const makeProj = new MakeProject(targets.getCwd(), targets);
 			makeProj.setNoChildrenInBuild(cliSettings.makeFileNoChildren);
 
-			let specificObjects: ILEObject[] | undefined = cliSettings.fileList ? cliSettings.lookupFiles.map(f => targets.getResolvedObject(path.join(cwd, f))).filter(o => o) : undefined;
-			writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile(specificObjects).join(`\n`));
-			
+			let specificObjects: ILEObject[] | undefined = cliSettings.fileList ? cliSettings.lookupFiles.map(f => targets.getResolvedObject(path.join(targets.getCwd(), f))).filter(o => o) : undefined;
+			writeFileSync(path.join(targets.getCwd(), `makefile`), makeProj.getMakefile(specificObjects).join(`\n`));
+
 			break;
 		case `imd`:
-			const impactMarkdown = new ImpactMarkdown(cwd, targets, cliSettings.lookupFiles);
-			writeFileSync(path.join(cwd, `impact.md`), impactMarkdown.getContent().join(`\n`));
+			const impactMarkdown = new ImpactMarkdown(targets.getCwd(), targets, cliSettings.lookupFiles);
+			writeFileSync(path.join(targets.getCwd(), `impact.md`), impactMarkdown.getContent().join(`\n`));
 			break;
 
 		case `json`:
@@ -229,7 +284,7 @@ async function main() {
 				messages: targets.logger.getAllLogs()
 			};
 
-			writeFileSync(path.join(cwd, `sourceorbit.json`), JSON.stringify(outJson, null, 2));
+			writeFileSync(path.join(targets.getCwd(), `sourceorbit.json`), JSON.stringify(outJson, null, 2));
 			break;
 	}
 }
@@ -265,7 +320,7 @@ function initProject(cwd) {
 /**
  * @param query Can be object (ABCD.PGM) or relative path
  */
-function listDeps(cwd: string, targets: Targets, query: string) {
+function printParents(cwd: string, targets: Targets, query: string) {
 	const fullPath = path.join(cwd, query);
 
 	let [name, type] = query.split(`.`);
