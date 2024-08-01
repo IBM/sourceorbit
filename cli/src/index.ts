@@ -68,6 +68,11 @@ async function main() {
 				cliSettings.makeFileNoChildren = true;
 				break;
 
+			case '-ap':
+			case '--assume-programs':
+				cliSettings.assumeSourcesArePrograms = true;
+				break;
+
 			case `-bl`:
 				cliSettings.userBranch = parms[i+1];
 				i++;
@@ -99,6 +104,11 @@ async function main() {
 				console.log(`\t\t\ta user provided branch name, and will write it out.`);
 				console.log(`\t\t\tExample: -bl feature/123-cool-idea`);
 				console.log(`\t\t\t\t -bl bug/123-bad-move`);
+				console.log(``);
+				console.log(`\t-ap`)
+				console.log(`\t--assume-programs`);
+				console.log(`\t\t\tAssume that all sources are programs. This is useful`);
+				console.log(`\t\t\tif your program sources do not use the .pgm notation.`);
 				console.log(``);
 				console.log(`Options for project cleanup:`);
 				console.log(``);
@@ -149,6 +159,8 @@ async function main() {
 		includes: cliSettings.fixIncludes,
 		renames: cliSettings.autoRename
 	});
+
+	targets.setAssumePrograms(cliSettings.assumeSourcesArePrograms);
 
 	let files: string[];
 
