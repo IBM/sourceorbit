@@ -17,8 +17,9 @@ describe.skipIf(files.length === 0)(`multi_module_two tests`, () => {
   
   beforeAll(async () => {
     targets.loadObjectsFromPaths(files);
-    const parsePromises = files.map(f => targets.parseFile(f));
-    await Promise.all(parsePromises);
+    for (const f of files) {
+      await targets.parseFile(f);
+    }
 
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();
