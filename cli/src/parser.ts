@@ -15,18 +15,34 @@ export function setupParser(targets: Targets): Parser {
 			includeFile = includeFile.substring(1, includeFile.length - 1);
 		}
 
+		let file: string;
+
 		if (includeFile.includes(`,`)) {
 			// If the member include path is qualified with a source file
 			// then we should convert to be a unix style path so we can
 			// search the explicit directories.
 			includeFile = includeFile.replace(/,/g, `/`) + `.*`;
+
+			// Keep making the path less specific until we find a possible include
+			let parts = includeFile.split(`/`);
+			while (!file && parts.length > 0) {
+				file = targets.resolveLocalFile(includeFile);
+
+				if (!file) {
+					parts.shift();
+					includeFile = parts.join(`/`);
+				}
+			}
 		} else if (!includeFile.includes(`/`)) {
 			const parent = path.basename(path.dirname(baseFile));
 			console.log(parent);
 			includeFile = `${parent}/${includeFile}`;
-		}
 
-		const file = targets.resolveLocalFile(includeFile);
+
+			file = targets.resolveLocalFile(includeFile);
+		} else {
+			file = targets.resolveLocalFile(includeFile);
+		}
 
 		if (file) {
 			if (includeFileCache[file]) {
