@@ -51,7 +51,6 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
 
   allLogs = targets.logger.getAllLogs();
 
-  console.log(allLogs);
   const newPgmSource = allLogs[path.join(`src`, `BBSADMMNUR.pgm.rpgle`)].filter(log => log.type === `includeFix`);
 
   expect(newPgmSource.length).toBe(1);
