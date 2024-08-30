@@ -960,7 +960,11 @@ export class Targets {
 					importName = parmParms.filter(p => !p.startsWith(`*`)).join(``);
 				}
 
-				importName = trimQuotes(importName);
+				if (importName.startsWith(`*`)) {
+					importName = ref.name;
+				} else {
+					importName = trimQuotes(importName);
+				}
 
 				return importName;
 			});
