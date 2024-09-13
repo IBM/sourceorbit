@@ -1,17 +1,31 @@
 {
 	"name": "vscode-sourceorbit",
-	"description": "Object dependency management",
-	"author": "IBM",
+	"displayName": "IBM i Source Orbit",
+	"description": "Object dependency management tool for IBM i",
+	"icon": "icon.png",
+	"author": {
+		"name": "IBM",
+		"url": "https://github.com/IBM"
+	},
+	"publisher": "IBM",
 	"license": "MIT",
 	"version": "1.2.3",
-	"publisher": "IBM",
-	"categories": ["Programming Languages", "Other"],
+	"repository": {
+		"url": "https://github.com/IBM/sourceorbit"
+	},
+	"homepage": "https://github.com/IBM/sourceorbit/blob/main/vs/README.md",
+	"bugs": {
+		"url": "https://github.com/IBM/sourceorbit/issues"
+	},
 	"keywords": [
+		"ibmi",
+		"iseries",
+		"as400",
 		"multi-root ready"
 	],
-	"repository": {
-		"url": "https://github.com/IBM/sourceorbit/"
-	},
+	"categories": [
+		"Other"
+	],
 	"engines": {
 		"vscode": "^1.75.0"
 	},
