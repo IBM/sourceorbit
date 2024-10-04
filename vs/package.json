@@ -111,6 +111,18 @@
 				"icon": "$(wand)"
 			},
 			{
+				"command": "vscode-sourceorbit.objects.refreshActiveImpactView",
+				"category": "Source Orbit",
+				"title": "Refresh",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "vscode-sourceorbit.objects.refreshGitImpactView",
+				"category": "Source Orbit",
+				"title": "Refresh",
+				"icon": "$(refresh)"
+			},
+			{
 				"command": "vscode-sourceorbit.objects.goToFile",
 				"icon": "$(go-to-file)",
 				"category": "Source Orbit",
@@ -146,8 +158,28 @@
 					"when": "never"
 				},
 				{
+					"command": "vscode-sourceorbit.objects.refreshActiveImpactView",
+					"when": "never"
+				},
+				{
+					"command": "vscode-sourceorbit.objects.refreshGitImpactView",
+					"when": "never"
+				},
+				{
 					"command": "vscode-sourceorbit.objects.goToFile",
 					"when": "never"
+				}
+			],
+			"view/title": [
+				{
+					"command": "vscode-sourceorbit.objects.refreshActiveImpactView",
+					"when": "view == activeImpactView",
+					"group": "navigation@0"
+				},
+				{
+					"command": "vscode-sourceorbit.objects.refreshGitImpactView",
+					"when": "view == gitImpactView",
+					"group": "navigation@0"
 				}
 			],
 			"view/item/context": [
