@@ -1,7 +1,7 @@
 import { Connection } from 'vscode-languageserver';
 import { TargetsManager } from './TargetsManager';
 
-import { ILEObject, TargetSuggestions, Targets } from "@ibm/sourceorbit/dist/src/targets";
+import { ILEObject, TargetSuggestions } from "@ibm/sourceorbit/dist/src/targets";
 import { URI } from 'vscode-uri';
 import { fixProject, generateBuildFile, initAndRefresh } from './setup';
 
@@ -24,7 +24,9 @@ export function setupRequestHandler(connection: Connection) {
 		if (target) {
 			const uris = params[1];
 
-			const possibleObjects = uris.map(fileUri => target.getResolvedObject(URI.parse(fileUri).fsPath)).filter(x => x && x.relativePath);
+			const possibleObjects = uris
+				.map(fileUri => target.getResolvedObject(URI.parse(fileUri).fsPath.replace(/\\/g, '/')))
+				.filter(x => x && x.relativePath);
 
 			return possibleObjects.map(ileObject => target.getImpactFor(ileObject));
 		}

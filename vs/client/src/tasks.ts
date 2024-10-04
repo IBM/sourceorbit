@@ -1,8 +1,8 @@
-import { CustomExecution, EventEmitter, ExtensionContext, Pseudoterminal, Task, TaskDefinition, TaskScope, TerminalDimensions, WorkspaceFolder, tasks, workspace } from 'vscode';
-import { generateBuildFile } from './requests';
+import { CustomExecution, EventEmitter, ExtensionContext, Pseudoterminal, Task, TaskDefinition, TaskScope, TerminalDimensions, WorkspaceFolder, tasks } from 'vscode';
+import { LanguageClientManager } from './languageClientManager';
 
 interface SourceOrbitTask extends TaskDefinition {
-	builder: "bob"|"make"|"json";
+	builder: "bob" | "make" | "json";
 }
 
 export function initialiseTaskProvider(context: ExtensionContext) {
@@ -34,8 +34,8 @@ export function initialiseTaskProvider(context: ExtensionContext) {
 								open: async (_initialDimensions: TerminalDimensions | undefined) => {
 									writeEmitter.fire(`Generating ${task.builder} files for ${workspaceFolder.name}...\r\n`);
 									try {
-										await generateBuildFile(workspaceFolder, task.builder);
-										
+										await LanguageClientManager.generateBuildFile(workspaceFolder, task.builder);
+
 										writeEmitter.fire(`Finished\r\n`);
 										closeEmitter.fire(0);
 									} catch (_e) {
