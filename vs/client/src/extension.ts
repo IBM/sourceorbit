@@ -1,11 +1,11 @@
 import { IProject } from '@ibm/vscode-ibmi-projectexplorer-types/iproject';
 import { commands, ExtensionContext, window, workspace, WorkspaceFolder } from 'vscode';
-import { Api } from './api';
+import { SourceOrbitApi } from './api';
 import { EnvironmentManager } from './environmentManager';
 import { GitEventHandler } from './gitEventHandler';
 import { LanguageClientManager } from './languageClientManager';
 import { getProjectManager, loadIBMiProjectExplorer } from './ProjectExplorer';
-import { initialiseTaskProvider } from './tasks';
+import { SourceOrbitTask } from './tasks';
 import { ImpactView } from './views/impactView/impactView';
 import { ILEObjectTreeItem } from './views/projectExplorer/ileObjectTreeItem';
 import { SourceOrbitTreeItem } from './views/projectExplorer/sourceOrbitTreeItem';
@@ -16,9 +16,9 @@ export async function activate(context: ExtensionContext) {
 	// Start the client
 	await LanguageClientManager.getLanguageClient(context);
 
-	initialiseTaskProvider(context);
+	SourceOrbitTask.initializeTaskProvider(context);
 
-	Api.registerCommands(context);
+	SourceOrbitApi.registerCommands(context);
 
 	if (!EnvironmentManager.isInMerlin()) {
 		// Ensure that the PE items only load if that extension is installed
