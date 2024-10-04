@@ -38,16 +38,14 @@ export async function activate(context: ExtensionContext) {
 					return [objectViews[fsPath]];
 				});
 
+				// Project Explorer specific commands
 				context.subscriptions.push(
-					// Project Explorer specific command
 					commands.registerCommand(`vscode-sourceorbit.objects.loadProject`, async (node: SourceOrbitTreeItem) => {
 						if (node) {
 							await LanguageClientManager.reloadProject(node.workspaceFolder);
 							node.refresh();
 						}
 					}),
-
-					// Project Explorer specific command
 					commands.registerCommand(`vscode-sourceorbit.objects.autoFix`, ((node: SourceOrbitTreeItem) => {
 						if (node && node.workspaceFolder) {
 							window.showInformationMessage(`Select auto fix method for ${node.workspaceFolder.name}`, `Cancel`, `File names`, `RPG includes`).then(chosen => {
@@ -66,6 +64,26 @@ export async function activate(context: ExtensionContext) {
 							});
 						}
 					})),
+					commands.registerCommand(`vscode-sourceorbit.objects.generateBobBuildFile`, async (node: SourceOrbitTreeItem) => {
+						if (node && node.workspaceFolder) {
+							await LanguageClientManager.generateBuildFile(node.workspaceFolder, 'bob');
+						}
+					}),
+					commands.registerCommand(`vscode-sourceorbit.objects.generateMakeBuildFile`, async (node: SourceOrbitTreeItem) => {
+						if (node && node.workspaceFolder) {
+							await LanguageClientManager.generateBuildFile(node.workspaceFolder, 'make');
+						}
+					}),
+					commands.registerCommand(`vscode-sourceorbit.objects.generateImdBuildFile`, async (node: SourceOrbitTreeItem) => {
+						if (node && node.workspaceFolder) {
+							await LanguageClientManager.generateBuildFile(node.workspaceFolder, 'imd');
+						}
+					}),
+					commands.registerCommand(`vscode-sourceorbit.objects.generateJsonBuildFile`, async (node: SourceOrbitTreeItem) => {
+						if (node && node.workspaceFolder) {
+							await LanguageClientManager.generateBuildFile(node.workspaceFolder, 'json');
+						}
+					})
 				);
 			}
 		}

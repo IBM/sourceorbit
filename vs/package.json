@@ -75,24 +75,24 @@
 		},
 		"viewsWelcome": [
 			{
-			  "view": "activeImpactView",
-			  "contents": "No workspace folder opened",
-			  "when": "workspaceFolderCount == 0"
+				"view": "activeImpactView",
+				"contents": "No workspace folder opened",
+				"when": "workspaceFolderCount == 0"
 			},
 			{
-			  "view": "activeImpactView",
-			  "contents": "Open a source file to see the affected objects",
-			  "when": "workspaceFolderCount != 0"
+				"view": "activeImpactView",
+				"contents": "Open a source file to see the affected objects",
+				"when": "workspaceFolderCount != 0"
 			},
 			{
-			  "view": "gitImpactView",
-			  "contents": "No workspace folder opened",
-			  "when": "workspaceFolderCount == 0"
+				"view": "gitImpactView",
+				"contents": "No workspace folder opened",
+				"when": "workspaceFolderCount == 0"
 			},
 			{
-			  "view": "gitImpactView",
-			  "contents": "Open a Git repository to see the affected objects",
-			  "when": "workspaceFolderCount != 0"
+				"view": "gitImpactView",
+				"contents": "Open a Git repository to see the affected objects",
+				"when": "workspaceFolderCount != 0"
 			}
 		],
 		"commands": [
@@ -109,6 +109,26 @@
 				"title": "Autofix",
 				"enablement": "vscode-sourceorbit:projectExplorerLoaded == true",
 				"icon": "$(wand)"
+			},
+			{
+				"command": "vscode-sourceorbit.objects.generateBobBuildFile",
+				"category": "Source Orbit",
+				"title": "Bob"
+			},
+			{
+				"command": "vscode-sourceorbit.objects.generateMakeBuildFile",
+				"category": "Source Orbit",
+				"title": "Make"
+			},
+			{
+				"command": "vscode-sourceorbit.objects.generateImdBuildFile",
+				"category": "Source Orbit",
+				"title": "IMD"
+			},
+			{
+				"command": "vscode-sourceorbit.objects.generateJsonBuildFile",
+				"category": "Source Orbit",
+				"title": "JSON"
 			},
 			{
 				"command": "vscode-sourceorbit.objects.refreshActiveImpactView",
@@ -158,6 +178,22 @@
 					"when": "never"
 				},
 				{
+					"command": "vscode-sourceorbit.objects.generateBobBuildFile",
+					"when": "never"
+				},
+				{
+					"command": "vscode-sourceorbit.objects.generateMakeBuildFile",
+					"when": "never"
+				},
+				{
+					"command": "vscode-sourceorbit.objects.generateImdBuildFile",
+					"when": "never"
+				},
+				{
+					"command": "vscode-sourceorbit.objects.generateJsonBuildFile",
+					"when": "never"
+				},
+				{
 					"command": "vscode-sourceorbit.objects.refreshActiveImpactView",
 					"when": "never"
 				},
@@ -186,20 +222,54 @@
 				{
 					"command": "vscode-sourceorbit.objects.goToFile",
 					"when": "view =~ /^(activeImpactView|gitImpactView|projectExplorer)$/ && viewItem == ileObject",
-					"group": "inline"
+					"group": "inline@0"
 				},
 				{
 					"command": "vscode-sourceorbit.objects.loadProject",
 					"when": "view == projectExplorer && viewItem == objectsView",
-					"group": "inline"
+					"group": "inline@2"
 				},
 				{
 					"command": "vscode-sourceorbit.objects.autoFix",
 					"when": "view == projectExplorer && viewItem == objectsView",
-					"group": "inline"
+					"group": "inline@0"
+				},
+				{
+					"submenu": "vscode-sourceorbit.generateBuildFileSubmenu",
+					"when": "view == projectExplorer && viewItem == objectsView",
+					"group": "inline@1"
+				}
+			],
+			"vscode-sourceorbit.generateBuildFileSubmenu": [
+				{
+					"command": "vscode-sourceorbit.objects.generateBobBuildFile",
+					"when": "view == projectExplorer",
+					"group": "0_buildFile@0"
+				},
+				{
+					"command": "vscode-sourceorbit.objects.generateMakeBuildFile",
+					"when": "view == projectExplorer",
+					"group": "0_buildFile@1"
+				},
+				{
+					"command": "vscode-sourceorbit.objects.generateImdBuildFile",
+					"when": "view == projectExplorer",
+					"group": "0_buildFile@2"
+				},
+				{
+					"command": "vscode-sourceorbit.objects.generateJsonBuildFile",
+					"when": "view == projectExplorer",
+					"group": "0_buildFile@3"
 				}
 			]
-		}
+		},
+		"submenus": [
+			{
+				"id": "vscode-sourceorbit.generateBuildFileSubmenu",
+				"label": "Generate Build File",
+				"icon": "$(new-file)"
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run webpack",
