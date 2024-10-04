@@ -123,12 +123,12 @@
 			{
 				"command": "vscode-sourceorbit.objects.generateImdBuildFile",
 				"category": "Source Orbit",
-				"title": "IMD"
+				"title": "Impact Report"
 			},
 			{
 				"command": "vscode-sourceorbit.objects.generateJsonBuildFile",
 				"category": "Source Orbit",
-				"title": "JSON"
+				"title": "JSON Report"
 			},
 			{
 				"command": "vscode-sourceorbit.objects.refreshActiveImpactView",
