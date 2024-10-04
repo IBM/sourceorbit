@@ -3,7 +3,7 @@ import { LanguageClientManager } from './languageClientManager';
 
 export namespace SourceOrbitTask {
 	interface SourceOrbitTask extends TaskDefinition {
-		builder: "bob" | "make" | "json";
+		builder: "bob" | "make" | "imd" | "json";
 	}
 
 	export function initializeTaskProvider(context: ExtensionContext) {
