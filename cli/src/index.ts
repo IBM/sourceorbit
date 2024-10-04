@@ -317,5 +317,6 @@ function listDeps(cwd: string, targets: Targets, query: string) {
 export { Targets } from './targets';
 export { MakeProject } from './builders/make';
 export { BobProject } from "./builders/bob";
+export { ImpactMarkdown } from "./builders/imd" 
 export { allExtensions } from "./extensions";
 export * as Utils from './utils';
