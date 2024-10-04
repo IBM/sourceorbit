@@ -1,6 +1,9 @@
 import { commands, ExtensionContext, WorkspaceFolder } from 'vscode';
 import { LanguageClientManager } from './languageClientManager';
 
+/**
+ * These commands are to be used by other extensions.
+ */
 export namespace Api {
 	export function registerCommands(context: ExtensionContext) {
 		context.subscriptions.push(
