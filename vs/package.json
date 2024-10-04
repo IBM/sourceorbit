@@ -61,8 +61,7 @@
 					"id": "activeImpactView",
 					"visibility": "collapsed",
 					"name": "Affected Objects",
-					"contextualTitle": "Active Editor",
-					"when": "vscode-sourceorbit:projectsLoaded == true"
+					"contextualTitle": "Active Editor"
 				}
 			],
 			"scm": [
@@ -70,23 +69,46 @@
 					"id": "gitImpactView",
 					"visibility": "collapsed",
 					"name": "Affected Objects",
-					"contextualTitle": "Source Changes",
-					"when": "vscode-sourceorbit:projectsLoaded == true"
+					"contextualTitle": "Source Changes"
 				}
 			]
 		},
+		"viewsWelcome": [
+			{
+			  "view": "activeImpactView",
+			  "contents": "No workspace folder opened",
+			  "when": "workspaceFolderCount == 0"
+			},
+			{
+			  "view": "activeImpactView",
+			  "contents": "Open a source file to see the affected objects",
+			  "when": "workspaceFolderCount != 0"
+			},
+			{
+			  "view": "gitImpactView",
+			  "contents": "No workspace folder opened",
+			  "when": "workspaceFolderCount == 0"
+			},
+			{
+			  "view": "gitImpactView",
+			  "contents": "Open a Git repository to see the affected objects",
+			  "when": "workspaceFolderCount != 0"
+			}
+		],
 		"commands": [
 			{
 				"command": "vscode-sourceorbit.objects.loadProject",
 				"category": "Source Orbit",
 				"title": "Reload Project",
-				"enablement": "vscode-sourceorbit:projectExplorerLoaded == true"
+				"enablement": "vscode-sourceorbit:projectExplorerLoaded == true",
+				"icon": "$(refresh)"
 			},
 			{
 				"command": "vscode-sourceorbit.objects.autoFix",
 				"category": "Source Orbit",
 				"title": "Autofix",
-				"enablement": "vscode-sourceorbit:projectExplorerLoaded == true"
+				"enablement": "vscode-sourceorbit:projectExplorerLoaded == true",
+				"icon": "$(wand)"
 			},
 			{
 				"command": "vscode-sourceorbit.objects.goToFile",
