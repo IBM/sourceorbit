@@ -76,6 +76,24 @@ export async function activate(context: ExtensionContext) {
 		context.subscriptions.push(
 			window.registerTreeDataProvider(`activeImpactView`, activeImpactView),
 			window.registerTreeDataProvider(`gitImpactView`, gitImpactView),
+			commands.registerCommand(`vscode-sourceorbit.objects.refreshGitImpactView`, (async () => {
+				if (gitImpactView.impactOf && gitImpactView.impactOf.length > 0) {
+					const workspaceFolder = workspace.getWorkspaceFolder(gitImpactView.impactOf[0]);
+					if (workspaceFolder) {
+						await LanguageClientManager.reloadProject(workspaceFolder);
+					}
+				}
+				gitImpactView.refresh();
+			})),
+			commands.registerCommand(`vscode-sourceorbit.objects.refreshActiveImpactView`, (async () => {
+				if (activeImpactView.impactOf && activeImpactView.impactOf.length > 0) {
+					const workspaceFolder = workspace.getWorkspaceFolder(activeImpactView.impactOf[0]);
+					if (workspaceFolder) {
+						await LanguageClientManager.reloadProject(workspaceFolder);
+					}
+				}
+				activeImpactView.refresh();
+			})),
 			commands.registerCommand(`vscode-sourceorbit.objects.goToFile`, ((node: ILEObjectTreeItem) => {
 				if (node && node.resourceUri) {
 					workspace.openTextDocument(node.resourceUri).then(doc => {
@@ -102,7 +120,7 @@ export async function activate(context: ExtensionContext) {
 
 		// Impact for current active editor
 		const activeTextEditor = window.activeTextEditor;
-		if(activeTextEditor) {
+		if (activeTextEditor) {
 			activeImpactView.showImpactFor([activeTextEditor.document.uri]);
 		}
 	}
