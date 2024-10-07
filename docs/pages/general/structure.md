@@ -1,3 +1,3 @@
-See the documentation project structure on the Code for IBM i documentation, as Source Orbit follows that structure.
+# Project Structure
 
-**[See it here](https://codefori.github.io/docs/#/pages/developing/local/structure)**.
+See the documentation [here](https://codefori.github.io/docs/developing/local/structure) on project structure in the Code for IBM i documentation, as Source Orbit follows that structure.

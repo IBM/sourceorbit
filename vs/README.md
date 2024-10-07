@@ -1,37 +1,36 @@
-# LSP Example
+# Source Orbit
 
-Heavily documented sample code for https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
+<img src="./icon.png" align="right" width="256" height="256">
 
-## Functionality
+Source Orbit is a dependency management system. As IBM i developers start using Git for their RPGLE, CL, DDS and SQL, we want to provide them with excellent tools to help them understand their source code. Source orbit is available for use as both a VS Code extension and CLI tool.
 
-This Language Server works for plain text file. It has the following language features:
-- Completions
-- Diagnostics regenerated on each file change or configuration change
+* 💻 [Install from VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=IBM.vscode-sourceorbit)
+* 📦 [Download from Open VSX Registry](https://open-vsx.org/extension/IBM/vscode-sourceorbit)
+* ⚡[Install CLI from NPM](https://www.npmjs.com/package/@ibm/sourceorbit)
+* 📖 [View Documentation](https://ibm.github.io/sourceorbit/#/) 
+* 🔎 [See Releases](https://github.com/IBM/sourceorbit/releases)
 
-It also includes an End-to-End test.
+[![Extension Version](https://img.shields.io/visual-studio-marketplace/v/IBM.vscode-sourceorbit?label=Extension)](https://marketplace.visualstudio.com/items?itemName=IBM.vscode-sourceorbit)
+[![Extension Installs](https://img.shields.io/visual-studio-marketplace/i/IBM.vscode-sourceorbit)](https://marketplace.visualstudio.com/items?itemName=IBM.vscode-sourceorbit)
 
-## Structure
+[![NPM Version](https://img.shields.io/npm/v/@ibm/sourceorbit.svg?label=CLI)](https://www.npmjs.com/package/@ibm/sourceorbit)
+[![NPM Downloads](https://img.shields.io/npm/dm/@ibm/sourceorbit.svg)](https://www.npmjs.com/package/@ibm/sourceorbit)
 
-```
-.
-├── client // Language Client
-│   ├── src
-│   │   ├── test // End to End tests for Language Client / Server
-│   │   └── extension.ts // Language Client entry point
-├── package.json // The extension manifest.
-└── server // Language Server
-    └── src
-        └── server.ts // Language Server entry point
-```
+## Features
 
-## Running the Sample
+Source Orbit is equipped to help you with the following tasks:
 
-- Run `npm install` in this folder. This installs all necessary npm modules in both the client and server folder
-- Open VS Code on this folder.
-- Press Ctrl+Shift+B to start compiling the client and server in [watch mode](https://code.visualstudio.com/docs/editor/tasks#:~:text=The%20first%20entry%20executes,the%20HelloWorld.js%20file.).
-- Switch to the Run and Debug View in the Sidebar (Ctrl+Shift+D).
-- Select `Launch Client` from the drop down (if it is not already).
-- Press ▷ to run the launch config (F5).
-- In the [Extension Development Host](https://code.visualstudio.com/api/get-started/your-first-extension#:~:text=Then%2C%20inside%20the%20editor%2C%20press%20F5.%20This%20will%20compile%20and%20run%20the%20extension%20in%20a%20new%20Extension%20Development%20Host%20window.) instance of VSCode, open a document in 'plain text' language mode.
-  - Type `j` or `t` to see `Javascript` and `TypeScript` completion.
-  - Enter text content such as `AAA aaa BBB`. The extension will emit diagnostics for all words in all-uppercase.
+1. Scans all applicable source code to build a dependency tree
+2. Show how objects would be affected as developers write code
+3. Generate JSON, or build scripts, to automatically build your application changes
+4. Generates reports for branches being worked on so project owners can see their application in real time
+5. Migrate your code to git
+
+## Getting Started
+
+Check out these pages to dive in:
+
+1. [As a CLI](https://ibm.github.io/sourceorbit/#/./pages/cli/index): Run Source Orbit as part of an automated pipeline, or anywhere really!
+2. [As a VS Code Extension](https://ibm.github.io/sourceorbit/#/./pages/extension/index): Leverage Source Orbit as you develop applications in VS Code
+3. [Project Structure](https://ibm.github.io/sourceorbit/#/./pages/general/structure): Learn how to structure your code when stored in git
+4. [Source Code Rules](https://ibm.github.io/sourceorbit/#/./pages/general/rules): Learn what rules to abide by when using Source Orbit

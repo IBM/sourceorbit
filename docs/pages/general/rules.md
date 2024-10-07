@@ -1,8 +1,11 @@
+# Source Code Rules
+
 This page will outline the rules of an IBM i project, including what extensions are expected.
 
-Source Orbit does not care about project structure, but does enforce these rules for source code:
+> [!WARNING]
+> Source Orbit does not care about project structure, but does enforce these rules for source code.
 
-### Supported extensions
+## Supported extensions
 
 | Extension  | Extension meaning  | Notes                               |
 | ---------- | ------------------ | ----------------------------------- |
@@ -31,7 +34,7 @@ Source Orbit does not care about project structure, but does enforce these rules
 | `binder`   | Binder source      | Should be renamed `bnd`             |
 | `cmd`      | Command            |                                     |
 
-### The system object name is the basename of the source file
+## The system object name is the basename of the source file
 
 | Source name           | Resulting object |
 | --------------------- | ---------------- |
@@ -51,7 +54,7 @@ Source Orbit does not care about project structure, but does enforce these rules
    * Source Orbit will scan the binder source to find the exported functions/procedures from modules inside the project.
 * Source Orbit does support SQL long names. But, where a long name is used, a system name should also be used (`FOR SYSTEM NAME` or `SPECIFIC`)
 
-#### Long file names
+### Long file names
 
 Typically, the basename of the file is also the object name. But, Source Orbit will generate a deterministic object name based on the file name.
 
@@ -66,7 +69,7 @@ Typically, the basename of the file is also the object name. But, Source Orbit w
 
 Even if you use long file names, your source code still needs to reference the object name for object resolves (not including *include directives* of course.)
 
-### Unresolved objects
+## Unresolved objects
 
 When using Source Orbit, you may find that you want to reference objects that do not existing in the same repository. Perhaps those objects/sources exist in another repository or already exist in a library on the system you're building on this. Usually, Source Orbit will complain about unresolved objects with an error like:
 
@@ -86,7 +89,7 @@ UTILS.SRVPGM
   toLower
 ```
 
-### Service Programs and Binder Source
+## Service Programs and Binder Source
 
 For service programs to be created, binder source must exist for it. Source Orbit will read the binder source, find all the referenced export functions/procedures and will find the correct module that exports them to create the service program.
 
@@ -95,7 +98,7 @@ When Source Orbit is resolving programs & service programs, and specifically res
 1. Look to see if a service program exports this named function/procedure and then depend on that service program
 2. If no service program is found, then Source Orbit will search all available modules for that named function/procedure. If a module is found, then the module will be bound into the program (and therefore will become a multi module program)
 
-### SQL sources
+## SQL sources
 
 SQL sources can be defined with many different extensions like `.sql`, `.table`, `.sqlprc`, `.view`, and so on. It is important that the name of source matches the system name of the object that is going to be created.
 
@@ -105,7 +108,7 @@ SQL sources can be defined with many different extensions like `.sql`, `.table`,
 CREATE OR REPLACE TABLE CUSORD (...)
 ```
 
-### Embedded SQL in RPGLE C specs
+## Embedded SQL in RPGLE C specs
 
 Source Orbit does not support embedded SQL (`exec sql`) used in a C spec. - no problem with mixed-format or free-format. We recommend:
 
@@ -118,7 +121,7 @@ Source Orbit does not support embedded SQL (`exec sql`) used in a C spec. - no p
      FPMESSGS   IF   E           K DISK    USROPN
 ```
 
-### Terminology
+## Terminology
 
 | Term              | Definitions                                                                                                    |
 | ----------------- | -------------------------------------------------------------------------------------------------------------- |

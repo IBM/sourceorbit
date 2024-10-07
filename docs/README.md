@@ -1,19 +1,38 @@
 <!-- docsify serve ./docs -->
 
-## What is Source Orbit
+# Source Orbit
 
-Source Orbit is a dependency management system. As IBM i developers start using git for the RPGLE, CL, DDS and SQL, we want to provide them with excellent tools to help them understand their source code. Source Orbit:
+<img src="./assets/icon.png" align="right" width="256" height="256">
 
-1. scans all applicable source code to build a dependency tree
-2. can show how objects would be affected as developers write code (inside of Visual Studio Code)
-3. can generate JSON, or build scripts, to automatically build your application changes
-4. generates reports for branches being worked on so project owners can see their application in real time.
-5. helps migrate your code to git (See [CLI, Cleanup capabilities](./pages/cli/index.md))
+Source Orbit is a dependency management system. As IBM i developers start using Git for their RPGLE, CL, DDS and SQL, we want to provide them with excellent tools to help them understand their source code. Source orbit is available for use as both a VS Code extension and CLI tool.
 
-## Start using Source Orbit
+* 💻 [Install from VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=IBM.vscode-sourceorbit)
+* 📦 [Download from Open VSX Registry](https://open-vsx.org/extension/IBM/vscode-sourceorbit)
+* ⚡[Install CLI from NPM](https://www.npmjs.com/package/@ibm/sourceorbit)
+* 📖 [View Documentation](https://ibm.github.io/sourceorbit/#/) 
+* 🔎 [See Releases](https://github.com/IBM/sourceorbit/releases)
+
+[![Extension Version](https://img.shields.io/visual-studio-marketplace/v/IBM.vscode-sourceorbit?label=Extension)](https://marketplace.visualstudio.com/items?itemName=IBM.vscode-sourceorbit)
+[![Extension Installs](https://img.shields.io/visual-studio-marketplace/i/IBM.vscode-sourceorbit)](https://marketplace.visualstudio.com/items?itemName=IBM.vscode-sourceorbit)
+
+[![NPM Version](https://img.shields.io/npm/v/@ibm/sourceorbit.svg?label=CLI)](https://www.npmjs.com/package/@ibm/sourceorbit)
+[![NPM Downloads](https://img.shields.io/npm/dm/@ibm/sourceorbit.svg)](https://www.npmjs.com/package/@ibm/sourceorbit)
+
+## Features
+
+Source Orbit is equipped to help you with the following tasks:
+
+1. Scans all applicable source code to build a dependency tree
+2. Show how objects would be affected as developers write code
+3. Generate JSON, or build scripts, to automatically build your application changes
+4. Generates reports for branches being worked on so project owners can see their application in real time
+5. Migrate your code to git
+
+## Getting Started
 
 Check out these pages to dive in:
 
-1. [As a CLI](./pages/cli/index.md): run Source Orbit as part of an automated pipeline, or anywhere really!
-2. [Rules](./pages/general/rules.md): using Source Orbit for dependency management? Check out how it works ✅
-3. [Structure](https://codefori.github.io/docs/#/pages/developing/local/structure): want to know how to structure your code when stored in git?
+1. [As a CLI](./pages/cli/index.md): Run Source Orbit as part of an automated pipeline, or anywhere really!
+2. [As a VS Code Extension](./pages/extension/index.md): Leverage Source Orbit as you develop applications in VS Code
+3. [Project Structure](./pages/developing/local/structure): Learn how to structure your code when stored in git
+4. [Source Code Rules](./pages/general/rules.md): Learn what rules to abide by when using Source Orbit
