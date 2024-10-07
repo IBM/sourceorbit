@@ -60,7 +60,7 @@
 				{
 					"id": "activeImpactView",
 					"visibility": "collapsed",
-					"name": "Affected Objects",
+					"name": "Source Impacts",
 					"contextualTitle": "Active Editor"
 				}
 			],
@@ -68,7 +68,7 @@
 				{
 					"id": "gitImpactView",
 					"visibility": "collapsed",
-					"name": "Affected Objects",
+					"name": "Change Impacts",
 					"contextualTitle": "Source Changes"
 				}
 			]
