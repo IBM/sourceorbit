@@ -17,8 +17,8 @@
   },
   "keywords": [
     "ibmi",
-		"iseries",
-		"as400"
+    "iseries",
+    "as400"
   ],
   "categories": [
     "Other"
@@ -26,8 +26,8 @@
   "author": "IBM",
   "license": "Apache 2",
   "repository": {
-		"url": "https://github.com/IBM/sourceorbit"
-	},
+    "url": "https://github.com/IBM/sourceorbit"
+  },
   "bugs": {
     "url": "https://github.com/IBM/sourceorbit/issues"
   },
