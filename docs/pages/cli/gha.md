@@ -1,6 +1,11 @@
-Below are two workflow examples that use Source Orbit and IBM i CI. They both make use of Environments which hold the connection details to the IBM i being deployed to.
+# GitHub Actions
+
+Below are two workflow examples that use [Source Orbit](https://www.npmjs.com/package/@ibm/sourceorbit) and [IBM i CI](https://www.npmjs.com/package/@ibm/ibmi-ci). They both make use of Environments which hold the connection details to the IBM i being deployed to.
 
 Both workflows the library with the full build / latest objects is `CMPSYS`.
+
+> [!NOTE]
+> Refer to the workflow history of the [ibmi-company_system](https://github.com/IBM/ibmi-company_system/actions) project for example output of both workflows.
 
 ## Main branch change
 
