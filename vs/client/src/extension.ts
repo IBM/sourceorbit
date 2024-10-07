@@ -6,7 +6,7 @@ import { GitEventHandler } from './gitEventHandler';
 import { LanguageClientManager } from './languageClientManager';
 import { getProjectManager, loadIBMiProjectExplorer } from './ProjectExplorer';
 import { SourceOrbitTask } from './tasks';
-import { ImpactView } from './views/impactView/impactView';
+import { ImpactView } from './views/impactView';
 import { ILEObjectTreeItem } from './views/projectExplorer/ileObjectTreeItem';
 import { SourceOrbitTreeItem } from './views/projectExplorer/sourceOrbitTreeItem';
 

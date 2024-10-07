@@ -2,7 +2,7 @@
 import { ExtensionContext, WorkspaceFolder } from 'vscode';
 import { getDeployGitFiles as getChangedFiles, getGitAPI, lastBranch } from './git';
 import { LanguageClientManager } from './languageClientManager';
-import { ImpactView } from './views/impactView/impactView';
+import { ImpactView } from './views/impactView';
 
 export namespace GitEventHandler {
 	export function setup(context: ExtensionContext, gitImpactView: ImpactView, workspaceFolders: WorkspaceFolder[]) {
