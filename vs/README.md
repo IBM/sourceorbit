@@ -2,7 +2,7 @@
 
 <img src="./icon.png" align="right" width="256" height="256">
 
-Source Orbit is a dependency management system. As IBM i developers start using Git for their RPGLE, CL, DDS and SQL, we want to provide them with excellent tools to help them understand their source code. Source orbit is available for use as both a VS Code extension and CLI tool.
+Source Orbit is a dependency management tool. As IBM i developers start using Git for their RPGLE, CL, DDS and SQL, we want to provide them with excellent tools to help them understand their source code. Source orbit is available for use as both a VS Code extension and CLI tool.
 
 * 💻 [Install from VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=IBM.vscode-sourceorbit)
 * 📦 [Download from Open VSX Registry](https://open-vsx.org/extension/IBM/vscode-sourceorbit)
