@@ -98,13 +98,13 @@ export class LanguageClientManager {
 		if (LanguageClientManager.client) {
 			return LanguageClientManager.client.sendRequest(`reloadProject`, [workspaceFolder.uri.toString()]);
 		} else {
-			return Promise.reject()
+			return Promise.reject();
 		}
 	}
 
 	public static fixProject(workspaceFolder: WorkspaceFolder, suggestion: string) {
 		if (LanguageClientManager.client) {
-			return LanguageClientManager.client.sendRequest(`fixProject`, [workspaceFolder.uri.toString(), suggestion]);;
+			return LanguageClientManager.client.sendRequest(`fixProject`, [workspaceFolder.uri.toString(), suggestion]);
 		} else {
 			return;
 		}
