@@ -74,8 +74,8 @@ export async function activate(context: ExtensionContext) {
 		const gitImpactView: ImpactView = new ImpactView();
 		const activeImpactView: ImpactView = new ImpactView();
 		context.subscriptions.push(
-			window.registerTreeDataProvider(`activeImpactView`, activeImpactView),
-			window.registerTreeDataProvider(`gitImpactView`, gitImpactView),
+			window.createTreeView(`gitImpactView`, { treeDataProvider: gitImpactView, showCollapseAll: true }),
+			window.createTreeView(`activeImpactView`, { treeDataProvider: activeImpactView, showCollapseAll: true }),
 			commands.registerCommand(`vscode-sourceorbit.objects.goToFile`, ((node: ILEObjectTreeItem) => {
 				if (node && node.resourceUri) {
 					workspace.openTextDocument(node.resourceUri).then(doc => {
