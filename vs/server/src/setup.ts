@@ -1,22 +1,22 @@
-import { URI } from 'vscode-uri';
-import { SupportedGlob, TargetsManager, getFiles } from './TargetsManager';
 import { BobProject, MakeProject, Targets } from '@ibm/sourceorbit';
-import { TargetSuggestions } from '@ibm/sourceorbit/dist/src/targets';
 import { Logger } from '@ibm/sourceorbit/dist/src/logger';
-import path from 'path';
+import { TargetSuggestions } from '@ibm/sourceorbit/dist/src/targets';
 import fs from 'fs';
+import path from 'path';
+import { URI } from 'vscode-uri';
 import { connection } from './server';
+import { SupportedGlob, TargetsManager, getFiles } from './TargetsManager';
 
 export async function initAndRefresh(workspaceUri: string) {
 	const progress = await connection.window.createWorkDoneProgress();
-	progress.begin(`Source Orbit`, undefined, `Initialising..`);
+	progress.begin(`Source Orbit`, undefined, `Initializing..`);
 
 	try {
 		await TargetsManager.refreshProject(workspaceUri);
-		progress.report(`Initialised`);
+		progress.report(`Initialized`);
 
 	} catch (e) {
-		progress.report(`Failed to initialise`);
+		progress.report(`Failed to initialize`);
 	}
 
 	setTimeout(() => {
@@ -109,7 +109,7 @@ export async function fixProject(workspaceUri: string, suggestions: TargetSugges
 
 	} finally {
 		progress.done();
-		// Let's reinitialised the project when we're done.
+		// Let's reinitialize the project when we're done.
 		await initAndRefresh(workspaceUri);
 	}
 

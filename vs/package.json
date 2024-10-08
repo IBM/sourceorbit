@@ -1,17 +1,31 @@
 {
 	"name": "vscode-sourceorbit",
-	"description": "Object dependency management",
-	"author": "IBM",
+	"displayName": "IBM i Source Orbit",
+	"description": "Object dependency management tool for IBM i",
+	"icon": "icon.png",
+	"author": {
+		"name": "IBM",
+		"url": "https://github.com/IBM"
+	},
+	"publisher": "IBM",
 	"license": "MIT",
 	"version": "1.2.3",
-	"publisher": "IBM",
-	"categories": ["Programming Languages", "Other"],
+	"repository": {
+		"url": "https://github.com/IBM/sourceorbit"
+	},
+	"homepage": "https://github.com/IBM/sourceorbit/blob/main/vs/README.md",
+	"bugs": {
+		"url": "https://github.com/IBM/sourceorbit/issues"
+	},
 	"keywords": [
+		"ibmi",
+		"iseries",
+		"as400",
 		"multi-root ready"
 	],
-	"repository": {
-		"url": "https://github.com/IBM/sourceorbit/"
-	},
+	"categories": [
+		"Other"
+	],
 	"engines": {
 		"vscode": "^1.75.0"
 	},
@@ -46,33 +60,55 @@
 				{
 					"id": "activeImpactView",
 					"visibility": "collapsed",
-					"name": "Affected Objects",
-					"contextualTitle": "Active Editor",
-					"when": "vscode-sourceorbit:projectsLoaded == true"
+					"name": "Source Impacts",
+					"contextualTitle": "Active Editor"
 				}
 			],
 			"scm": [
 				{
 					"id": "gitImpactView",
 					"visibility": "collapsed",
-					"name": "Affected Objects",
-					"contextualTitle": "Source Changes",
-					"when": "vscode-sourceorbit:projectsLoaded == true"
+					"name": "Change Impacts",
+					"contextualTitle": "Source Changes"
 				}
 			]
 		},
+		"viewsWelcome": [
+			{
+			  "view": "activeImpactView",
+			  "contents": "No workspace folder opened",
+			  "when": "workspaceFolderCount == 0"
+			},
+			{
+			  "view": "activeImpactView",
+			  "contents": "Open a source file to see the affected objects",
+			  "when": "workspaceFolderCount != 0"
+			},
+			{
+			  "view": "gitImpactView",
+			  "contents": "No workspace folder opened",
+			  "when": "workspaceFolderCount == 0"
+			},
+			{
+			  "view": "gitImpactView",
+			  "contents": "Open a Git repository to see the affected objects",
+			  "when": "workspaceFolderCount != 0"
+			}
+		],
 		"commands": [
 			{
 				"command": "vscode-sourceorbit.objects.loadProject",
 				"category": "Source Orbit",
 				"title": "Reload Project",
-				"enablement": "vscode-sourceorbit:projectExplorerLoaded == true"
+				"enablement": "vscode-sourceorbit:projectExplorerLoaded == true",
+				"icon": "$(refresh)"
 			},
 			{
 				"command": "vscode-sourceorbit.objects.autoFix",
 				"category": "Source Orbit",
 				"title": "Autofix",
-				"enablement": "vscode-sourceorbit:projectExplorerLoaded == true"
+				"enablement": "vscode-sourceorbit:projectExplorerLoaded == true",
+				"icon": "$(wand)"
 			},
 			{
 				"command": "vscode-sourceorbit.objects.goToFile",
