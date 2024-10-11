@@ -81,7 +81,7 @@
 			},
 			{
 				"view": "activeImpactView",
-				"contents": "Open a source file to see the affected objects",
+				"contents": "Open a source file to see the affected IBM i objects",
 				"when": "workspaceFolderCount != 0"
 			},
 			{
@@ -91,7 +91,7 @@
 			},
 			{
 				"view": "gitImpactView",
-				"contents": "Open a Git repository to see the affected objects",
+				"contents": "Open a Git repository to see the affected IBM i objects",
 				"when": "workspaceFolderCount != 0"
 			}
 		],
