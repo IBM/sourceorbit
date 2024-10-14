@@ -33,20 +33,20 @@ describe.skipIf(files.length === 0)(`bob Rules.mk tests`, () => {
 
     const files = project.createRules();
 
-    const baseRules = files[`Rules.mk`].split(`\n`);
+    const baseRules = files[`Rules.mk`].split(/\r?\n/);
 
     expect(baseRules).toBeDefined();
     expect(baseRules[0]).toContain(`SUBDIRS =`);
     expect(baseRules[0]).toContain(`qobjs`);
     expect(baseRules[0]).toContain(`qrpglesrc`);
 
-    const qobjRules = files[`qobjs/Rules.mk`].split(`\n`);
+    const qobjRules = files[path.join(`qobjs`, `Rules.mk`)].split(/\r?\n/);
 
     expect(qobjRules).toBeDefined();
     expect(qobjRules).toContain(`MYTHING.DTAARA:text=Hello world`);
     expect(qobjRules).toContain(`MSTDSP.FILE: mstdsp.dspf`);
 
-    const qrpglesrcRules = files[`qrpglesrc/Rules.mk`].split(`\n`);
+    const qrpglesrcRules = files[path.join(`qrpglesrc`, `Rules.mk`)].split(/\r?\n/);
 
     expect(qrpglesrcRules).toBeDefined();
     expect(qrpglesrcRules).toContain(`TESTER.PGM: tester.pgm.rpgle MYTHING.DTAARA`);
