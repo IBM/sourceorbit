@@ -1,4 +1,9 @@
-Source Orbit is available as a CLI tool. It can be installed through npm onto most platforms, including IBM i.
+# Overview
+
+[Source Orbit](https://www.npmjs.com/package/@ibm/sourceorbit) is available as a CLI tool. It can be installed through npm onto most platforms, including IBM i.
+
+> [!TIP]
+> Use the `so --help` command anytime you would like to see the available commands and options.
 
 ## General usage
 
@@ -23,13 +28,14 @@ Source Orbit CLI can generate different file formats using the `-bf <type>` para
 
 Types available:
 
-* `json` Generate all dependency info as JSON
-* `bob` to generate the required `Rules.mk` files
-* `make` generates a single makefile with the targets and rules.
-   *  [See more here](./make.md) for our make support.
-* `imd` can be used to generate analysis reports for branches
+* `json`: Generate all dependency info as JSON
+* `bob`: Generate the required `Rules.mk` files for bob
+   *  See the documentation [here](https://ibm.github.io/ibmi-bob/#/prepare-the-project/rules.mk) on defining targets using Rules.mk in the Bob documentation.
+* `make`: Generates a single makefile with the targets and rules
+   *  [See more here](./pages/cli/make.md) for our make support.
+* `imd`: Generate analysis reports for branches
    * This is particularly useful for pull-requests. It is possible have a pipeline that runs on a push to a branch/PR to generate dependency information.
-   * See about [GitHub Actions](./pages/cli/gha.md) here.
+   * [See more here](./pages/cli/gha.md) about usage with GitHub Actions.
 
 ```sh
 so -bf json
@@ -80,25 +86,3 @@ $ export BIN_LIB=$(so -bl feature/5353_new_thing)
 $ echo $BIN_LIB                                 
 VS6541B2A1
 ```
-
-## Installation
-
-We recommend Node.js 18+.
-
-### Most platforms
-
-1. Install Source Orbit globally
-   * `npm i -g @ibm/sourceorbit`
-2. Use `so`
-
-### IBM i
-
-1. Install Node.js via `yum` and/or use `update-alternatives` to set the Node.js version.
-   * `yum install nodejsxx`
-   * `update-alternatives --set node /QOpenSys/pkgs/lib/nodejs18/bin/node`
-2. Install Source Orbit globally on to the IBM i
-   * `npm i -g @ibm/sourceorbit`
-3. Update the `PATH` environment variable to include the `npm` binary directory for installed CLI packages
-   * `PATH=/QOpenSys/pkgs/lib/nodejs18/bin:$PATH`
-	* put in `.bash_profile` for CLI usage, put in `.bashrc` for Code for IBM i usage 
-4. Use `so`
