@@ -38,16 +38,14 @@ export async function activate(context: ExtensionContext) {
 					return [objectViews[fsPath]];
 				});
 
+				// Project Explorer specific commands
 				context.subscriptions.push(
-					// Project Explorer specific command
 					commands.registerCommand(`vscode-sourceorbit.objects.loadProject`, async (node: SourceOrbitTreeItem) => {
 						if (node) {
 							await LanguageClientManager.reloadProject(node.workspaceFolder);
 							node.refresh();
 						}
 					}),
-
-					// Project Explorer specific command
 					commands.registerCommand(`vscode-sourceorbit.objects.autoFix`, ((node: SourceOrbitTreeItem) => {
 						if (node && node.workspaceFolder) {
 							window.showInformationMessage(`Select auto fix method for ${node.workspaceFolder.name}`, `Cancel`, `File names`, `RPG includes`).then(chosen => {
@@ -66,6 +64,26 @@ export async function activate(context: ExtensionContext) {
 							});
 						}
 					})),
+					commands.registerCommand(`vscode-sourceorbit.objects.generateBobBuildFile`, async (node: SourceOrbitTreeItem) => {
+						if (node && node.workspaceFolder) {
+							await LanguageClientManager.generateBuildFile(node.workspaceFolder, 'bob');
+						}
+					}),
+					commands.registerCommand(`vscode-sourceorbit.objects.generateMakeBuildFile`, async (node: SourceOrbitTreeItem) => {
+						if (node && node.workspaceFolder) {
+							await LanguageClientManager.generateBuildFile(node.workspaceFolder, 'make');
+						}
+					}),
+					commands.registerCommand(`vscode-sourceorbit.objects.generateImdBuildFile`, async (node: SourceOrbitTreeItem) => {
+						if (node && node.workspaceFolder) {
+							await LanguageClientManager.generateBuildFile(node.workspaceFolder, 'imd');
+						}
+					}),
+					commands.registerCommand(`vscode-sourceorbit.objects.generateJsonBuildFile`, async (node: SourceOrbitTreeItem) => {
+						if (node && node.workspaceFolder) {
+							await LanguageClientManager.generateBuildFile(node.workspaceFolder, 'json');
+						}
+					})
 				);
 			}
 		}
@@ -76,6 +94,24 @@ export async function activate(context: ExtensionContext) {
 		context.subscriptions.push(
 			window.createTreeView(`gitImpactView`, { treeDataProvider: gitImpactView, showCollapseAll: true }),
 			window.createTreeView(`activeImpactView`, { treeDataProvider: activeImpactView, showCollapseAll: true }),
+			commands.registerCommand(`vscode-sourceorbit.objects.refreshGitImpactView`, (async () => {
+				if (gitImpactView.impactOf && gitImpactView.impactOf.length > 0) {
+					const workspaceFolder = workspace.getWorkspaceFolder(gitImpactView.impactOf[0]);
+					if (workspaceFolder) {
+						await LanguageClientManager.reloadProject(workspaceFolder);
+					}
+				}
+				gitImpactView.refresh();
+			})),
+			commands.registerCommand(`vscode-sourceorbit.objects.refreshActiveImpactView`, (async () => {
+				if (activeImpactView.impactOf && activeImpactView.impactOf.length > 0) {
+					const workspaceFolder = workspace.getWorkspaceFolder(activeImpactView.impactOf[0]);
+					if (workspaceFolder) {
+						await LanguageClientManager.reloadProject(workspaceFolder);
+					}
+				}
+				activeImpactView.refresh();
+			})),
 			commands.registerCommand(`vscode-sourceorbit.objects.goToFile`, ((node: ILEObjectTreeItem) => {
 				if (node && node.resourceUri) {
 					workspace.openTextDocument(node.resourceUri).then(doc => {
@@ -102,7 +138,7 @@ export async function activate(context: ExtensionContext) {
 
 		// Impact for current active editor
 		const activeTextEditor = window.activeTextEditor;
-		if(activeTextEditor) {
+		if (activeTextEditor) {
 			activeImpactView.showImpactFor([activeTextEditor.document.uri]);
 		}
 	}

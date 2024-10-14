@@ -5,7 +5,7 @@ import { ILEImpactedObjectTreeItem } from './ileImpactedObjectTreeItem';
 export class ImpactView implements TreeDataProvider<any> {
 	private _onDidChangeTreeData: EventEmitter<TreeItem | undefined | null | void> = new EventEmitter<TreeItem | undefined | null | void>();
 	readonly onDidChangeTreeData: Event<TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
-	private impactOf: Uri[] = [];
+	public impactOf: Uri[] = [];
 
 	refresh() {
 		this._onDidChangeTreeData.fire();

@@ -1,4 +1,4 @@
-import { BobProject, MakeProject, Targets } from '@ibm/sourceorbit';
+import { BobProject, ImpactMarkdown, MakeProject, Targets } from '@ibm/sourceorbit';
 import { Logger } from '@ibm/sourceorbit/dist/src/logger';
 import { TargetSuggestions } from '@ibm/sourceorbit/dist/src/targets';
 import fs from 'fs';
@@ -52,6 +52,11 @@ export async function generateBuildFile(workspaceUri: string, type: string) {
 			case `make`:
 				const makeProj = new MakeProject(cwd, targets);
 				fs.writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile().join(`\n`));
+				break;
+
+			case `imd`:
+				const impactMarkdown = new ImpactMarkdown(cwd, targets, []);
+				fs.writeFileSync(path.join(cwd, `impact.md`), impactMarkdown.getContent().join(`\n`));
 				break;
 
 			case `json`:
