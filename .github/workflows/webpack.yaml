@@ -44,7 +44,7 @@ jobs:
 
       - name: Build and Package
         run: |
-          npx webpack
+          npm run webpack
           vsce package
 
       - name: Upload VSIX
