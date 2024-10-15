@@ -7,14 +7,18 @@ on:
     types: [created]
 
 jobs:
-  release:
-    name: Release
+  cli:
+    name: Release CLI
 
     runs-on: ubuntu-latest
 
     permissions:
       packages: write
       contents: read
+    
+    defaults:
+      run:
+        working-directory: ./cli
 
     strategy:
       matrix:
@@ -31,7 +35,6 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Publish CLI
-        working-directory: ./cli
         run: |
           npm ci
           npm run test
@@ -39,6 +42,33 @@ jobs:
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  extension:
+    name: Release Extension
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      packages: write
+      contents: read
+    
+    defaults:
+      run:
+        working-directory: ./vs
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: 'https://registry.npmjs.org'
           
       - name: Install NPM Dependencies
         working-directory: ./vs
