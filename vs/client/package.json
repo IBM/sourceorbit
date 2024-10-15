@@ -3,7 +3,7 @@
 	"description": "Client",
 	"author": "IBM",
 	"license": "MIT",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"publisher": "vscode",
 	"engines": {
 		"vscode": "^1.75.0"

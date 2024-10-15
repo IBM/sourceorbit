@@ -1,6 +1,6 @@
 {
 	"name": "vscode-sourceorbit",
-	"displayName": "IBM i Source Orbit",
+	"displayName": "Source Orbit",
 	"description": "Object dependency management tool for IBM i",
 	"icon": "icon.png",
 	"author": {
@@ -9,7 +9,7 @@
 	},
 	"publisher": "IBM",
 	"license": "MIT",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"repository": {
 		"url": "https://github.com/IBM/sourceorbit"
 	},
