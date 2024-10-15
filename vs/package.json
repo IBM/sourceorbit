@@ -10,12 +10,21 @@
 	"publisher": "IBM",
 	"license": "MIT",
 	"version": "1.0.0",
-	"categories": ["Programming Languages", "Other"],
+	"repository": {
+		"url": "https://github.com/IBM/sourceorbit"
+	},
+	"homepage": "https://github.com/IBM/sourceorbit/blob/main/vs/README.md",
+	"bugs": {
+		"url": "https://github.com/IBM/sourceorbit/issues"
+	},
 	"keywords": [
 		"ibmi",
 		"iseries",
 		"as400",
 		"multi-root ready"
+	],
+	"categories": [
+		"Other"
 	],
 	"engines": {
 		"vscode": "^1.75.0"
