@@ -3,6 +3,7 @@
 	"typescript.tsc.autoDetect": "off",
 	"typescript.preferences.quoteStyle": "single",
 	"editor.codeActionsOnSave": {
+		"source.organizeImports": "always",
 		"source.fixAll.eslint": "explicit"
 	}
 }

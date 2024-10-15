@@ -1,12 +1,15 @@
 * [Home](/)
 * Projects
-   * [Structure](./pages/general/structure.md)
-   * [Rules](./pages/general/rules.md)
-   * [Migrating to git](./pages/general/migrating.md)
+   * [Project Structure](./pages/general/structure.md)
+   * [Source Code Rules](./pages/general/rules.md)
+   * [Migrating to Git](./pages/general/migrating.md)
 * CLI
-   * [Home](./pages/cli/index.md)
+   * [Overview](./pages/cli/index.md)
+   * [Installation](./pages/cli/installation.md)
    * [Make](./pages/cli/make.md)
-* Visual Studio Code
-   * Coming soon
+   * [GitHub Actions](./pages/cli/gha.md)
+* VS Code Extension
+   * [Overview](./pages/extension/index.md)
+   * [Installation](./pages/extension/installation.md)
 * Tutorials
    * Coming soon
