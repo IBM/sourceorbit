@@ -1,0 +1,55 @@
+name: NodeJS with Webpack
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches: ["main"]
+    paths:
+      - 'vs/**'
+
+  pull_request:
+    branches: ["main"]
+    paths:
+      - 'vs/**'
+
+jobs:
+  build:
+    name: Build and Package
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    defaults:
+      run:
+        working-directory: ./vs
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install NPM Dependencies
+        run: |
+          npm install
+          npm install -g vsce
+
+      - name: Build and Package
+        run: |
+          npm run webpack
+          vsce package
+
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: VSIX
+          path: ./vs/*.vsix
+          if-no-files-found: error
