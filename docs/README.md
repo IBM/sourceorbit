@@ -2,7 +2,7 @@
 
 # Source Orbit
 
-<img src="./assets/icon.png" align="right" width="256" height="256">
+<img src="https://github.com/IBM/sourceorbit/blob/main/vs/icon.png?raw=true" align="right" width="256" height="256">
 
 Source Orbit is a dependency management tool. As IBM i developers start using Git for their RPGLE, CL, DDS and SQL, we want to provide them with excellent tools to help them understand their source code. Source orbit is available for use as both a VS Code extension and CLI tool.
 
