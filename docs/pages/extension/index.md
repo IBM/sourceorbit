@@ -8,16 +8,14 @@ The extension comes built with two views for viewing the impacted objects in you
 
 The `Source Impacts` view in the `Explorer` view container will render the impacted objects for the current active editor.
 
-<!-- ![Source Impacts view](../../assets/Extension_01.png) -->
-
 <div style="text-align: center; margin: 20px;">
-    <img src="../../assets/Extension_01.png" alt="Source Impacts view" style="box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); border-radius: 8px;">
+    <img src="https://github.com/IBM/sourceorbit/blob/main/docs/assets/Extension_01.png?raw=true" alt="Source Impacts view" style="box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); border-radius: 8px;">
 </div>
 
 The `Change Impacts` view in the `Source Control` view container will render the impacted objects for any files changed detected by Git.
 
 <div style="text-align: center; margin: 20px;">
-    <img src="../../assets/Extension_02.png" alt="Change Impacts view" style="box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); border-radius: 8px;">
+    <img src="https://github.com/IBM/sourceorbit/blob/main/docs/assets/Extension_02.png?raw=true" alt="Change Impacts view" style="box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); border-radius: 8px;">
 </div>
 
 ## IBM i Project Explorer Integration
@@ -36,5 +34,5 @@ Source Orbit integrates seemlessly with the [IBM i Project Explorer](https://mar
 The source migration tool built into IBM i Project Explorer can also automatically perform these tasks after migrating your source from QSYS. Check out more details [here](./pages/general/migrating?id=_1-ibm-i-project-explorer).
 
 <div style="text-align: center; margin: 20px;">
-    <img src="../../assets/Extension_03.png" alt="Project Explorer Integration" style="box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); border-radius: 8px;">
+    <img src="https://github.com/IBM/sourceorbit/blob/main/docs/assets/Extension_03.png?raw=true" alt="Project Explorer Integration" style="box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); border-radius: 8px;">
 </div>
