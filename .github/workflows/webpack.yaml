@@ -51,5 +51,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: VSIX
-          path: ./*.vsix
+          path: ./vs/*.vsix
           if-no-files-found: error
