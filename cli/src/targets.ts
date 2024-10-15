@@ -450,11 +450,11 @@ export class Targets {
 
 		const validStatements = module.statements.filter(s => {
 			const possibleObject = s.getObject();
-			return (possibleObject && possibleObject.name && [`STRPGMEXP`, `ENDPGMEXP`, `EXPORT`].includes(possibleObject.name));
+			return (possibleObject && possibleObject.name && [`STRPGMEXP`, `ENDPGMEXP`, `EXPORT`].includes(possibleObject.name.toUpperCase()));
 		});
 
 		for (const statement of validStatements) {
-			const currentCommand = statement.getObject().name;
+			const currentCommand = statement.getObject().name.toUpperCase();
 			if (currentCommand === `EXPORT`) {
 				const parms = statement.getParms();
 				const symbolTokens = parms[`SYMBOL`];
