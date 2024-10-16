@@ -1,0 +1,5 @@
+             strpgmexp  signature( 'V2021.02')
+                export     symbol(getRandomMethodA)
+                export     symbol(BigFootLivesInSc)
+                export     symbol(validateCoolness)
+             endpgmexp
