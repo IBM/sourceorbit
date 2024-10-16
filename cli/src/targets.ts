@@ -482,6 +482,9 @@ export class Targets {
 				}
 		}
 
+		// Exports are always uppercase
+		target.exports = target.exports.map(e => e.toUpperCase());
+
 		this.addNewTarget(target);
 	}
 
@@ -972,6 +975,8 @@ export class Targets {
 		// define exported functions
 		if (cache.keyword[`NOMAIN`]) {
 			ileObject.type = `MODULE`;
+
+			// Note that we store exports as uppercase.
 			ileObject.exports = cache.procedures
 				.filter((proc: any) => proc.keyword[`EXPORT`])
 				.map(ref => ref.name.toUpperCase());
@@ -1328,7 +1333,7 @@ export class Targets {
 
 				for (const exportName of target.exports) {
 					// We loop through each export of the service program and find the module that exports it
-					const foundModule = allModules.find(mod => mod.exports && mod.exports.includes(exportName));
+					const foundModule = allModules.find(mod => mod.exports && mod.exports.includes(exportName.toUpperCase()));
 					if (foundModule) {
 						const alreadyBound = target.deps.some(dep => dep.systemName === foundModule.systemName && dep.type === `MODULE`);
 						if (!alreadyBound) {
