@@ -85,6 +85,10 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     expect(utilsSrvPgm.systemName).toBe(`UTILS`);
     expect(utilsSrvPgm.type).toBe(`SRVPGM`);
     expect(utilsSrvPgm.relativePath).toBe(path.join(`qsrvsrc`, `utils.bnd`));
+
+    expect(myPgm.headers).toBeDefined();
+    expect(myPgm.headers.length).toBe(2);
+    console.log(myPgm.headers);
   });
 
   test(`Check utils`, async () => {
