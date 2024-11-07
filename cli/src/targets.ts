@@ -48,6 +48,9 @@ export interface ILEObject {
 	exports?: string[];
 	/** each function import in the object */
 	imports?: string[];
+
+	/** headers. only supports RPGLE and is not recursive */
+	headers?: string[];
 }
 
 export interface ILEObjectTarget extends ILEObject {
@@ -161,7 +164,7 @@ export class Targets {
 		if (sqlExtensions.includes(extension.toLowerCase())) {
 			const ref = this.sqlObjectDataFromPath(localPath);
 			if (ref) {
-				if (ref.object.system)  theObject.systemName = ref.object.system.toUpperCase();
+				if (ref.object.system) theObject.systemName = ref.object.system.toUpperCase();
 				if (ref.object.name) theObject.longName = ref.object.name;
 				// theObject.type = ref.type;
 			}
@@ -502,7 +505,7 @@ export class Targets {
 
 		// We have a local cache of refs found so we don't keep doing global lookups
 		// on objects we already know to depend on in this object.
-		
+
 		let alreadyFoundRefs: string[] = [];
 
 		const handleObjectPath = (currentKeyword: string, recordFormat: any, value: string) => {
@@ -971,7 +974,7 @@ export class Targets {
 
 				return importName;
 			});
-	
+
 		// define exported functions
 		if (cache.keyword[`NOMAIN`]) {
 			ileObject.type = `MODULE`;
@@ -982,66 +985,74 @@ export class Targets {
 				.map(ref => ref.name.toUpperCase());
 		}
 
+		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
+
+		if (cache.includes && cache.includes.length > 0) {
+			ileObject.headers = [];
+			
+			cache.includes.forEach((include: IncludeStatement) => {
+				// RPGLE includes are always returned as posix paths
+				// even on Windows. We need to do some magic to convert here for Windows systems
+				include.toPath = toLocalPath(include.toPath);
+
+				const includeDetail = path.parse(include.toPath);
+
+				if (includeDetail.ext !== `.rpgleinc`) {
+					const possibleName = includeDetail.name.toLowerCase().endsWith(`.pgm`) ? includeDetail.name.substring(0, includeDetail.name.length - 4) : includeDetail.name;
+
+					if (this.suggestions.renames) {
+						const renameLogPath = this.getRelative(include.toPath);
+
+						// We need to make sure the .rpgleinc rename is most important
+						if (this.logger.exists(renameLogPath, `rename`)) {
+							this.logger.flush(renameLogPath);
+						}
+
+						this.logger.fileLog(renameLogPath, {
+							message: `Rename suggestion`,
+							type: `rename`,
+							change: {
+								rename: {
+									path: include.toPath,
+									newName: `${possibleName}.rpgleinc`
+								}
+							}
+						});
+					} else {
+						this.logger.fileLog(this.getRelative(include.toPath), {
+							message: `referenced as include, but should use the '.rpgleinc' extension.`,
+							type: `warning`,
+						});
+					}
+				}
+
+				const theIncludePath = asPosix(this.getRelative(include.toPath));
+
+				ileObject.headers.push(theIncludePath);
+
+				if (this.suggestions.includes) {
+					this.logger.fileLog(ileObject.relativePath, {
+						message: `Will update to use unix style path.`,
+						type: `includeFix`,
+						line: include.line,
+						change: {
+							lineContent: (options.isFree ? `` : ``.padEnd(6)) + `/copy '${theIncludePath}'`
+						}
+					});
+				} else {
+					this.logger.fileLog(ileObject.relativePath, {
+						message: `Include at line ${include.line} found, to path '${theIncludePath}'`,
+						type: `info`,
+						line: include.line,
+					});
+				}
+			});
+		}
+
 		const target: ILEObjectTarget = {
 			...ileObject,
 			deps: []
 		};
-
-		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
-
-		cache.includes.forEach((include: IncludeStatement) => {
-			// RPGLE includes are always returned as posix paths
-			// even on Windows. We need to do some magic to convert here for Windows systems
-			include.toPath = toLocalPath(include.toPath);
-
-			const includeDetail = path.parse(include.toPath);
-
-			if (includeDetail.ext !== `.rpgleinc`) {
-				const possibleName = includeDetail.name.toLowerCase().endsWith(`.pgm`) ? includeDetail.name.substring(0, includeDetail.name.length - 4) : includeDetail.name;
-
-				if (this.suggestions.renames) {
-					const renameLogPath = this.getRelative(include.toPath);
-
-					// We need to make sure the .rpgleinc rename is most important
-					if (this.logger.exists(renameLogPath, `rename`)) {
-						this.logger.flush(renameLogPath);
-					}
-
-					this.logger.fileLog(renameLogPath, {
-						message: `Rename suggestion`,
-						type: `rename`,
-						change: {
-							rename: {
-								path: include.toPath,
-								newName: `${possibleName}.rpgleinc`
-							}
-						}
-					});
-				} else {
-					this.logger.fileLog(this.getRelative(include.toPath), {
-						message: `referenced as include, but should use the '.rpgleinc' extension.`,
-						type: `warning`,
-					});
-				}
-			}
-
-			if (this.suggestions.includes) {
-				this.logger.fileLog(ileObject.relativePath, {
-					message: `Will update to use unix style path.`,
-					type: `includeFix`,
-					line: include.line,
-					change: {
-						lineContent: (options.isFree ? `` : ``.padEnd(6)) + `/copy '${asPosix(this.getRelative(include.toPath))}'`
-					}
-				});
-			} else {
-				this.logger.fileLog(ileObject.relativePath, {
-					message: `Include at line ${include.line} found, to path '${asPosix(this.getRelative(include.toPath))}'`,
-					type: `info`,
-					line: include.line,
-				});
-			}
-		});
 
 		// This usually means .pgm is in the name
 		if (ileObject.type === `PGM` && cache.keyword[`NOMAIN`]) {
@@ -1417,7 +1428,7 @@ export class Targets {
 								.map(m => this.getTarget(m));
 
 							// Confusing names, it means: dependencies of the dependencies that are modules
-							const depDeps = depTargets .map(m => m?.deps).flat().filter(d => d.type === `MODULE`);
+							const depDeps = depTargets.map(m => m?.deps).flat().filter(d => d.type === `MODULE`);
 
 							for (const newDep of depDeps) {
 								if (newDep && !currentTarget.deps.some(d => d.systemName === newDep.systemName && d.type === newDep.type)) {
@@ -1587,7 +1598,7 @@ export class Targets {
 	 * Sadly the long name is not typically part of the path name, so we need to
 	 * find the name inside of the source code.
 	 */
-	sqlObjectDataFromPath(fullPath: string): ObjectRef|undefined {
+	sqlObjectDataFromPath(fullPath: string): ObjectRef | undefined {
 		const relativePath = this.getRelative(fullPath);
 
 		if (fss.existsSync(fullPath)) {
