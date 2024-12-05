@@ -180,7 +180,7 @@ export class ImpactMarkdown {
 
     this.targets.getResolvedObjects().forEach(ileObject => {
 
-      let logs = this.targets.logger.getLogsFor(ileObject.relativePath);
+      let logs = this.targets.logger.getLogsFor(ileObject.relativePath) || [];
       let parents = this.targets.getTargets().filter(t => t.deps.some(d => d.systemName === ileObject.systemName && d.type === ileObject.type));
       let children = this.targets.getTarget(ileObject)?.deps || [];
 
