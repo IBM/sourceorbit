@@ -5,7 +5,7 @@ import fss from 'fs';
 import Cache from "vscode-rpgle/language/models/cache";
 import { IncludeStatement } from "vscode-rpgle/language/parserTypes";
 import { infoOut, warningOut } from './cli';
-import { DefinitionType, File, Module, CLParser } from 'vscode-clle/language';
+import { DefinitionType, File, Module, CLParser, Token } from 'vscode-clle/language';
 import { DisplayFile as dds } from "vscode-displayfile/src/dspf";
 import Document from "vscode-db2i/src/language/sql/document";
 import { ObjectRef, StatementType } from 'vscode-db2i/src/language/sql/types';
@@ -33,6 +33,10 @@ const sqlTypeExtension = {
 const bindingDirectoryTarget: ILEObject = { systemName: `$(APP_BNDDIR)`, type: `BNDDIR` };
 
 const TextRegex = /\%TEXT.*(?=\n|\*)/gm
+const ParameterRegexs = [
+	/\%(PGM)(.*)(?=\n|\*)/gm,
+	/\%(VLDCKR)(.*)(?=\n|\*)/gm
+];
 
 export interface ILEObject {
 	systemName: string;
@@ -55,6 +59,7 @@ export interface ILEObject {
 
 export interface ILEObjectTarget extends ILEObject {
 	deps: ILEObject[];
+	overrides?: CommandParameters;
 }
 
 export interface TargetSuggestions {
@@ -75,6 +80,11 @@ interface RpgLookup {
 interface FileOptions {
 	isFree?: boolean;
 	text?: string;
+}
+
+interface CommandParameters {
+	pgm?: string;
+	vldckr?: string;
 }
 
 /**
@@ -337,6 +347,7 @@ export class Targets {
 				try {
 					[textMatch] = content.match(TextRegex);
 					if (textMatch) {
+						console.log(textMatch);
 						if (textMatch.startsWith(`%TEXT`)) textMatch = textMatch.substring(5);
 						if (textMatch.endsWith(`*`)) textMatch = textMatch.substring(0, textMatch.length - 1);
 						textMatch = textMatch.trim();
@@ -392,7 +403,7 @@ export class Targets {
 					this.createSrvPgmTarget(filePath, module, options);
 				}
 				else if (cmdExtensions.includes(ext)) {
-					this.createCmdTarget(filePath, options);
+					this.createCmdTarget(filePath, content, options);
 				}
 			} catch (e) {
 				this.logger.fileLog(relative, {
@@ -415,10 +426,53 @@ export class Targets {
 
 	}
 
-	private createCmdTarget(localPath, options: FileOptions = {}) {
-		this.resolvePathToObject(localPath, options.text);
+	private createCmdTarget(localPath: string, content: string, options: FileOptions = {}) {
+		const ileObject = this.resolvePathToObject(localPath, options.text);
+		const target: ILEObjectTarget = {
+			...ileObject,
+			deps: []
+		};
+		const params: CommandParameters = {};
+		const clDocs = new CLParser();
+		const tokens = clDocs.parseDocument(content);
 
-		// Since cmd source doesn't explicity contains deps, we resolve later on
+		ParameterRegexs.forEach((regex) => {
+			try {
+				const match = regex.exec(content);
+				if (match) {
+					console.log(`Parameter match: ${match}`);
+					params[match[1].toLowerCase()] = match[2].trim() ?? '';
+				}
+			} catch (e) { }
+		});
+
+		if (params?.pgm) {
+			const possibleChildObject = this.searchForObject({ systemName: params.pgm, type: `PGM` });
+			if (possibleChildObject) target.deps.push(this.createOrAppend(possibleChildObject));
+		};
+
+		if (params?.vldckr) {
+			const possibleChildObject = this.searchForObject({ systemName: params.vldckr, type: `PGM` });
+			if (possibleChildObject) target.deps.push(this.createOrAppend(possibleChildObject));
+		} else {
+			// Get program dependency from VLDCKR parameter in the command definition
+			tokens.forEach((token, index) => {
+				if (token.type === 'parameter' && token.value === 'VLDCKR') {
+					const firstBlockToken = tokens.slice(index + 1).find(token => token.type === 'block');
+					if (firstBlockToken) {
+						const wordToken = firstBlockToken.block.find(token => token.type === 'word');
+						if (wordToken && wordToken.value) {
+							const possibleChildObject = this.searchForObject({ systemName: wordToken.value, type: `PGM` });
+							if (possibleChildObject)
+								target.deps.push(this.createOrAppend(possibleChildObject));
+						}
+					}
+				}
+			});
+		}
+
+		target.overrides = params;
+		this.addNewTarget(target);
 	}
 
 	private createSrvPgmTarget(localPath: string, module: Module, options: FileOptions = {}) {
@@ -716,10 +770,6 @@ export class Targets {
 			}
 		});
 
-		// We also look to see if there is a `.cmd` object with the same name
-		const possibleCommandObject = this.searchForObject({ systemName: ileObject.systemName, type: `CMD` });
-		if (possibleCommandObject) this.createOrAppend(possibleCommandObject, target);
-
 		if (target.deps.length > 0)
 			infoOut(`Depends on: ${target.deps.map(d => `${d.systemName}.${d.type}`).join(` `)}`);
 
@@ -989,7 +1039,7 @@ export class Targets {
 
 		if (cache.includes && cache.includes.length > 0) {
 			ileObject.headers = [];
-			
+
 			cache.includes.forEach((include: IncludeStatement) => {
 				// RPGLE includes are always returned as posix paths
 				// even on Windows. We need to do some magic to convert here for Windows systems
@@ -1053,6 +1103,9 @@ export class Targets {
 			...ileObject,
 			deps: []
 		};
+
+		// const target = this.createOrAppend(ileObject);
+
 
 		// This usually means .pgm is in the name
 		if (ileObject.type === `PGM` && cache.keyword[`NOMAIN`]) {
@@ -1301,15 +1354,14 @@ export class Targets {
 				});
 		}
 
-		// TODO: did we duplicate this?
-		// We also look to see if there is a `.cmd` object with the same name
-		const resolvedObject = this.searchForObject({ systemName: ileObject.systemName, type: `CMD` });
-		if (resolvedObject) this.createOrAppend(resolvedObject, target);
-
 		if (target.deps.length > 0)
 			infoOut(`Depends on: ${target.deps.map(d => `${d.systemName}.${d.type}`).join(` `)}`);
 
-		this.addNewTarget(target);
+		// For each target dep call createOrAppend
+		const currentTarget = this.createOrAppend(target);
+
+		// Merge dependencies into the current target
+		this.mergeDependencies(currentTarget, target.deps);
 	}
 
 	getTarget(object: ILEObject): ILEObjectTarget | undefined {
@@ -1450,15 +1502,20 @@ export class Targets {
 					...cmdObject,
 					deps: [programObject]
 				}
-
 				this.addNewTarget(newTarget);
 			} else {
-
-				this.removeObject(cmdObject);
-				this.logger.fileLog(cmdObject.relativePath, {
-					message: `Removed as target because no program was found with a matching name.`,
-					type: `info`
-				});
+				const commandObject = this.getTarget(cmdObject);
+				// Check if command object has no deps defined or deps count is 0
+				if (commandObject?.overrides?.pgm)
+					continue;
+				else {
+					// If no program is found, we remove the command object
+					this.removeObject(cmdObject);
+					this.logger.fileLog(cmdObject.relativePath, {
+						message: `Removed as target because no program was found with a matching name.`,
+						type: `info`
+					});
+				}
 			}
 		}
 	}
@@ -1513,6 +1570,26 @@ export class Targets {
 			existingTarget.deps.push(newDep);
 
 		return existingTarget;
+	}
+
+	public mergeDependencies(parentObject: ILEObject, deps: ILEObject[]) {
+		let existingTarget = this.targets[`${parentObject.systemName}.${parentObject.type}`];
+
+		if (!existingTarget) {
+			existingTarget = {
+				...parentObject,
+				deps: []
+			};
+
+			this.addNewTarget(existingTarget);
+		}
+
+		// We need to make sure we don't add duplicates
+		for (const dep of deps) {
+			if (!existingTarget.deps.some(d => d.systemName === dep.systemName && d.type === dep.type)) {
+				existingTarget.deps.push(dep);
+			}
+		}
 	}
 
 	private addNewTarget(dep: ILEObjectTarget) {
