@@ -17,7 +17,7 @@ let files = getFiles(cwd, scanGlob);
 
 describe.skipIf(files.length === 0)(`company_system tests`, () => {
   const targets = new Targets(cwd);
-  
+
   beforeAll(async () => {
     targets.loadObjectsFromPaths(files);
     const parsePromises = files.map(f => targets.parseFile(f));
@@ -28,22 +28,23 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Check objects are generated`, async () => {
-    expect(targets.getResolvedObjects().length).toBe(14);
-    expect(targets.getTargets().length).toBe(15);
+    expect(targets.getResolvedObjects().length).toBe(16);
+    expect(targets.getTargets().length).toBe(17);
     expect(targets.getTargetsOfType(`FILE`).length).toBe(4);
-    expect(targets.getTargetsOfType(`PGM`).length).toBe(4);
+    expect(targets.getTargetsOfType(`PGM`).length).toBe(5);
     expect(targets.getTargetsOfType(`MODULE`).length).toBe(2);
+    expect(targets.getTargetsOfType(`CMD`).length).toBe(1);
     expect(targets.getTargetsOfType(`SRVPGM`).length).toBe(4);
   });
 
   test(`Check mypgm`, async () => {
-    const myPgm = targets.getTarget({systemName: `MYPGM`, type: `PGM`});
+    const myPgm = targets.getTarget({ systemName: `MYPGM`, type: `PGM` });
     expect(myPgm.relativePath).toBe(path.join(`qrpglesrc`, `mypgm.pgm.rpgle`));
     expect(myPgm.deps.length).toBe(0);
   });
 
   test(`Check employees`, async () => {
-    const myPgm = targets.getTarget({systemName: `EMPLOYEES`, type: `PGM`});
+    const myPgm = targets.getTarget({ systemName: `EMPLOYEES`, type: `PGM` });
     expect(myPgm.relativePath).toBe(path.join(`qrpglesrc`, `employees.pgm.sqlrpgle`));
 
     expect(myPgm.deps.length).toBe(2);
@@ -60,7 +61,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Check depts`, async () => {
-    const myPgm = targets.getTarget({systemName: `DEPTS`, type: `PGM`});
+    const myPgm = targets.getTarget({ systemName: `DEPTS`, type: `PGM` });
     expect(myPgm.relativePath).toBe(path.join(`qrpglesrc`, `depts.pgm.sqlrpgle`));
     expect(myPgm.text).toBe(`This is the text for this program`);
 
@@ -92,7 +93,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Check utils`, async () => {
-    const myPgm = targets.getTarget({systemName: `UTILS`, type: `SRVPGM`});
+    const myPgm = targets.getTarget({ systemName: `UTILS`, type: `SRVPGM` });
     expect(myPgm.relativePath).toBe(path.join(`qsrvsrc`, `utils.bnd`));
 
     expect(myPgm.deps.length).toBe(1);
@@ -104,7 +105,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Check getDouble`, async () => {
-    const theObj = targets.getTarget({systemName: `GETDOUBLE`, type: `SRVPGM`});
+    const theObj = targets.getTarget({ systemName: `GETDOUBLE`, type: `SRVPGM` });
     expect(theObj.relativePath).toBe(path.join(`qsqlsrc`, `getDouble.sql`));
 
     expect(theObj.deps.length).toBe(1);
@@ -121,7 +122,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Check binding directory`, async () => {
-    const myBinder = targets.getTarget({systemName: `$(APP_BNDDIR)`, type: `BNDDIR`});
+    const myBinder = targets.getTarget({ systemName: `$(APP_BNDDIR)`, type: `BNDDIR` });
     expect(myBinder.relativePath).toBeUndefined();
 
     expect(myBinder.deps.length).toBe(2);
@@ -138,16 +139,22 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Check employee table`, async () => {
-    const empTable = targets.getTarget({systemName: `EMPLOYEE`, type: `FILE`});
+    const empTable = targets.getTarget({ systemName: `EMPLOYEE`, type: `FILE` });
     expect(empTable.relativePath).toBe(path.join(`qddssrc`, `employee.table`));
     expect(empTable.text).toBe(`Employee File`);
-    
+
+  });
+
+  test(`Check mycmd`, async () => {
+    const myCmd = targets.getTarget({ systemName: `MYCMD`, type: `CMD` });
+    expect(myCmd.relativePath).toBe(path.join(`qcmdsrc`, `mycmd.cmd`));
+    expect(myCmd.deps.length).toBe(2);
   });
 
   test(`Testing removing and adding an object`, async () => {
     // First, let's delete the object internally
-    let deptsPgm = targets.getTarget({systemName: `DEPTS`, type: `PGM`});
-    let deptsFile = targets.getTarget({systemName: `DEPTS`, type: `FILE`});
+    let deptsPgm = targets.getTarget({ systemName: `DEPTS`, type: `PGM` });
+    let deptsFile = targets.getTarget({ systemName: `DEPTS`, type: `FILE` });
 
     const deptsFilePath = path.join(cwd, deptsFile.relativePath);
     const deptsPgmPath = path.join(cwd, deptsPgm.relativePath);
@@ -159,14 +166,14 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     expect(impacted.length).toBe(1);
     expect(impacted[0].systemName).toBe(`DEPTS`);
     expect(impacted[0].type).toBe(`PGM`);
-    
+
     const logs = targets.logger.getLogsFor(deptsPgm.relativePath);
     expect(logs.length).toBe(3);
     expect(logs[0].message).toBe(`Include at line 14 found, to path 'qrpgleref/utils.rpgleinc'`);
     expect(logs[1].message).toBe(`Include at line 13 found, to path 'qrpgleref/constants.rpgleinc'`);
     expect(logs[2].message).toBe(`This object depended on DEPTS.FILE before it was deleted.`);
 
-    expect(targets.getTarget({systemName: `DEPTS`, type: `FILE`})).toBeUndefined();
+    expect(targets.getTarget({ systemName: `DEPTS`, type: `FILE` })).toBeUndefined();
 
     targets.resolveBinder();
 
@@ -174,7 +181,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
     await targets.parseFile(deptsFilePath);
 
-    deptsFile = targets.getTarget({systemName: `DEPTS`, type: `FILE`});
+    deptsFile = targets.getTarget({ systemName: `DEPTS`, type: `FILE` });
     expect(deptsFile).toBeDefined();
 
     // Just because we re-handle the path, doesn't mean it's picked up again in other places where it was before
@@ -182,24 +189,24 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
 
     await targets.parseFile(deptsPgmPath);
     // We have to fetch the dep again because the old reference is lost since we parsed again
-    deptsPgm = targets.getTarget({systemName: `DEPTS`, type: `PGM`});
+    deptsPgm = targets.getTarget({ systemName: `DEPTS`, type: `PGM` });
     expect(deptsPgm.deps.find(d => d.systemName === `DEPTS` && d.type === `FILE`)).toBeDefined();
   });
 
   test(`Double resolve binder test`, async () => {
     targets.resolveBinder();
-    let deptsPgm = targets.getTarget({systemName: `DEPTS`, type: `PGM`});
+    let deptsPgm = targets.getTarget({ systemName: `DEPTS`, type: `PGM` });
 
     expect(deptsPgm.deps.length).toBe(4);
 
     targets.resolveBinder();
-    deptsPgm = targets.getTarget({systemName: `DEPTS`, type: `PGM`});
+    deptsPgm = targets.getTarget({ systemName: `DEPTS`, type: `PGM` });
 
     expect(deptsPgm.deps.length).toBe(4);
   });
 
   test(`Check mypgm RPGLE target`, async () => {
-    const myPgm = targets.getTarget({systemName: `MYPGM`, type: `PGM`});
+    const myPgm = targets.getTarget({ systemName: `MYPGM`, type: `PGM` });
     const lines = MakeProject.generateSpecificTarget(compileDefaults[`pgm.rpgle`], myPgm);
 
     expect(lines.join()).toBe([
@@ -214,7 +221,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Check depts SQLRPGLE target (with CHGATR)`, async () => {
-    const myPgm = targets.getTarget({systemName: `DEPTS`, type: `PGM`});
+    const myPgm = targets.getTarget({ systemName: `DEPTS`, type: `PGM` });
     const lines = MakeProject.generateSpecificTarget(compileDefaults[`pgm.sqlrpgle`], myPgm);
 
     expect(lines.join()).toBe([
@@ -228,8 +235,22 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     ].join());
   });
 
+  test(`Check depts CMD target (with overrides)`, async () => {
+    const myCmd = targets.getTarget({ systemName: `MYCMD`, type: `CMD` });
+    const lines = MakeProject.generateSpecificTarget(compileDefaults[`cmd`], myCmd);
+
+    expect(lines.join()).toBe([
+      '$(PREPATH)/MYCMD.CMD: qcmdsrc/mycmd.cmd',
+      '\t-system -qi \"CRTSRCPF FILE($(BIN_LIB)/qcmdsrc) RCDLEN(112) CCSID(*JOB)"',
+      `\tsystem \"CPYFRMSTMF FROMSTMF('qcmdsrc/mycmd.cmd') TOMBR('$(PREPATH)/qcmdsrc.FILE/MYCMD.MBR') MBROPT(*REPLACE)"`,
+      '\tliblist -c $(BIN_LIB);\\',
+      '\tliblist -a $(LIBL);\\',
+      `\tsystem \"CRTCMD CMD($(BIN_LIB)/MYCMD) PGM($(BIN_LIB)/MYPGM) SRCFILE($(BIN_LIB)/qcmdsrc) OPTION(*EVENTF) VLDCKR(VMYCMD)\" > .logs/mycmd.splf || \\\n\t(system \"CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/MYCMD.MBR') TOSTMF('.evfevent/mycmd.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)\"; $(SHELL) -c 'exit 1')`,
+    ].join());
+  });
+
   test(`Check depts DSPF target (member)`, async () => {
-    const myPgm = targets.getTarget({systemName: `DEPTS`, type: `FILE`});
+    const myPgm = targets.getTarget({ systemName: `DEPTS`, type: `FILE` });
     const lines = MakeProject.generateSpecificTarget(compileDefaults[`dspf`], myPgm);
 
     expect(lines.join()).toBe([
@@ -246,7 +267,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Check utils SRVPGM target (from binder source, *MODULES variable)`, async () => {
-    const myPgm = targets.getTarget({systemName: `UTILS`, type: `SRVPGM`});
+    const myPgm = targets.getTarget({ systemName: `UTILS`, type: `SRVPGM` });
     const lines = MakeProject.generateSpecificTarget(compileDefaults[`bnd`], myPgm);
 
     expect(lines.join()).toBe([
@@ -260,7 +281,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Check banking SRVPGM target (no binder source)`, async () => {
-    const myPgm = targets.getTarget({systemName: `BANKING`, type: `SRVPGM`});
+    const myPgm = targets.getTarget({ systemName: `BANKING`, type: `SRVPGM` });
     const lines = MakeProject.generateSpecificTarget(compileDefaults[`srvpgm`], myPgm);
 
     expect(lines.join()).toBe([
@@ -306,7 +327,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   test(`Makefile targets for partial build (DEPTS display file)`, () => {
     const project = new MakeProject(cwd, targets);
 
-    const deptsFile = targets.getTarget({systemName: `DEPTS`, type: `FILE`});
+    const deptsFile = targets.getTarget({ systemName: `DEPTS`, type: `FILE` });
 
     // Generate targets on it's own will have BNDDIR, PGM, etc
     const headerContent = project.generateTargets([deptsFile]);
@@ -320,7 +341,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   test(`Makefile targets for partial build (EMPLOYEE table)`, () => {
     const project = new MakeProject(cwd, targets);
 
-    const deptsFile = targets.getTarget({systemName: `EMPLOYEE`, type: `FILE`});
+    const deptsFile = targets.getTarget({ systemName: `EMPLOYEE`, type: `FILE` });
 
     // Generate targets on it's own will have BNDDIR, PGM, etc
     const headerContent = project.generateTargets([deptsFile]);
@@ -338,7 +359,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     expect(allTargets).toContain(`$(PREPATH)/DEPTS.PGM`);
     expect(allTargets).toContain(`$(PREPATH)/SHOWEMPS.PGM`);
     expect(allTargets).toContain(`$(PREPATH)/GETTOTSAL.SRVPGM`);
-    
+
     const deptsTargetDeps = headerContent.find(l => l.startsWith(`$(PREPATH)/DEPTS.PGM:`));
     expect(deptsTargetDeps).toBeDefined();
 
@@ -349,7 +370,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     const project = new MakeProject(cwd, targets);
     project.setNoChildrenInBuild(true);
 
-    const deptsFile = targets.getTarget({systemName: `EMPLOYEE`, type: `FILE`});
+    const deptsFile = targets.getTarget({ systemName: `EMPLOYEE`, type: `FILE` });
 
     // Generate targets on it's own will have BNDDIR, PGM, etc
     const headerContent = project.generateTargets([deptsFile]);
@@ -367,13 +388,13 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     expect(allTargets).toContain(`$(PREPATH)/DEPTS.PGM`);
     expect(allTargets).toContain(`$(PREPATH)/SHOWEMPS.PGM`);
     expect(allTargets).toContain(`$(PREPATH)/GETTOTSAL.SRVPGM`);
-    
+
     const deptsTargetDeps = headerContent.find(l => l.startsWith(`$(PREPATH)/DEPTS.PGM:`));
     expect(deptsTargetDeps).toBeUndefined();
   });
 
   test(`Impact of EMPLOYEES`, () => {
-    const empPgm = targets.getTarget({systemName: `EMPLOYEES`, type: `PGM`});
+    const empPgm = targets.getTarget({ systemName: `EMPLOYEES`, type: `PGM` });
     expect(empPgm.relativePath).toBe(path.join(`qrpglesrc`, `employees.pgm.sqlrpgle`));
 
     const impactTree = targets.getImpactFor(empPgm);
@@ -388,7 +409,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Impact of UTILS`, () => {
-    const utilsModule = targets.getTarget({systemName: `UTILS`, type: `MODULE`});
+    const utilsModule = targets.getTarget({ systemName: `UTILS`, type: `MODULE` });
     expect(utilsModule.relativePath).toBe(path.join(`qrpglesrc`, `utils.sqlrpgle`));
 
     const impactTree = targets.getImpactFor(utilsModule);
@@ -425,7 +446,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     // We have a test for this as SQL objects are created a little different
     // from regular objects.
 
-    const resolvedObject = targets.getTarget({systemName: `GETTOTSAL`, type: `SRVPGM`});
+    const resolvedObject = targets.getTarget({ systemName: `GETTOTSAL`, type: `SRVPGM` });
     expect(resolvedObject.relativePath).toBe(path.join(`qsqlsrc`, `getTotalSalary.sqludf`));
 
     expect(resolvedObject).toBeDefined();
