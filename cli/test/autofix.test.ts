@@ -1,5 +1,5 @@
-import { describe, expect, test } from "vitest";
-import { setupIncludeFix, setupProjectFromQsys } from "./fixtures/projects";
+import { expect, test } from "vitest";
+import { setupFixture } from "./fixtures/projects";
 
 import { Targets } from '../src/targets'
 import { renameFiles } from "../src/utils";
@@ -9,15 +9,16 @@ import * as path from "path";
 import { ReadFileSystem } from "../src/readFileSystem";
 
 test(`Auto rename RPGLE program and include and fix-include infos`, async () => {
-  const cwd = setupProjectFromQsys();
+  const project = setupFixture(`from_qsys`);
 
   // First step is to rename the files
 
   const fs = new ReadFileSystem();
-	let targets = new Targets(cwd, fs);
+	let targets = new Targets(project.cwd, fs);
 	targets.setSuggestions({renames: true});
 
-  const initialFiles = await fs.getFiles(cwd, scanGlob);
+  project.setup();
+  const initialFiles = await fs.getFiles(project.cwd, scanGlob);
   targets.loadObjectsFromPaths(initialFiles);
 	await Promise.allSettled(initialFiles.map(f => targets.parseFile(f)));
 
@@ -59,7 +60,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
     type: "rename",
     change: {
       rename: {
-        path: path.join(cwd, `qsqlsrc`, `dept.sql`),
+        path: path.join(project.cwd, `qsqlsrc`, `dept.sql`),
         newName: "super_long_dept_name.table",
       },
     },
@@ -71,7 +72,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
     type: "rename",
     change: {
       rename: {
-        path: path.join(cwd, `qsqlsrc`, `empmst.sql`),
+        path: path.join(project.cwd, `qsqlsrc`, `empmst.sql`),
         newName: "empmst.table",
       },
     },
@@ -83,7 +84,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
     type: "rename",
     change: {
       rename: {
-        path: path.join(cwd, `qprotosrc`, `errortable.rpgle`),
+        path: path.join(project.cwd, `qprotosrc`, `errortable.rpgle`),
         newName: "errortable.rpgleinc",
       },
     },
@@ -101,7 +102,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
     type: "rename",
     change: {
       rename: {
-        path: path.join(cwd, `qrpglesrc`, `payroll.rpgle`),
+        path: path.join(project.cwd, `qrpglesrc`, `payroll.rpgle`),
         newName: "payroll.pgm.rpgle",
       },
     },
@@ -111,10 +112,10 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
   renameFiles(targets.logger);
 
   // Next, scan the project again and check the logs
-  targets = new Targets(cwd, fs);
+  targets = new Targets(project.cwd, fs);
 	targets.setSuggestions({renames: true});
 
-  const newFiles = await fs.getFiles(cwd, scanGlob);
+  const newFiles = await fs.getFiles(project.cwd, scanGlob);
   targets.loadObjectsFromPaths(newFiles);
 	await Promise.allSettled(newFiles.map(f => targets.parseFile(f)));
 
@@ -156,13 +157,14 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
 
 test(`Fix includes in same directory`, async () => {
   const fs = new ReadFileSystem();
-  const cwd = setupIncludeFix();
+  const project = setupFixture('include_fix')
 
   // First step is to rename the files
 
-	let targets = new Targets(cwd, fs);
+	let targets = new Targets(project.cwd, fs);
 	targets.setSuggestions({includes: true});
 
+  project.setup();
   await targets.loadProject();
 
 	targets.resolveBinder();

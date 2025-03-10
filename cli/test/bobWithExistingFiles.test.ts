@@ -6,17 +6,17 @@ import { setupFixture } from './fixtures/projects';
 import { BobProject } from '../src';
 import { ReadFileSystem } from '../src/readFileSystem';
 
-const cwd = setupFixture(`pseudo`);
-
 // This issue was occuring when you had two files with the same name, but different extensions.
 
-
 describe(`bob Rules.mk tests`, () => {
+  const project = setupFixture(`pseudo`);
+
   const fs = new ReadFileSystem();
-  const targets = new Targets(cwd, fs);
+  const targets = new Targets(project.cwd, fs);
   targets.setSuggestions({ renames: true, includes: true })
 
   beforeAll(async () => {
+    project.setup();
     await targets.loadProject();
 
     expect(targets.getTargets().length).toBeGreaterThan(0);

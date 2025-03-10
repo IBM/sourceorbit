@@ -2,23 +2,24 @@ import { beforeAll, describe, expect, test } from 'vitest';
 
 import { Targets } from '../src/targets'
 import { MakeProject } from '../src/builders/make';
-import { setupPseudo } from './fixtures/projects';
+import { setupFixture } from './fixtures/projects';
 import { ReadFileSystem } from '../src/readFileSystem';
 
-const cwd = setupPseudo();
-
 describe(`pseudo tests`, () => {
+  const project = setupFixture(`pseudo`);
+  
   const fs = new ReadFileSystem();
-  const targets = new Targets(cwd, fs);
+  const targets = new Targets(project.cwd, fs);
   let make: MakeProject;
 
   beforeAll(async () => {
+    project.setup();
     await targets.loadProject();
 
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();
 
-    make = new MakeProject(cwd, targets);
+    make = new MakeProject(project.cwd, targets);
   });
 
   test(`Test objects exists`, () => {

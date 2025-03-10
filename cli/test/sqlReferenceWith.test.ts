@@ -5,8 +5,6 @@ import path from 'path';
 import { setupFixture } from './fixtures/projects';
 import { ReadFileSystem } from '../src/readFileSystem';
 
-const cwd = setupFixture(`sql_ref_with`)
-
 async function setupScopeAnalysis(targets: Targets) {
   await targets.loadProject();
 
@@ -15,10 +13,13 @@ async function setupScopeAnalysis(targets: Targets) {
 }
 
 describe(`sql_references_with tests`, () => {
+  const project = setupFixture(`sql_ref_with`)
+
   const fs = new ReadFileSystem();
-  const targets = new Targets(cwd, fs);
+  const targets = new Targets(project.cwd, fs);
 
   beforeAll(async () => {
+    project.setup();
     await setupScopeAnalysis(targets);
   });
 

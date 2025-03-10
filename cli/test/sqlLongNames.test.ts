@@ -4,16 +4,17 @@ import { Targets } from '../src/targets'
 import { setupFixture } from './fixtures/projects';
 import { ReadFileSystem } from '../src/readFileSystem';
 
-const cwd = setupFixture(`sql_long_names`);
-
 // This issue was occuring when you had two files with the same name, but different extensions.
 
 describe(`sql long name lookup`, () => {
+  const project = setupFixture(`sql_long_names`);
+
   const fs = new ReadFileSystem();
-  const targets = new Targets(cwd, fs);
+  const targets = new Targets(project.cwd, fs);
   targets.setSuggestions({ renames: true, includes: true })
 
   beforeAll(async () => {
+    project.setup();
     await targets.loadProject();
 
     expect(targets.getTargets().length).toBeGreaterThan(0);

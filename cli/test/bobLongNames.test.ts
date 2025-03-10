@@ -4,16 +4,16 @@ import { Targets } from '../src/targets'
 import { setupFixture } from './fixtures/projects';
 import { ReadFileSystem } from '../src/readFileSystem';
 
-const cwd = setupFixture(`bob_long_names`);
-
 const fs = new ReadFileSystem();
 
-
 describe(`long name test`, () => {
-  const targets = new Targets(cwd, fs);
+  const project = setupFixture(`bob_long_names`);
+  
+  const targets = new Targets(project.cwd, fs);
   targets.setSuggestions({ renames: true, includes: true })
 
   beforeAll(async () => {
+    project.setup();
     await targets.loadProject();
 
     expect(targets.getTargets().length).toBeGreaterThan(0);

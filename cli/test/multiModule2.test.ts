@@ -5,13 +5,15 @@ import { MakeProject } from '../src/builders/make';
 import { setupFixture } from './fixtures/projects';
 import { ReadFileSystem } from '../src/readFileSystem';
 
-const cwd = setupFixture(`multi_module_two`);
 
 describe(`multi_module_two tests`, () => {
+  const project = setupFixture(`multi_module_two`);
   const fs = new ReadFileSystem();
-  const targets = new Targets(cwd, fs);
+  const targets = new Targets(project.cwd, fs);
   
   beforeAll(async () => {
+    project.setup();
+
     await targets.loadProject();
 
     expect(targets.getTargets().length).toBeGreaterThan(0);
@@ -51,9 +53,9 @@ describe(`multi_module_two tests`, () => {
   });
 
   test(`Check makefile result`, async () => {
-    const project = new MakeProject(cwd, targets);
+    const makeProject = new MakeProject(project.cwd, targets);
 
-    const targetContent = project.getMakefile();
+    const targetContent = makeProject.getMakefile();
 
     const runnerTarget = targetContent.find(t => t.startsWith(`$(PREPATH)/RUNNER.PGM: `) && t.length > 50);
     expect(runnerTarget).toBeDefined();

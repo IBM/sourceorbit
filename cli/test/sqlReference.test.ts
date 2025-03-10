@@ -2,10 +2,9 @@ import { beforeAll, describe, expect, test } from 'vitest';
 
 import { Targets } from '../src/targets'
 import path from 'path';
-import { setupSqlReferencesSystem } from './fixtures/projects';
+import { setupFixture } from './fixtures/projects';
 import { ReadFileSystem } from '../src/readFileSystem';
 
-const cwd = setupSqlReferencesSystem();
 
 async function setupScopeAnalysis(targets: Targets) {
   await targets.loadProject();
@@ -15,10 +14,13 @@ async function setupScopeAnalysis(targets: Targets) {
 }
 
 describe(`sql_references tests (internal scope analysis)`, () => {
+  const project = setupFixture(`sql_references`);
+
   const fs = new ReadFileSystem();
-  const targets = new Targets(cwd, fs);
+  const targets = new Targets(project.cwd, fs);
 
   beforeAll(async () => {
+    project.setup();
     await setupScopeAnalysis(targets);
   });
 

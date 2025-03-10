@@ -6,14 +6,15 @@ import { ReadFileSystem } from "../src/readFileSystem";
 
 
 test(`Check that dclcase is being imported correctly`, async () => {
-  const cwd = setupFixture(`dclcase`);
+  const project = setupFixture(`dclcase`);
 
   // First step is to rename the files
 
   const fs = new ReadFileSystem();
-  const targets = new Targets(cwd, fs);
+  const targets = new Targets(project.cwd, fs);
 	targets.setSuggestions({renames: true});
 
+  project.setup();
   await targets.loadProject();
   
   const pgmObject = targets.getTarget({systemName: `APIVAL01S`, type: `PGM`});

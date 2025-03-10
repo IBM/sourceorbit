@@ -6,13 +6,13 @@ import { setupFixture } from './fixtures/projects';
 import { BobProject } from '../src/builders/bob';
 import { ReadFileSystem } from '../src/readFileSystem';
 
-const cwd = setupFixture(`dds_deps_with_refs`);
-
 // This issue was occuring when you had two files with the same name, but different extensions.
 
 describe(`dds_refs tests with reference file`, () => {
+  const project = setupFixture(`dds_deps_with_refs`);
+
   const fs = new ReadFileSystem();
-  const targets = new Targets(cwd, fs);
+  const targets = new Targets(project.cwd, fs);
   targets.setSuggestions({renames: true, includes: true})
   
   beforeAll(async () => {
@@ -85,9 +85,9 @@ describe(`dds_refs tests with reference file`, () => {
 
 
   test(`make doesn't include refs that do not exist or are referenced objects`, () => {
-    const project = new MakeProject(cwd, targets);
+    const makeProject = new MakeProject(project.cwd, targets);
 
-    const targetContent = project.generateTargets();
+    const targetContent = makeProject.generateTargets();
 
     expect(targetContent).toContain(`$(PREPATH)/PROVIDE1.FILE: $(PREPATH)/PROVIDER.FILE`);
     expect(targetContent).toContain(`$(PREPATH)/PRO250D.FILE: $(PREPATH)/PROVIDER.FILE`);
@@ -95,9 +95,9 @@ describe(`dds_refs tests with reference file`, () => {
   });
 
   test(`bob doesn't include refs that do not exist or are referenced objects`, () => {
-    const project = new BobProject(targets);
+    const bobProject = new BobProject(targets);
 
-    const files = project.createRules();
+    const files = bobProject.createRules();
 
     expect(files[`Rules.mk`]).toBeDefined();
 

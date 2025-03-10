@@ -5,16 +5,17 @@ import path from 'path';
 import { setupFixture } from './fixtures/projects';
 import { ReadFileSystem } from '../src/readFileSystem';
 
-const cwd = setupFixture(`include_mismatch_fix`);
-
 // This issue was occuring when you had two files with the same name, but different extensions.
 
 describe(`include_mismatch_fix tests`, () => {
+  const project = setupFixture(`include_mismatch_fix`);
+
   const fs = new ReadFileSystem();
-  const targets = new Targets(cwd, fs);
+  const targets = new Targets(project.cwd, fs);
   targets.setSuggestions({renames: true, includes: true})
   
   beforeAll(async () => {
+    project.setup();
     await targets.loadProject();
 
     expect(targets.getTargets().length).toBeGreaterThan(0);
@@ -36,7 +37,7 @@ describe(`include_mismatch_fix tests`, () => {
     expect(articleIncludeLogs[0].type).toBe(`rename`);
     expect(articleIncludeLogs[0].change).toMatchObject({
       rename: {
-        path: path.join(cwd, `QPROTOSRC`, `ARTICLE.RPGLE`),
+        path: path.join(project.cwd, `QPROTOSRC`, `ARTICLE.RPGLE`),
         newName: 'ARTICLE.rpgleinc'
       }
     })

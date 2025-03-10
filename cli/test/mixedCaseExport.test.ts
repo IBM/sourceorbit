@@ -4,8 +4,6 @@ import { Targets } from '../src/targets'
 import { setupFixture } from './fixtures/projects';
 import { ReadFileSystem } from '../src/readFileSystem';
 
-const cwd = setupFixture(`mixedCaseExport`);
-
 async function setupScopeAnalysis(targets: Targets) {
   await targets.loadProject();
 
@@ -14,10 +12,13 @@ async function setupScopeAnalysis(targets: Targets) {
 }
 
 describe(`pr with mixed case exports exports `, () => {
+  const project = setupFixture(`mixedCaseExport`);
+
   const fs = new ReadFileSystem();
-  const targets = new Targets(cwd, fs);
+  const targets = new Targets(project.cwd, fs);
 
   beforeAll(async () => {
+    project.setup();
     await setupScopeAnalysis(targets);
   });
 

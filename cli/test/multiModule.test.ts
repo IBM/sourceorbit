@@ -3,17 +3,18 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { Targets } from '../src/targets'
 import path from 'path';
 import { MakeProject } from '../src/builders/make';
-import { setupMultiModule } from './fixtures/projects';
+import { setupFixture } from './fixtures/projects';
 import { writeFileSync } from 'fs';
 import { ReadFileSystem } from '../src/readFileSystem';
 
-const cwd = setupMultiModule();
-
 describe(`multi_module tests`, () => {
+  const project = setupFixture(`multi_module`);
+
   const fs = new ReadFileSystem();
-  const targets = new Targets(cwd, fs);
+  const targets = new Targets(project.cwd, fs);
   
   beforeAll(async () => {
+    project.setup();
     await targets.loadProject();
 
     targets.resolveBinder();
@@ -48,8 +49,8 @@ describe(`multi_module tests`, () => {
   });
 
   test(`Generate makefile`, () => {
-    const makeProj = new MakeProject(cwd, targets);
+    const makeProj = new MakeProject(project.cwd, targets);
 
-    writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile().join(`\n`));
+    writeFileSync(path.join(project.cwd, `makefile`), makeProj.getMakefile().join(`\n`));
   });
 });

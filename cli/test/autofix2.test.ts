@@ -9,12 +9,13 @@ import * as path from "path";
 import { ReadFileSystem } from "../src/readFileSystem";
 
 test(`Auto rename RPGLE program and include and fix-include infos`, async () => {
-  const cwd = setupFixture(`auto_rename1`);
+  const project = setupFixture(`auto_rename1`);
+  project.setup();
 
   const fs = new ReadFileSystem();
 
   // First step is to rename the files
-	let targets = new Targets(cwd, fs);
+	let targets = new Targets(project.cwd, fs);
 	targets.setSuggestions({renames: true});
 
   await targets.loadProject();
@@ -42,10 +43,10 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
   renameFiles(targets.logger);
 
   // Next, scan the project again and check the logs
-  targets = new Targets(cwd, fs);
+  targets = new Targets(project.cwd, fs);
   targets.setSuggestions({includes: true});
 
-  const newFiles = await fs.getFiles(cwd, scanGlob);
+  const newFiles = await fs.getFiles(project.cwd, scanGlob);
   targets.loadObjectsFromPaths(newFiles);
   await Promise.allSettled(newFiles.map(f => targets.parseFile(f)));
 
