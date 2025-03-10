@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import * as path from 'path';
 
 import Parser from "vscode-rpgle/language/parser";
-import { Targets } from './targets';
+import { Targets } from '../targets';
 
 let includeFileCache: { [path: string]: string } = {};
 
@@ -49,7 +49,7 @@ export function setupParser(targets: Targets): Parser {
 				return {
 					found: true,
 					uri: file,
-					lines: includeFileCache[file].split(`\n`)
+					content: includeFileCache[file]
 				}
 
 			} else {
@@ -59,7 +59,7 @@ export function setupParser(targets: Targets): Parser {
 				return {
 					found: true,
 					uri: file,
-					lines: content.split(`\n`)
+					content: content
 				}
 			}
 		}

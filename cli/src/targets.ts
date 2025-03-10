@@ -11,10 +11,11 @@ import Document from "vscode-db2i/src/language/sql/document";
 import { ObjectRef, StatementType } from 'vscode-db2i/src/language/sql/types';
 import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensions, cmdExtensions } from './extensions';
 import Parser from "vscode-rpgle/language/parser";
-import { setupParser } from './parser';
+import { setupParser } from './languages/rpgle';
 import { Logger } from './logger';
 import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
 import { extCanBeProgram, getObjectType } from './builders/environment';
+import { isSqlFunction } from './languages/sql';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -881,7 +882,7 @@ export class Targets {
 								// TODO: do we need to look for SRVPGM (function) or PGM (procedure) here?
 								const resolvedObject = this.searchForAnyObject({ name: simpleName, types: [`FILE`, `SRVPGM`, `PGM`] });
 								if (resolvedObject) newTarget.deps.push(resolvedObject);
-								else {
+								else if (!isSqlFunction(def.object.name)) {
 									this.logger.fileLog(newTarget.relativePath, {
 										message: `No object found for reference '${def.object.name}'`,
 										type: `warning`,
@@ -1120,7 +1121,7 @@ export class Targets {
 
 				return {
 					lookup: fileName.toUpperCase(),
-					line: ref.position ? ref.position.line : undefined
+					line: ref.position ? ref.position.range.line : undefined
 				};
 			})
 			.forEach((ref: RpgLookup) => {
@@ -1160,7 +1161,7 @@ export class Targets {
 
 					return {
 						lookup: value.split(`:`)[0].toUpperCase(),
-						line: struct.position ? struct.position.line : undefined
+						line: struct.position ? struct.position.range.line : undefined
 					};
 				})
 				.forEach((ref: RpgLookup) => {
@@ -1200,7 +1201,7 @@ export class Targets {
 
 					return {
 						lookup: possibleName.toUpperCase(),
-						line: file.position ? file.position.line : undefined
+						line: file.position ? file.position.range.line : undefined
 					};
 				})
 				.forEach((ref: RpgLookup) => {
@@ -1225,14 +1226,14 @@ export class Targets {
 				.filter(ref => !ref.description)
 				.map((ref): RpgLookup => ({
 					lookup: trimQuotes(ref.name, `"`).toUpperCase(),
-					line: ref.position ? ref.position.line : undefined
+					line: ref.position ? ref.position.range.line : undefined
 				}))
 				.forEach((ref: RpgLookup) => {
 					const previouslyScanned = target.deps.some((r => (ref.lookup === r.systemName || ref.lookup === r.longName?.toUpperCase()) && r.type === `FILE`));
 					if (previouslyScanned) return;
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
 					if (resolvedObject) target.deps.push(resolvedObject)
-					else {
+					else if (!isSqlFunction(ref.lookup)) {
 						this.logger.fileLog(ileObject.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
@@ -1255,7 +1256,7 @@ export class Targets {
 
 					return {
 						lookup: fileName.toUpperCase(),
-						line: ref.position ? ref.position.line : undefined
+						line: ref.position ? ref.position.range.line : undefined
 					};
 				})
 				.forEach((ref: RpgLookup) => {
@@ -1285,7 +1286,7 @@ export class Targets {
 
 					return {
 						lookup: fileName.toUpperCase(),
-						line: ref.position ? ref.position.line : undefined
+						line: ref.position ? ref.position.range.line : undefined
 					};
 				})
 				.forEach((ref: RpgLookup) => {
@@ -1638,8 +1639,12 @@ export class Targets {
 	}
 }
 
-function trimQuotes(input: string, value = `'`) {
-	if (input[0] === value) input = input.substring(1);
-	if (input[input.length - 1] === value) input = input.substring(0, input.length - 1);
-	return input;
+function trimQuotes(input: string|boolean, value = `'`) {
+	if (typeof input === `string`) {
+		if (input[0] === value) input = input.substring(1);
+		if (input[input.length - 1] === value) input = input.substring(0, input.length - 1);
+		return input;
+	} else {
+		return '';
+	}
 }
