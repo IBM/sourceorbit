@@ -2,25 +2,21 @@ import { beforeAll, describe, expect, test } from 'vitest';
 
 import { Targets } from '../src/targets'
 import path from 'path';
-import { getFiles } from '../src/utils';
 import { setupSqlReferencesSystem } from './fixtures/projects';
-import { scanGlob } from '../src/extensions';
+import { ReadFileSystem } from '../src/readFileSystem';
 
 const cwd = setupSqlReferencesSystem();
 
-let files = getFiles(cwd, scanGlob);
-
 async function setupScopeAnalysis(targets: Targets) {
-  targets.loadObjectsFromPaths(files);
-  const parsePromises = files.map(f => targets.parseFile(f));
-  await Promise.all(parsePromises);
+  await targets.loadProject();
 
   expect(targets.getTargets().length).toBeGreaterThan(0);
   targets.resolveBinder();
 }
 
-describe.skipIf(files.length === 0)(`sql_references tests (internal scope analysis)`, () => {
-  const targets = new Targets(cwd);
+describe(`sql_references tests (internal scope analysis)`, () => {
+  const fs = new ReadFileSystem();
+  const targets = new Targets(cwd, fs);
 
   beforeAll(async () => {
     await setupScopeAnalysis(targets);

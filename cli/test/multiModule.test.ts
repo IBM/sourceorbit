@@ -1,26 +1,20 @@
-import { assert, beforeAll, describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
 
 import { Targets } from '../src/targets'
 import path from 'path';
 import { MakeProject } from '../src/builders/make';
-import { getFiles } from '../src/utils';
 import { setupMultiModule } from './fixtures/projects';
-import { scanGlob } from '../src/extensions';
 import { writeFileSync } from 'fs';
+import { ReadFileSystem } from '../src/readFileSystem';
 
 const cwd = setupMultiModule();
 
-let files = getFiles(cwd, scanGlob);
-
-describe.skipIf(files.length === 0)(`multi_module tests`, () => {
-  const targets = new Targets(cwd);
+describe(`multi_module tests`, () => {
+  const fs = new ReadFileSystem();
+  const targets = new Targets(cwd, fs);
   
   beforeAll(async () => {
-    targets.loadObjectsFromPaths(files);
-    
-    for (const f of files) {
-      await targets.parseFile(f);
-    }
+    await targets.loadProject();
 
     targets.resolveBinder();
   });

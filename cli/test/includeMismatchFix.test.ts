@@ -1,27 +1,21 @@
-import { assert, beforeAll, describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
 
 import { Targets } from '../src/targets'
 import path from 'path';
-import { MakeProject } from '../src/builders/make';
-import { getFiles } from '../src/utils';
 import { setupFixture } from './fixtures/projects';
-import { scanGlob } from '../src/extensions';
-import { writeFileSync } from 'fs';
+import { ReadFileSystem } from '../src/readFileSystem';
 
 const cwd = setupFixture(`include_mismatch_fix`);
 
 // This issue was occuring when you had two files with the same name, but different extensions.
 
-let files = getFiles(cwd, scanGlob);
-
-describe.skipIf(files.length === 0)(`include_mismatch_fix tests`, () => {
-  const targets = new Targets(cwd);
+describe(`include_mismatch_fix tests`, () => {
+  const fs = new ReadFileSystem();
+  const targets = new Targets(cwd, fs);
   targets.setSuggestions({renames: true, includes: true})
   
   beforeAll(async () => {
-    targets.loadObjectsFromPaths(files);
-    const parsePromises = files.map(f => targets.parseFile(f));
-    await Promise.all(parsePromises);
+    await targets.loadProject();
 
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();

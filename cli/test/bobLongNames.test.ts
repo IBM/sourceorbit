@@ -1,26 +1,20 @@
-import { assert, beforeAll, describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
 
 import { Targets } from '../src/targets'
-import path from 'path';
-import { MakeProject } from '../src/builders/make';
-import { getFiles } from '../src/utils';
 import { setupFixture } from './fixtures/projects';
-import { scanGlob } from '../src/extensions';
-import { writeFileSync } from 'fs';
-import { BobProject } from '../src';
+import { ReadFileSystem } from '../src/readFileSystem';
 
 const cwd = setupFixture(`bob_long_names`);
 
-let files = getFiles(cwd, scanGlob);
+const fs = new ReadFileSystem();
 
-describe.skipIf(files.length === 0)(`long name test`, () => {
-  const targets = new Targets(cwd);
+
+describe(`long name test`, () => {
+  const targets = new Targets(cwd, fs);
   targets.setSuggestions({ renames: true, includes: true })
 
   beforeAll(async () => {
-    targets.loadObjectsFromPaths(files);
-    const parsePromises = files.map(f => targets.parseFile(f));
-    await Promise.all(parsePromises);
+    await targets.loadProject();
 
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();

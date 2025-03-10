@@ -1,7 +1,5 @@
 import glob from 'glob';
 import path from 'path';
-import fs from 'fs/promises';
-import fss from 'fs';
 import Cache from "vscode-rpgle/language/models/cache";
 import { IncludeStatement } from "vscode-rpgle/language/parserTypes";
 import { infoOut, warningOut } from './cli';
@@ -16,6 +14,7 @@ import { Logger } from './logger';
 import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
 import { extCanBeProgram, getObjectType } from './builders/environment';
 import { isSqlFunction } from './languages/sql';
+import { ReadFileSystem } from './readFileSystem';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -109,7 +108,7 @@ export class Targets {
 
 	public logger: Logger;
 
-	constructor(private cwd: string) {
+	constructor(private cwd: string, private fs: ReadFileSystem) {
 		this.rpgParser = setupParser(this);
 		this.logger = new Logger();
 	}
@@ -138,7 +137,21 @@ export class Targets {
 		this.resolvedObjects[localPath] = ileObject;
 	}
 
-	public resolvePathToObject(localPath: string, newText?: string) {
+	public async loadProject(withRef?: string) {
+		if (Object.keys(this.resolvedObjects).length > 0) {
+			throw new Error(`Project already loaded.`);
+		}
+
+		if (withRef) {
+			await this.handleRefsFile(this.getRelative(withRef));
+		}
+
+		const initialFiles = await this.fs.getFiles(this.cwd);
+		await this.loadObjectsFromPaths(initialFiles);
+		await Promise.allSettled(initialFiles.map(f => this.parseFile(f)));
+	}
+
+	public async resolvePathToObject(localPath: string, newText?: string) {
 		if (this.resolvedObjects[localPath]) {
 			if (newText) this.resolvedObjects[localPath].text = newText;
 			return this.resolvedObjects[localPath];
@@ -163,7 +176,7 @@ export class Targets {
 
 		// If this file is an SQL file, we need to look to see if it has a long name as we need to resolve all names here
 		if (sqlExtensions.includes(extension.toLowerCase())) {
-			const ref = this.sqlObjectDataFromPath(localPath);
+			const ref = await this.sqlObjectDataFromPath(localPath);
 			if (ref) {
 				if (ref.object.system) theObject.systemName = ref.object.system.toUpperCase();
 				if (ref.object.name) theObject.longName = ref.object.name;
@@ -182,7 +195,7 @@ export class Targets {
 	 * @param filePath Fully qualified path to the file. Assumed to exist.
 	 */
 	public async handleRefsFile(filePath: string) {
-		const content = await fs.readFile(filePath, { encoding: `utf-8` });
+		const content = await this.fs.readFile(filePath);
 
 		const pseudoObjects = getReferenceObjectsFrom(content);
 
@@ -310,7 +323,7 @@ export class Targets {
 
 	public loadObjectsFromPaths(paths: string[]) {
 		// optimiseFileList(paths); //Ensure we load SQL files first
-		paths.forEach(p => this.resolvePathToObject(p));
+		return Promise.all(paths.map(p => this.resolvePathToObject(p)));
 	}
 
 	public async parseFile(filePath: string) {
@@ -328,7 +341,7 @@ export class Targets {
 			const ext = pathDetail.ext.substring(1).toLowerCase();
 
 			try {
-				const content = await fs.readFile(filePath, { encoding: `utf-8` });
+				const content = await this.fs.readFile(filePath);
 				const eol = content.indexOf(`\r\n`) >= 0 ? `\r\n` : `\n`;
 
 				// Really only applied to rpg
@@ -360,7 +373,8 @@ export class Targets {
 					);
 
 					if (rpgDocs) {
-						this.createRpgTarget(filePath, rpgDocs, options);
+						const ileObject = await this.resolvePathToObject(filePath, options.text);
+						this.createRpgTarget(ileObject, filePath, rpgDocs, options);
 					}
 
 				}
@@ -371,13 +385,15 @@ export class Targets {
 					const module = new Module();
 					module.parseStatements(tokens);
 
-					this.createClTarget(filePath, module, options);
+					const ileObject = await this.resolvePathToObject(filePath);
+					this.createClTarget(ileObject, filePath, module, options);
 				}
 				else if (ddsExtension.includes(ext)) {
 					const ddsFile = new dds();
 					ddsFile.parse(content.split(eol));
 
-					this.createDdsFileTarget(filePath, ddsFile, options);
+					const ileObject = await this.resolvePathToObject(filePath, options.text);
+					this.createDdsFileTarget(ileObject, filePath, ddsFile, options);
 				}
 				else if (sqlExtensions.includes(ext)) {
 					const sqlDoc = new Document(content);
@@ -390,7 +406,8 @@ export class Targets {
 					const module = new Module();
 					module.parseStatements(tokens);
 
-					this.createSrvPgmTarget(filePath, module, options);
+					const ileObject = await this.resolvePathToObject(filePath, options.text);
+					this.createSrvPgmTarget(ileObject, filePath, module, options);
 				}
 				else if (cmdExtensions.includes(ext)) {
 					this.createCmdTarget(filePath, options);
@@ -422,8 +439,7 @@ export class Targets {
 		// Since cmd source doesn't explicity contains deps, we resolve later on
 	}
 
-	private createSrvPgmTarget(localPath: string, module: Module, options: FileOptions = {}) {
-		const ileObject = this.resolvePathToObject(localPath, options.text);
+	private createSrvPgmTarget(ileObject: ILEObject, localPath: string, module: Module, options: FileOptions = {}) {
 		const target: ILEObjectTarget = {
 			...ileObject,
 			deps: [],
@@ -495,8 +511,7 @@ export class Targets {
 	/**
 	 * Handles all DDS types: pf, lf, dspf
 	 */
-	private createDdsFileTarget(localPath: string, dds: dds, options: FileOptions = {}) {
-		const ileObject = this.resolvePathToObject(localPath, options.text);
+	private createDdsFileTarget(ileObject: ILEObject, localPath: string, dds: dds, options: FileOptions = {}) {
 		const target: ILEObjectTarget = {
 			...ileObject,
 			deps: []
@@ -590,10 +605,8 @@ export class Targets {
 		this.addNewTarget(target);
 	}
 
-	private createClTarget(localPath: string, module: Module, options: FileOptions = {}) {
+	private createClTarget(ileObject: ILEObject, localPath: string, module: Module, options: FileOptions = {}) {
 		const pathDetail = path.parse(localPath);
-		const sourceName = pathDetail.base;
-		const ileObject = this.resolvePathToObject(localPath);
 		const target: ILEObjectTarget = {
 			...ileObject,
 			deps: []
@@ -946,10 +959,8 @@ export class Targets {
 		}
 	}
 
-	private createRpgTarget(localPath: string, cache: Cache, options: FileOptions = {}) {
+	private createRpgTarget(ileObject: ILEObject, localPath: string, cache: Cache, options: FileOptions = {}) {
 		const pathDetail = path.parse(localPath);
-		const ileObject = this.resolvePathToObject(localPath, options.text);
-
 		// define internal imports
 		ileObject.imports = cache.procedures
 			.filter((proc: any) => proc.keyword[`EXTPROC`])
@@ -1599,11 +1610,11 @@ export class Targets {
 	 * Sadly the long name is not typically part of the path name, so we need to
 	 * find the name inside of the source code.
 	 */
-	sqlObjectDataFromPath(fullPath: string): ObjectRef | undefined {
+	async sqlObjectDataFromPath(fullPath: string): Promise<ObjectRef> {
 		const relativePath = this.getRelative(fullPath);
 
-		if (fss.existsSync(fullPath)) {
-			const content = fss.readFileSync(fullPath, { encoding: `utf-8` });
+		if (await this.fs.exists(fullPath)) {
+			const content = await this.fs.readFile(fullPath);
 			const document = new Document(content);
 
 			const groups = document.getStatementGroups();

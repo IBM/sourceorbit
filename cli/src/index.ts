@@ -10,8 +10,9 @@ import { BobProject } from "./builders/bob";
 import { ImpactMarkdown } from "./builders/imd";
 import { allExtensions, referencesFileName } from "./extensions";
 import { getBranchLibraryName, getDefaultCompiles } from "./builders/environment";
-import { getFiles, renameFiles, replaceIncludes } from './utils';
+import { renameFiles, replaceIncludes } from './utils';
 import { iProject } from './builders/iProject';
+import { ReadFileSystem } from './readFileSystem';
 
 const isCli = process.argv.length >= 2 && (process.argv[1].endsWith(`so`) || process.argv[1].endsWith(`index.js`));
 
@@ -164,15 +165,17 @@ async function main() {
 
 	let files: string[];
 
+	const fs = new ReadFileSystem();
+
 	try {
-		files = getFiles(cwd, scanGlob);
+		files = await fs.getFiles(cwd, scanGlob);
 	} catch (e) {
 		error(e.message || e);
 		process.exit(1);
 	}
 
 	const referenceFile = path.join(cwd, referencesFileName);
-	if (existsSync(referenceFile)) {
+	if (await fs.exists(referenceFile)) {
 		infoOut(`Found reference file: ${referenceFile}`);
 		targets.handleRefsFile(referenceFile);
 	}

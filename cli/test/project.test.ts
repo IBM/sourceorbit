@@ -3,22 +3,23 @@ import { assert, beforeAll, describe, expect, test } from 'vitest';
 import { Targets } from '../src/targets'
 import path from 'path';
 import { MakeProject } from '../src/builders/make';
-import { getFiles } from '../src/utils';
 import { setupCompanySystem } from './fixtures/projects';
 import { scanGlob } from '../src/extensions';
 import { writeFileSync } from 'fs';
 import { getDefaultCompiles } from '../src/builders/environment';
+import { ReadFileSystem } from '../src/readFileSystem';
 
 const cwd = setupCompanySystem();
 
 const compileDefaults = getDefaultCompiles();
 
-let files = getFiles(cwd, scanGlob);
+const fs = new ReadFileSystem();
 
-describe.skipIf(files.length === 0)(`company_system tests`, () => {
-  const targets = new Targets(cwd);
+describe(`company_system tests`, () => {
+  const targets: Targets = new Targets(cwd, fs);
   
   beforeAll(async () => {
+    const files = await fs.getFiles(cwd, scanGlob);
     targets.loadObjectsFromPaths(files);
     const parsePromises = files.map(f => targets.parseFile(f));
     await Promise.all(parsePromises);

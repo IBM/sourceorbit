@@ -1,29 +1,22 @@
-import { assert, beforeAll, describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
 
 import { Targets } from '../src/targets'
-import path from 'path';
 import { MakeProject } from '../src/builders/make';
-import { getFiles } from '../src/utils';
 import { setupFixture } from './fixtures/projects';
-import { referencesFileName, scanGlob } from '../src/extensions';
-import { writeFileSync } from 'fs';
 import { BobProject } from '../src/builders/bob';
+import { ReadFileSystem } from '../src/readFileSystem';
 
 const cwd = setupFixture(`dds_deps_with_refs`);
 
 // This issue was occuring when you had two files with the same name, but different extensions.
 
-let files = getFiles(cwd, scanGlob);
-
-describe.skipIf(files.length === 0)(`dds_refs tests with reference file`, () => {
-  const targets = new Targets(cwd);
+describe(`dds_refs tests with reference file`, () => {
+  const fs = new ReadFileSystem();
+  const targets = new Targets(cwd, fs);
   targets.setSuggestions({renames: true, includes: true})
   
   beforeAll(async () => {
-    targets.handleRefsFile(path.join(cwd, referencesFileName));
-    targets.loadObjectsFromPaths(files);
-    const parsePromises = files.map(f => targets.parseFile(f));
-    await Promise.all(parsePromises);
+    await targets.loadProject(`.objrefs`);
 
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();

@@ -1,25 +1,18 @@
-import { assert, beforeAll, describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
 
 import { Targets } from '../src/targets'
-import path from 'path';
 import { MakeProject } from '../src/builders/make';
-import { getFiles } from '../src/utils';
-import { setupFixture, setupMultiModule } from './fixtures/projects';
-import { scanGlob } from '../src/extensions';
-import { writeFileSync } from 'fs';
+import { setupFixture } from './fixtures/projects';
+import { ReadFileSystem } from '../src/readFileSystem';
 
 const cwd = setupFixture(`multi_module_two`);
 
-let files = getFiles(cwd, scanGlob);
-
-describe.skipIf(files.length === 0)(`multi_module_two tests`, () => {
-  const targets = new Targets(cwd);
+describe(`multi_module_two tests`, () => {
+  const fs = new ReadFileSystem();
+  const targets = new Targets(cwd, fs);
   
   beforeAll(async () => {
-    targets.loadObjectsFromPaths(files);
-    for (const f of files) {
-      await targets.parseFile(f);
-    }
+    await targets.loadProject();
 
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();

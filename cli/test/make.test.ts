@@ -2,8 +2,8 @@ import { assert, expect, test } from 'vitest'
 import { baseTargets, cwd, multiModuleObjects } from './fixtures/targets';
 import { MakeProject } from '../src/builders/make';
 
-test('generateTargets (pre-resolve)', () => {
-  const targets = baseTargets(true);
+test('generateTargets (pre-resolve)', async () => {
+  const targets = await baseTargets(true);
   const project = new MakeProject(cwd, targets);
 
   const targetContent = project.generateTargets();
@@ -27,8 +27,8 @@ test('generateTargets (pre-resolve)', () => {
   );
 });
 
-test('generateTargets (post-resolve)', () => {
-  const targets = baseTargets(true);
+test('generateTargets (post-resolve)', async () => {
+  const targets = await baseTargets(true);
 
   targets.resolveBinder();
 
@@ -59,8 +59,8 @@ test('generateTargets (post-resolve)', () => {
   );
 });
 
-test('generateHeader (binder changes)', () => {
-  const targets = baseTargets(true);
+test('generateHeader (binder changes)', async () => {
+  const targets = await baseTargets(true);
 
   const project = new MakeProject(cwd, targets);
 
@@ -77,8 +77,8 @@ test('generateHeader (binder changes)', () => {
   expect(headerContentB[bndDirIndex]).toBe(`BNDDIR=($(BIN_LIB)/$(APP_BNDDIR))`);
 });
 
-test('applySettings (binder)', () => {
-  const targets = baseTargets(true);
+test('applySettings (binder)', async () => {
+  const targets = await baseTargets(true);
 
   const project = new MakeProject(cwd, targets);
 
@@ -99,8 +99,8 @@ test('applySettings (binder)', () => {
   expect(headerContentB[bndDirIndex]).toBe(`BNDDIR=($(BIN_LIB)/$(APP_BNDDIR)) (TESTING)`);
 });
 
-test(`Multi-module program and service program`, () => {
-  const targets = multiModuleObjects();
+test(`Multi-module program and service program`, async () => {
+  const targets = await multiModuleObjects();
 
   const project = new MakeProject(cwd, targets);
   const settings = project.getSettings();
