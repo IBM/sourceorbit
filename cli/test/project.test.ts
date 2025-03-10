@@ -162,8 +162,8 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     
     const logs = targets.logger.getLogsFor(deptsPgm.relativePath);
     expect(logs.length).toBe(3);
-    expect(logs[0].message).toBe(`Include at line 14 found, to path 'qrpgleref/utils.rpgleinc'`);
-    expect(logs[1].message).toBe(`Include at line 13 found, to path 'qrpgleref/constants.rpgleinc'`);
+    expect(logs[0].message).toBe(`Include at line 13 found, to path 'qrpgleref/constants.rpgleinc'`);
+    expect(logs[1].message).toBe(`Include at line 14 found, to path 'qrpgleref/utils.rpgleinc'`);
     expect(logs[2].message).toBe(`This object depended on DEPTS.FILE before it was deleted.`);
 
     expect(targets.getTarget({systemName: `DEPTS`, type: `FILE`})).toBeUndefined();
@@ -437,6 +437,7 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     expect(resolvedObject.deps[0].systemName).toBe(`EMPLOYEE`);
 
     const logs = targets.logger.getLogsFor(resolvedObject.relativePath);
+    console.log(logs);
     expect(logs.length).toBe(0);
     // expect(logs[0].message).toBe(`Extension should be based on type. Suggested name is 'getTotalSalary.sqludf'`);
     // expect(logs[0].type).toBe(`warning`);
