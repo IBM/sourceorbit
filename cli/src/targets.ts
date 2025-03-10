@@ -11,7 +11,7 @@ import Document from "vscode-db2i/src/language/sql/document";
 import { ObjectRef, StatementType } from 'vscode-db2i/src/language/sql/types';
 import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensions, cmdExtensions } from './extensions';
 import Parser from "vscode-rpgle/language/parser";
-import { setupParser } from './parser';
+import { setupParser } from './languages/rpgle';
 import { Logger } from './logger';
 import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
 import { extCanBeProgram, getObjectType } from './builders/environment';

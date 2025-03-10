@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import * as path from 'path';
 
 import Parser from "vscode-rpgle/language/parser";
-import { Targets } from './targets';
+import { Targets } from '../targets';
 
 let includeFileCache: { [path: string]: string } = {};
 
