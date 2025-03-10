@@ -1120,7 +1120,7 @@ export class Targets {
 
 				return {
 					lookup: fileName.toUpperCase(),
-					line: ref.position ? ref.position.line : undefined
+					line: ref.position ? ref.position.range.line : undefined
 				};
 			})
 			.forEach((ref: RpgLookup) => {
@@ -1160,7 +1160,7 @@ export class Targets {
 
 					return {
 						lookup: value.split(`:`)[0].toUpperCase(),
-						line: struct.position ? struct.position.line : undefined
+						line: struct.position ? struct.position.range.line : undefined
 					};
 				})
 				.forEach((ref: RpgLookup) => {
@@ -1200,7 +1200,7 @@ export class Targets {
 
 					return {
 						lookup: possibleName.toUpperCase(),
-						line: file.position ? file.position.line : undefined
+						line: file.position ? file.position.range.line : undefined
 					};
 				})
 				.forEach((ref: RpgLookup) => {
@@ -1225,7 +1225,7 @@ export class Targets {
 				.filter(ref => !ref.description)
 				.map((ref): RpgLookup => ({
 					lookup: trimQuotes(ref.name, `"`).toUpperCase(),
-					line: ref.position ? ref.position.line : undefined
+					line: ref.position ? ref.position.range.line : undefined
 				}))
 				.forEach((ref: RpgLookup) => {
 					const previouslyScanned = target.deps.some((r => (ref.lookup === r.systemName || ref.lookup === r.longName?.toUpperCase()) && r.type === `FILE`));
@@ -1255,7 +1255,7 @@ export class Targets {
 
 					return {
 						lookup: fileName.toUpperCase(),
-						line: ref.position ? ref.position.line : undefined
+						line: ref.position ? ref.position.range.line : undefined
 					};
 				})
 				.forEach((ref: RpgLookup) => {
@@ -1285,7 +1285,7 @@ export class Targets {
 
 					return {
 						lookup: fileName.toUpperCase(),
-						line: ref.position ? ref.position.line : undefined
+						line: ref.position ? ref.position.range.line : undefined
 					};
 				})
 				.forEach((ref: RpgLookup) => {
@@ -1638,8 +1638,12 @@ export class Targets {
 	}
 }
 
-function trimQuotes(input: string, value = `'`) {
-	if (input[0] === value) input = input.substring(1);
-	if (input[input.length - 1] === value) input = input.substring(0, input.length - 1);
-	return input;
+function trimQuotes(input: string|boolean, value = `'`) {
+	if (typeof input === `string`) {
+		if (input[0] === value) input = input.substring(1);
+		if (input[input.length - 1] === value) input = input.substring(0, input.length - 1);
+		return input;
+	} else {
+		return '';
+	}
 }

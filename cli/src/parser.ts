@@ -49,7 +49,7 @@ export function setupParser(targets: Targets): Parser {
 				return {
 					found: true,
 					uri: file,
-					lines: includeFileCache[file].split(`\n`)
+					content: includeFileCache[file]
 				}
 
 			} else {
@@ -59,7 +59,7 @@ export function setupParser(targets: Targets): Parser {
 				return {
 					found: true,
 					uri: file,
-					lines: content.split(`\n`)
+					content: content
 				}
 			}
 		}
