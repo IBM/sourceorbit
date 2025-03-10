@@ -15,6 +15,7 @@ import { setupParser } from './languages/rpgle';
 import { Logger } from './logger';
 import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
 import { extCanBeProgram, getObjectType } from './builders/environment';
+import { isSqlFunction } from './languages/sql';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -881,7 +882,7 @@ export class Targets {
 								// TODO: do we need to look for SRVPGM (function) or PGM (procedure) here?
 								const resolvedObject = this.searchForAnyObject({ name: simpleName, types: [`FILE`, `SRVPGM`, `PGM`] });
 								if (resolvedObject) newTarget.deps.push(resolvedObject);
-								else {
+								else if (!isSqlFunction(def.object.name)) {
 									this.logger.fileLog(newTarget.relativePath, {
 										message: `No object found for reference '${def.object.name}'`,
 										type: `warning`,
@@ -1232,7 +1233,7 @@ export class Targets {
 					if (previouslyScanned) return;
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
 					if (resolvedObject) target.deps.push(resolvedObject)
-					else {
+					else if (!isSqlFunction(ref.lookup)) {
 						this.logger.fileLog(ileObject.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
