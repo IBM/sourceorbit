@@ -1,26 +1,21 @@
-import { assert, beforeAll, describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
 
 import { Targets } from '../src/targets'
 import path from 'path';
 import { MakeProject } from '../src/builders/make';
-import { getFiles } from '../src/utils';
-import { setupMultiModule } from './fixtures/projects';
-import { scanGlob } from '../src/extensions';
+import { setupFixture } from './fixtures/projects';
 import { writeFileSync } from 'fs';
+import { ReadFileSystem } from '../src/readFileSystem';
 
-const cwd = setupMultiModule();
+describe(`multi_module tests`, () => {
+  const project = setupFixture(`multi_module`);
 
-let files = getFiles(cwd, scanGlob);
-
-describe.skipIf(files.length === 0)(`multi_module tests`, () => {
-  const targets = new Targets(cwd);
+  const fs = new ReadFileSystem();
+  const targets = new Targets(project.cwd, fs);
   
   beforeAll(async () => {
-    targets.loadObjectsFromPaths(files);
-    
-    for (const f of files) {
-      await targets.parseFile(f);
-    }
+    project.setup();
+    await targets.loadProject();
 
     targets.resolveBinder();
   });
@@ -54,8 +49,8 @@ describe.skipIf(files.length === 0)(`multi_module tests`, () => {
   });
 
   test(`Generate makefile`, () => {
-    const makeProj = new MakeProject(cwd, targets);
+    const makeProj = new MakeProject(project.cwd, targets);
 
-    writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile().join(`\n`));
+    writeFileSync(path.join(project.cwd, `makefile`), makeProj.getMakefile().join(`\n`));
   });
 });

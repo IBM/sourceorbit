@@ -7,9 +7,9 @@ import * as path from "path";
 import * as os from "os"
 import { ILEObject, ObjectType } from "./targets";
 import { CommandParameters } from "./builders/environment";
+import { ReadFileSystem } from "./readFileSystem";
 
 export function getSystemNameFromPath(inputName: string) {
-
 	let baseName = inputName.includes(`-`) ? inputName.split(`-`)[0] : inputName;
 
 	// If the name is of valid length, return it
@@ -45,6 +45,9 @@ export function getSystemNameFromPath(inputName: string) {
 	return systemName.toUpperCase();
 }
 
+/**
+ * @deprecated Use {@link ReadFileSystem.getFiles} instead
+ */
 export function getFiles(cwd: string, globPath: string): string[] {
 	let paths: string[] = glob.sync(globPath, {
 		cwd,

@@ -1,27 +1,22 @@
-import { assert, beforeAll, describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
 
 import { Targets } from '../src/targets'
 import path from 'path';
-import { MakeProject } from '../src/builders/make';
-import { getFiles } from '../src/utils';
 import { setupFixture } from './fixtures/projects';
-import { scanGlob } from '../src/extensions';
-import { writeFileSync } from 'fs';
-
-const cwd = setupFixture(`include_mismatch_fix`);
+import { ReadFileSystem } from '../src/readFileSystem';
 
 // This issue was occuring when you had two files with the same name, but different extensions.
 
-let files = getFiles(cwd, scanGlob);
+describe(`include_mismatch_fix tests`, () => {
+  const project = setupFixture(`include_mismatch_fix`);
 
-describe.skipIf(files.length === 0)(`include_mismatch_fix tests`, () => {
-  const targets = new Targets(cwd);
+  const fs = new ReadFileSystem();
+  const targets = new Targets(project.cwd, fs);
   targets.setSuggestions({renames: true, includes: true})
   
   beforeAll(async () => {
-    targets.loadObjectsFromPaths(files);
-    const parsePromises = files.map(f => targets.parseFile(f));
-    await Promise.all(parsePromises);
+    project.setup();
+    await targets.loadProject();
 
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();
@@ -42,7 +37,7 @@ describe.skipIf(files.length === 0)(`include_mismatch_fix tests`, () => {
     expect(articleIncludeLogs[0].type).toBe(`rename`);
     expect(articleIncludeLogs[0].change).toMatchObject({
       rename: {
-        path: path.join(cwd, `QPROTOSRC`, `ARTICLE.RPGLE`),
+        path: path.join(project.cwd, `QPROTOSRC`, `ARTICLE.RPGLE`),
         newName: 'ARTICLE.rpgleinc'
       }
     })

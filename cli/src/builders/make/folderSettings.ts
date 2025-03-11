@@ -1,7 +1,8 @@
 import * as path from "path";
-import { getFiles } from "../../utils";
 import { readFileSync } from "fs";
 import { warningOut } from "../../cli";
+import { ReadFileSystem } from "../../readFileSystem";
+import { getFiles } from "../../utils";
 
 export interface FolderOptions {
 	version?: "0.0.1",

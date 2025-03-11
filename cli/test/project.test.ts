@@ -3,25 +3,23 @@ import { assert, beforeAll, describe, expect, test } from 'vitest';
 import { Targets } from '../src/targets'
 import path from 'path';
 import { MakeProject } from '../src/builders/make';
-import { getFiles } from '../src/utils';
-import { setupCompanySystem } from './fixtures/projects';
+import { setupFixture } from './fixtures/projects';
 import { scanGlob } from '../src/extensions';
 import { writeFileSync } from 'fs';
 import { getDefaultCompiles } from '../src/builders/environment';
-
-const cwd = setupCompanySystem();
+import { ReadFileSystem } from '../src/readFileSystem';
 
 const compileDefaults = getDefaultCompiles();
 
-let files = getFiles(cwd, scanGlob);
+describe(`company_system tests`, () => {
+  const project = setupFixture(`company_system`);
 
-describe.skipIf(files.length === 0)(`company_system tests`, () => {
-  const targets = new Targets(cwd);
+  const fs = new ReadFileSystem();
+  const targets: Targets = new Targets(project.cwd, fs);
   
   beforeAll(async () => {
-    targets.loadObjectsFromPaths(files);
-    const parsePromises = files.map(f => targets.parseFile(f));
-    await Promise.all(parsePromises);
+    project.setup();
+    await targets.loadProject();
 
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();
@@ -149,13 +147,13 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
     let deptsPgm = targets.getTarget({systemName: `DEPTS`, type: `PGM`});
     let deptsFile = targets.getTarget({systemName: `DEPTS`, type: `FILE`});
 
-    const deptsFilePath = path.join(cwd, deptsFile.relativePath);
-    const deptsPgmPath = path.join(cwd, deptsPgm.relativePath);
+    const deptsFilePath = path.join(project.cwd, deptsFile.relativePath);
+    const deptsPgmPath = path.join(project.cwd, deptsPgm.relativePath);
 
     targets.logger.flush(deptsFile.relativePath);
 
     // We removed the DEPTS display file, used by DEPTS program
-    const impacted = targets.removeObjectByPath(path.join(cwd, deptsFile.relativePath));
+    const impacted = targets.removeObjectByPath(path.join(project.cwd, deptsFile.relativePath));
     expect(impacted.length).toBe(1);
     expect(impacted[0].systemName).toBe(`DEPTS`);
     expect(impacted[0].type).toBe(`PGM`);
@@ -276,9 +274,9 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Checking makefile rule generation`, () => {
-    const project = new MakeProject(cwd, targets);
+    const makeProject = new MakeProject(project.cwd, targets);
 
-    const headerContent = project.generateGenericRules();
+    const headerContent = makeProject.generateGenericRules();
 
     expect(headerContent.find(l => l === `$(PREPATH)/DEPTS.PGM: qrpglesrc/depts.pgm.sqlrpgle`)).toBeDefined();
     expect(headerContent.find(l => l === `$(PREPATH)/BANKING.MODULE: qrpglesrc/banking.sqlrpgle`)).toBeDefined();
@@ -287,10 +285,10 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Makefile targets for all`, () => {
-    const project = new MakeProject(cwd, targets);
+    const makeProject = new MakeProject(project.cwd, targets);
 
     // Generate targets on it's own will have BNDDIR, PGM, etc
-    const headerContent = project.generateTargets();
+    const headerContent = makeProject.generateTargets();
 
     const allTarget = headerContent.find(l => l.startsWith(`all:`));
     expect(allTarget).toBeDefined();
@@ -304,12 +302,12 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Makefile targets for partial build (DEPTS display file)`, () => {
-    const project = new MakeProject(cwd, targets);
+    const makeProject = new MakeProject(project.cwd, targets);
 
     const deptsFile = targets.getTarget({systemName: `DEPTS`, type: `FILE`});
 
     // Generate targets on it's own will have BNDDIR, PGM, etc
-    const headerContent = project.generateTargets([deptsFile]);
+    const headerContent = makeProject.generateTargets([deptsFile]);
 
     const allTarget = headerContent.find(l => l.startsWith(`all:`));
     expect(allTarget).toBeDefined();
@@ -318,12 +316,12 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Makefile targets for partial build (EMPLOYEE table)`, () => {
-    const project = new MakeProject(cwd, targets);
+    const makeProject = new MakeProject(project.cwd, targets);
 
     const deptsFile = targets.getTarget({systemName: `EMPLOYEE`, type: `FILE`});
 
     // Generate targets on it's own will have BNDDIR, PGM, etc
-    const headerContent = project.generateTargets([deptsFile]);
+    const headerContent = makeProject.generateTargets([deptsFile]);
 
     const allTarget = headerContent.find(l => l.startsWith(`all:`));
     expect(allTarget).toBeDefined();
@@ -346,13 +344,13 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   });
 
   test(`Makefile targets for partial build (EMPLOYEE table) without children`, () => {
-    const project = new MakeProject(cwd, targets);
-    project.setNoChildrenInBuild(true);
+    const makeProject = new MakeProject(project.cwd, targets);
+    makeProject.setNoChildrenInBuild(true);
 
     const deptsFile = targets.getTarget({systemName: `EMPLOYEE`, type: `FILE`});
 
     // Generate targets on it's own will have BNDDIR, PGM, etc
-    const headerContent = project.generateTargets([deptsFile]);
+    const headerContent = makeProject.generateTargets([deptsFile]);
 
     const allTarget = headerContent.find(l => l.startsWith(`all: `));
     expect(allTarget).toBeDefined();
@@ -449,8 +447,8 @@ describe.skipIf(files.length === 0)(`company_system tests`, () => {
   })
 
   test(`Generate makefile`, () => {
-    const makeProj = new MakeProject(cwd, targets);
+    const makeProj = new MakeProject(project.cwd, targets);
 
-    writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile().join(`\n`));
+    writeFileSync(path.join(project.cwd, `makefile`), makeProj.getMakefile().join(`\n`));
   });
 });

@@ -1,26 +1,21 @@
-import { assert, beforeAll, describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
 
 import { Targets } from '../src/targets'
-import path from 'path';
-import { MakeProject } from '../src/builders/make';
-import { getFiles } from '../src/utils';
 import { setupFixture } from './fixtures/projects';
-import { scanGlob } from '../src/extensions';
-
-const cwd = setupFixture(`sql_long_names`);
+import { ReadFileSystem } from '../src/readFileSystem';
 
 // This issue was occuring when you had two files with the same name, but different extensions.
 
-let files = getFiles(cwd, scanGlob);
+describe(`sql long name lookup`, () => {
+  const project = setupFixture(`sql_long_names`);
 
-describe.skipIf(files.length === 0)(`sql long name lookup`, () => {
-  const targets = new Targets(cwd);
+  const fs = new ReadFileSystem();
+  const targets = new Targets(project.cwd, fs);
   targets.setSuggestions({ renames: true, includes: true })
 
   beforeAll(async () => {
-    targets.loadObjectsFromPaths(files);
-    const parsePromises = files.map(f => targets.parseFile(f));
-    await Promise.all(parsePromises);
+    project.setup();
+    await targets.loadProject();
 
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();

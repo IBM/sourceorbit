@@ -7,8 +7,8 @@ test('resolveObject', () => {
   baseTargets();
 });
 
-test('createOrApend', () => {
-  const targets = baseTargets(true);
+test('createOrApend', async () => {
+  const targets = await baseTargets(true);
 
   const deps = targets.getTargets();
 
@@ -34,8 +34,8 @@ test('createOrApend', () => {
   expect(moduleB.deps[0].systemName).toBe(`FILEB`);
 });
 
-test('resolveBinder', () => {
-  const targets = baseTargets(true);
+test('resolveBinder', async () => {
+  const targets = await baseTargets(true);
 
   expect(targets.getTargets().length).toBe(10);
   expect(targets.binderRequired()).toBe(false);
@@ -89,8 +89,8 @@ test('resolveBinder', () => {
   expect(programACmd.deps[0].type).toBe(`PGM`);
 });
 
-test('getObjectsByExtension', () => {
-  const targets = baseTargets(true);
+test('getObjectsByExtension', async () => {
+  const targets = await baseTargets(true);
 
   const rpglePrograms = targets.getResolvedObjectsByFileExtension(`pgm.rpgle`);
   expect(rpglePrograms.length).toBe(1);
@@ -102,8 +102,8 @@ test('getObjectsByExtension', () => {
   expect(rpgleModules[1].relativePath).toBe(path.join(`qrpglesrc`, `ordentmod.rpgle`));
 })
 
-test(`Multi-module program and service programs`, () => {
-  const targets = multiModuleObjects();
+test(`Multi-module program and service programs`, async () => {
+  const targets = await multiModuleObjects();
   const deps = targets.getTargets();
 
   const programs = targets.getResolvedObjects(`PGM`);

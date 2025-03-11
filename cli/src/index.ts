@@ -10,8 +10,9 @@ import { BobProject } from "./builders/bob";
 import { ImpactMarkdown } from "./builders/imd";
 import { allExtensions, referencesFileName } from "./extensions";
 import { getBranchLibraryName, getDefaultCompiles } from "./builders/environment";
-import { getFiles, renameFiles, replaceIncludes } from './utils';
+import { renameFiles, replaceIncludes } from './utils';
 import { iProject } from './builders/iProject';
+import { ReadFileSystem } from './readFileSystem';
 
 const isCli = process.argv.length >= 2 && (process.argv[1].endsWith(`so`) || process.argv[1].endsWith(`index.js`));
 
@@ -153,7 +154,8 @@ async function main() {
 		process.exit(0);
 	}
 
-	const targets = new Targets(cwd);
+	const fs = new ReadFileSystem();
+	const targets = new Targets(cwd, fs);
 
 	targets.setSuggestions({
 		includes: cliSettings.fixIncludes,
@@ -165,14 +167,14 @@ async function main() {
 	let files: string[];
 
 	try {
-		files = getFiles(cwd, scanGlob);
+		files = await fs.getFiles(cwd, scanGlob);
 	} catch (e) {
 		error(e.message || e);
 		process.exit(1);
 	}
 
 	const referenceFile = path.join(cwd, referencesFileName);
-	if (existsSync(referenceFile)) {
+	if (await fs.exists(referenceFile)) {
 		infoOut(`Found reference file: ${referenceFile}`);
 		targets.handleRefsFile(referenceFile);
 	}
@@ -206,7 +208,7 @@ async function main() {
 	
 	if (cliSettings.lookupFiles && cliSettings.buildFile === `none`) {
 		for (const value of cliSettings.lookupFiles) {
-			listDeps(cwd, targets, value);
+			await listDeps(cwd, targets, value);
 		}
 	}
 
@@ -277,7 +279,7 @@ function initProject(cwd) {
 /**
  * @param query Can be object (ABCD.PGM) or relative path
  */
-function listDeps(cwd: string, targets: Targets, query: string) {
+async function listDeps(cwd: string, targets: Targets, query: string) {
 	const fullPath = path.join(cwd, query);
 
 	let [name, type] = query.split(`.`);
@@ -288,7 +290,7 @@ function listDeps(cwd: string, targets: Targets, query: string) {
 	let theObject = targets.getResolvedObjects().find(o => o.systemName === name && o.type === type);
 
 	if (!theObject) {
-		theObject = targets.resolvePathToObject(fullPath);
+		theObject = await targets.resolvePathToObject(fullPath);
 	}
 
 	const allDeps = targets.getTargets();

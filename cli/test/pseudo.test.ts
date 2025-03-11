@@ -2,27 +2,24 @@ import { beforeAll, describe, expect, test } from 'vitest';
 
 import { Targets } from '../src/targets'
 import { MakeProject } from '../src/builders/make';
-import { getFiles } from '../src/utils';
-import { setupPseudo } from './fixtures/projects';
-import { scanGlob } from '../src/extensions';
+import { setupFixture } from './fixtures/projects';
+import { ReadFileSystem } from '../src/readFileSystem';
 
-const cwd = setupPseudo();
-
-let files = getFiles(cwd, scanGlob);
-
-describe.skipIf(files.length === 0)(`pseudo tests`, () => {
-  const targets = new Targets(cwd);
+describe(`pseudo tests`, () => {
+  const project = setupFixture(`pseudo`);
+  
+  const fs = new ReadFileSystem();
+  const targets = new Targets(project.cwd, fs);
   let make: MakeProject;
 
   beforeAll(async () => {
-    targets.loadObjectsFromPaths(files);
-    const parsePromises = files.map(f => targets.parseFile(f));
-    await Promise.all(parsePromises);
+    project.setup();
+    await targets.loadProject();
 
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();
 
-    make = new MakeProject(cwd, targets);
+    make = new MakeProject(project.cwd, targets);
   });
 
   test(`Test objects exists`, () => {
