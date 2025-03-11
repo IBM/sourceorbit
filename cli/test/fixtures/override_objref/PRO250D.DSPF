@@ -1,0 +1,67 @@
+      *%METADATA                                                      *
+      * %TEXT Display Article                                         *
+      *%EMETADATA                                                     *
+     A*%%TS  SD  20210414  103200  VTAQUIN     REL-V7R3M0  5770-WDS
+     A*%%EC
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      REF(*LIBL/PROVIDER FPROV)
+     A                                      PRINT
+     A                                      INDARA
+     A                                      ERRSFL
+     A                                      CA03(03)
+     A                                      CA12(12)
+     A          R FMT01
+     A*%%TS  SD  20210330  110722  VTAQUIN     REL-V7R3M0  5770-WDS
+     A                                      CF04(04 'Prompt')
+     A                                  1  2'PRO250 '
+     A                                      COLOR(BLU)
+     A                                  3  4'Type choices, press Enter.'
+     A                                      COLOR(BLU)
+     A                                 23  3'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 37'F12=Cancel'
+     A                                      COLOR(BLU)
+     A                                  1 34'Provider by Id'
+     A                                      DSPATR(HI)
+     A                                  5  4'Provider Id . . . . . .'
+     A                                 23 19'F4=Prompt'
+     A                                      COLOR(BLU)
+     A            PRID      R        B  5 29
+     A  40                                  ERRMSGID(ERR0103 *LIBL/SAMMSGF 40 &-
+     A                                      ERRDATA)
+     A            ERRDATA        6A  P
+     A          R FMT02
+     A*%%TS  SD  20210414  103200  VTAQUIN     REL-V7R3M0  5770-WDS
+     A                                      CA07(07 'Items')
+     A                                  1  2'PRO250 '
+     A                                      COLOR(BLU)
+     A                                  3  4'Press Enter to continue.'
+     A                                      COLOR(BLU)
+     A                                 23  3'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 37'F12=Cancel'
+     A                                      COLOR(BLU)
+     A                                  5  4'Provider Id . . . . . :'
+     A                                  6  4'Name  . . . . . . . . :'
+     A                                  7  4'Phone . . . . . . . . :'
+     A                                  8  4'Vat Nr  . . . . . . . :'
+     A                                  9  4'eMail . . . . . . . . :'
+     A                                 10  4'Address . . . . . . . :'
+     A                                 13  4'Postal Code & City  . :'
+     A                                 14  4'Country Code  . . . . :'
+     A                                  1 34'Provider by Id'
+     A                                      DSPATR(HI)
+     A            PRID      R        O  5 29
+     A            PROVNM    R        O  6 29
+     A            PRPHONE   R        O  7 29
+     A            PRVAT     R        O  8 29
+     A            PRMAIL    R        O  9 29
+     A            PRLINE1   R        O 10 29
+     A            PRLINE2   R        O 11 29
+     A            PRLINE3   R        O 12 29
+     A            PRZIP     R        O 13 29
+     A            PRCOUN    R        O 14 29
+     A            PRCITY    R        O 13 40
+     A            COUNTR    R        O 14 32REFFLD(FCOUN/COUNTR *LIBL/COUNTRY)
+     A                                 23 18'F7=Items'
+     A                                      COLOR(BLU)

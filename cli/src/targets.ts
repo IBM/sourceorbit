@@ -171,6 +171,14 @@ export class Targets {
 			}
 		}
 
+		// This allows us to override the .objrefs if the source actually exists.
+		if (this.isReferenceObject(theObject, true)) {
+			this.logger.fileLog(relativePath, {
+				type: `info`,
+				message: `The object ${theObject.systemName}.${theObject.type} is defined in the references file even though the source exists for it.`
+			});
+		}
+
 		this.storeResolved(localPath, theObject);
 
 		return theObject;
@@ -188,11 +196,23 @@ export class Targets {
 
 		pseudoObjects.forEach(ileObject => {
 			if (!this.searchForObject(ileObject)) {
-				const key = `/${ileObject.systemName}.${ileObject.type}`;
+				const key = `${ileObject.systemName}.${ileObject.type}`;
 				ileObject.reference = true;
 				this.resolvedObjects[key] = ileObject;
 			}
 		});
+	}
+
+	public isReferenceObject(ileObject: ILEObject, remove?: boolean) {
+		const key = `${ileObject.systemName}.${ileObject.type}`;
+		const existing = this.resolvedObjects[key];
+		const isRef = Boolean(existing && existing.reference);
+		
+		if (isRef && remove) {
+			this.resolvedObjects[key] = undefined;
+		}
+
+		return isRef;
 	}
 
 	public removeObjectByPath(localPath: string) {

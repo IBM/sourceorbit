@@ -75,7 +75,7 @@ When using Source Orbit, you may find that you want to reference objects that do
 
 > `no object found for reference 'COUNTRY'`
 
-If you know those objects do exist but outside of this project, then you can use the `.objrefs` file in the project root to list those objects and if that object is a service program, you can also list the exports by indenting after the service program reference. Comments can start with `#`
+If you know those objects do exist but outside of this project, then you can use the `.objrefs` file (references file) in the project root to list those objects and if that object is a service program, you can also list the exports by indenting after the service program reference. Comments can start with `#`
 
 ```
 # Files that exist outside this project
@@ -88,6 +88,8 @@ UTILS.SRVPGM
   toUpper
   toLower
 ```
+
+If you use a references file, but you have source that defines the object, the source will take precedence over the reference and a log will be issued on the source.
 
 ## Service Programs and Binder Source
 
@@ -109,6 +111,8 @@ CREATE OR REPLACE TABLE CUSORD (...)
 ```
 
 ## Embedded SQL in RPGLE C specs
+
+**This section is not true as of Source Orbit CLI 1.1.0**
 
 Source Orbit does not support embedded SQL (`exec sql`) used in a C spec. - no problem with mixed-format or free-format. We recommend:
 
