@@ -12,6 +12,7 @@ import { allExtensions, referencesFileName } from "./extensions";
 import { getBranchLibraryName, getDefaultCompiles } from "./builders/environment";
 import { getFiles, renameFiles, replaceIncludes } from './utils';
 import { iProject } from './builders/iProject';
+import { SqlBuilder } from './builders/sql';
 
 const isCli = process.argv.length >= 2 && (process.argv[1].endsWith(`so`) || process.argv[1].endsWith(`index.js`));
 
@@ -242,6 +243,11 @@ async function main() {
 			};
 
 			writeFileSync(path.join(cwd, `sourceorbit.json`), JSON.stringify(outJson, null, 2));
+			break;
+
+		case "sql":
+			const sqlProj = new SqlBuilder(targets);
+			sqlProj.write(path.join(cwd, `objects.sql`))
 			break;
 	}
 }
