@@ -154,7 +154,8 @@ async function main() {
 		process.exit(0);
 	}
 
-	const targets = new Targets(cwd);
+	const fs = new ReadFileSystem();
+	const targets = new Targets(cwd, fs);
 
 	targets.setSuggestions({
 		includes: cliSettings.fixIncludes,
@@ -164,8 +165,6 @@ async function main() {
 	targets.setAssumePrograms(cliSettings.assumeSourcesArePrograms);
 
 	let files: string[];
-
-	const fs = new ReadFileSystem();
 
 	try {
 		files = await fs.getFiles(cwd, scanGlob);
@@ -209,7 +208,7 @@ async function main() {
 	
 	if (cliSettings.lookupFiles && cliSettings.buildFile === `none`) {
 		for (const value of cliSettings.lookupFiles) {
-			listDeps(cwd, targets, value);
+			await listDeps(cwd, targets, value);
 		}
 	}
 
@@ -280,7 +279,7 @@ function initProject(cwd) {
 /**
  * @param query Can be object (ABCD.PGM) or relative path
  */
-function listDeps(cwd: string, targets: Targets, query: string) {
+async function listDeps(cwd: string, targets: Targets, query: string) {
 	const fullPath = path.join(cwd, query);
 
 	let [name, type] = query.split(`.`);
@@ -291,7 +290,7 @@ function listDeps(cwd: string, targets: Targets, query: string) {
 	let theObject = targets.getResolvedObjects().find(o => o.systemName === name && o.type === type);
 
 	if (!theObject) {
-		theObject = targets.resolvePathToObject(fullPath);
+		theObject = await targets.resolvePathToObject(fullPath);
 	}
 
 	const allDeps = targets.getTargets();
