@@ -17,10 +17,8 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
 	let targets = new Targets(project.cwd, fs);
 	targets.setSuggestions({renames: true});
 
-  project.setup();
-  const initialFiles = await fs.getFiles(project.cwd, scanGlob);
-  targets.loadObjectsFromPaths(initialFiles);
-	await Promise.allSettled(initialFiles.map(f => targets.parseFile(f)));
+  project.copy();
+  await targets.loadProject();
 
 	targets.resolveBinder();
 
@@ -115,9 +113,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
   targets = new Targets(project.cwd, fs);
 	targets.setSuggestions({renames: true});
 
-  const newFiles = await fs.getFiles(project.cwd, scanGlob);
-  targets.loadObjectsFromPaths(newFiles);
-	await Promise.allSettled(newFiles.map(f => targets.parseFile(f)));
+  await targets.loadProject();
 
 	targets.resolveBinder();
 

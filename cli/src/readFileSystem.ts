@@ -18,6 +18,6 @@ export class ReadFileSystem {
   }
 
   async exists(filePath: string): Promise<boolean> {
-    return await ffs.existsSync(filePath);
+    return ffs.existsSync(filePath);
   }
 }

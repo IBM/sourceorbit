@@ -138,12 +138,8 @@ export class Targets {
 	}
 
 	public async loadProject(withRef?: string) {
-		if (Object.keys(this.resolvedObjects).length > 0) {
-			throw new Error(`Project already loaded.`);
-		}
-
 		if (withRef) {
-			await this.handleRefsFile(this.getRelative(withRef));
+			await this.handleRefsFile(path.join(this.cwd, withRef));
 		}
 
 		const initialFiles = await this.fs.getFiles(this.cwd);
@@ -207,13 +203,13 @@ export class Targets {
 
 		const pseudoObjects = getReferenceObjectsFrom(content);
 
-		pseudoObjects.forEach(ileObject => {
+		for (const ileObject of pseudoObjects) {
 			if (!this.searchForObject(ileObject)) {
 				const key = `${ileObject.systemName}.${ileObject.type}`;
 				ileObject.reference = true;
 				this.resolvedObjects[key] = ileObject;
 			}
-		});
+		};
 	}
 
 	public isReferenceObject(ileObject: ILEObject, remove?: boolean) {
@@ -1391,9 +1387,9 @@ export class Targets {
 					this.createOrAppend(bindingDirectoryTarget, target);
 
 					// Make sure we can resolve to this service program
-					target.exports.forEach(e => {
+					for (const e of target.exports) {
 						this.resolvedExports[e.toUpperCase()] = target;
-					});
+					}
 				} else {
 					// This service program target doesn't have any deps... so, it's not used?
 					this.removeObject(target);
@@ -1419,7 +1415,7 @@ export class Targets {
 				// Remove any service program deps so we can resolve them cleanly
 				currentTarget.deps = currentTarget.deps.filter(d => ![`SRVPGM`].includes(d.type));
 
-				currentTarget.imports.forEach(importName => {
+				for (const importName of currentTarget.imports) {
 					// Find if this import resolves to another object
 					const possibleSrvPgmDep = this.resolvedExports[importName.toUpperCase()];
 					// We can't add a module as a dependency at this step.
@@ -1441,7 +1437,7 @@ export class Targets {
 							}
 						}
 					}
-				});
+				};
 
 				// If the program or module has imports that we ca resolve, then we add them as deps
 				if (newImports.length > 0) {

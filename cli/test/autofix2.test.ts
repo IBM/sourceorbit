@@ -10,7 +10,7 @@ import { ReadFileSystem } from "../src/readFileSystem";
 
 test(`Auto rename RPGLE program and include and fix-include infos`, async () => {
   const project = setupFixture(`auto_rename1`);
-  project.setup();
+  project.copy();
 
   const fs = new ReadFileSystem();
 
@@ -46,9 +46,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
   targets = new Targets(project.cwd, fs);
   targets.setSuggestions({includes: true});
 
-  const newFiles = await fs.getFiles(project.cwd, scanGlob);
-  targets.loadObjectsFromPaths(newFiles);
-  await Promise.allSettled(newFiles.map(f => targets.parseFile(f)));
+  await targets.loadProject();
 
   allLogs = targets.logger.getAllLogs();
 

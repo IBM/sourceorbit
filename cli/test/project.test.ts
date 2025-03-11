@@ -19,7 +19,7 @@ describe(`company_system tests`, () => {
   
   beforeAll(async () => {
     project.setup();
-    targets.loadProject();
+    await targets.loadProject();
 
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();
