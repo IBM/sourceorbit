@@ -12,7 +12,7 @@ import { iProject } from '../iProject';
 export class MakeProject {
 	private noChildren: boolean = false;
 	private settings: iProject = new iProject();
-	private folderSettings: {[folder: string]: FolderOptions} = {};
+	private folderSettings: { [folder: string]: FolderOptions } = {};
 
 	constructor(private cwd: string, private targets: Targets) {
 		this.setupSettings();
@@ -207,32 +207,30 @@ export class MakeProject {
 				if (objects.length > 0) {
 					for (const ileObject of objects) {
 						if (ileObject.reference) continue;
-						
-						// This is used when your object really has source
 
+						// This is used when your object really has source
 						const possibleTarget: ILEObjectTarget = this.targets.getTarget(ileObject) || (ileObject as ILEObjectTarget);
 						const customAttributes = this.getObjectAttributes(data, possibleTarget);
-						
 						lines.push(...MakeProject.generateSpecificTarget(data, possibleTarget, customAttributes));
 					}
 
 				} else
-				if (data.sourceOptional) {
-					// This is usually used as a generic target.
-					lines.push(
-						`$(PREPATH)/%.${data.becomes}: ${data.targetSource ? asPosix(data.targetSource) : ``}`,
-						...(data.preCommands ? data.preCommands.map(cmd => `\t${cmd}`) : []),
-						...(data.command ?
-							[
-								`\tliblist -c $(BIN_LIB);\\`,
-								`\tliblist -a $(LIBL);\\`,
-								`\tsystem "${toCl(data.command, data.parameters)}"` // TODO: write the spool file somewhere?
-							]
-							: []
-						),
-						...(data.postCommands ? data.postCommands.map(cmd => `\t${cmd}`) : []),
-					);
-				}
+					if (data.sourceOptional) {
+						// This is usually used as a generic target.
+						lines.push(
+							`$(PREPATH)/%.${data.becomes}: ${data.targetSource ? asPosix(data.targetSource) : ``}`,
+							...(data.preCommands ? data.preCommands.map(cmd => `\t${cmd}`) : []),
+							...(data.command ?
+								[
+									`\tliblist -c $(BIN_LIB);\\`,
+									`\tliblist -a $(LIBL);\\`,
+									`\tsystem "${toCl(data.command, data.parameters)}"` // TODO: write the spool file somewhere?
+								]
+								: []
+							),
+							...(data.postCommands ? data.postCommands.map(cmd => `\t${cmd}`) : []),
+						);
+					}
 			}
 
 			lines.push(``);
@@ -249,6 +247,19 @@ export class MakeProject {
 		const qsysTempName: string | undefined = (parentName && parentName.length > 10 ? parentName.substring(0, 10) : parentName);
 
 		const resolve = (command: string) => {
+
+			if (ileObject.overrides) {
+				for (const [key, value] of Object.entries(ileObject.overrides)) {
+					const regex = new RegExp(`(${key.toUpperCase()}.*)\\$[\\*<]`, `g`);
+					const match = regex.exec(command);
+					if (match)
+						command = command.replace(regex, `$1${value}`);
+					else {
+						command = `${command} ${key.toUpperCase()}(${value})`;
+					}
+				}
+			}
+
 			command = command.replace(new RegExp(`\\*CURLIB`, `g`), `$(BIN_LIB)`);
 			command = command.replace(new RegExp(`\\$\\*`, `g`), ileObject.systemName);
 			command = command.replace(new RegExp(`\\$<`, `g`), asPosix(ileObject.relativePath));
@@ -263,13 +274,11 @@ export class MakeProject {
 					command = command.replace(new RegExp(`\\*${objType}S`, `g`), specificDeps.map(d => d.systemName).join(` `));
 				}
 			}
-
 			return command;
 		}
 
 		// TODO: resolve the parameters from the Rules.mk
 		const objectKey = `${ileObject.systemName}.${ileObject.type}`;
-		
 		if (customAttributes) {
 			data.parameters = {
 				...data.parameters,
@@ -278,7 +287,6 @@ export class MakeProject {
 		}
 
 		let sourceFileCcsid = `*JOB`;
-		
 		if (data.parameters.memberCcsid) {
 			sourceFileCcsid = data.parameters.memberCcsid;
 			delete data.parameters.memberCcsid;
