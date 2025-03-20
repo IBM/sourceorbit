@@ -1,23 +1,24 @@
-import { describe, expect, test } from "vitest";
-import { setupFixture, setupIncludeFix, setupProjectFromQsys } from "./fixtures/projects";
+import { expect, test } from "vitest";
+import { setupFixture } from "./fixtures/projects";
 
 import { Targets } from '../src/targets'
-import { getFiles, renameFiles } from "../src/utils";
+import { renameFiles } from "../src/utils";
 import { scanGlob } from "../src/extensions";
 
 import * as path from "path";
+import { ReadFileSystem } from "../src/readFileSystem";
 
 test(`Auto rename RPGLE program and include and fix-include infos`, async () => {
-  const cwd = setupFixture(`auto_rename1`);
+  const project = setupFixture(`auto_rename1`);
+  project.copy();
+
+  const fs = new ReadFileSystem();
 
   // First step is to rename the files
-
-	let targets = new Targets(cwd);
+	let targets = new Targets(project.cwd, fs);
 	targets.setSuggestions({renames: true});
 
-  const initialFiles = getFiles(cwd, scanGlob);
-  targets.loadObjectsFromPaths(initialFiles);
-	await Promise.allSettled(initialFiles.map(f => targets.parseFile(f)));
+  await targets.loadProject();
 
 	targets.resolveBinder();
 
@@ -42,12 +43,10 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
   renameFiles(targets.logger);
 
   // Next, scan the project again and check the logs
-  targets = new Targets(cwd);
+  targets = new Targets(project.cwd, fs);
   targets.setSuggestions({includes: true});
 
-  const newFiles = getFiles(cwd, scanGlob);
-  targets.loadObjectsFromPaths(newFiles);
-  await Promise.allSettled(newFiles.map(f => targets.parseFile(f)));
+  await targets.loadProject();
 
   allLogs = targets.logger.getAllLogs();
 

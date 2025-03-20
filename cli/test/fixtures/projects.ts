@@ -3,82 +3,29 @@ import * as path from "path";
 
 const projectFolder = path.join(__dirname, `..`, `..`, `..`, `testData`);
 
-export function setupProjectFromQsys() {
-  const fixturePath = path.join(__dirname, `from_qsys`);
-  const projectPath = path.join(projectFolder, `from_qsys`);
+export function getAllFixtures(): string[] {
+  const dirs = fs.readdirSync(__dirname, {withFileTypes: true})
+    .filter(dirent => dirent.isDirectory())
+    .map(dirent => dirent.name);
 
-  
-  deleteDir(projectPath);
-  mkdir(projectPath);
-  fs.cpSync(fixturePath, projectPath, {recursive: true});
-
-  return projectPath;
+  return dirs;
 }
 
-export function setupIncludeFix() {
-  const fixturePath = path.join(__dirname, `include_fix`);
-  const projectPath = path.join(projectFolder, `include_fix`);
-
-  deleteDir(projectPath);
-  mkdir(projectPath);
-  fs.cpSync(fixturePath, projectPath, {recursive: true});
-
-  return projectPath;
-}
-
-export function setupCompanySystem() {
-  const fixturePath = path.join(__dirname, `company_system`);
-  const projectPath = path.join(projectFolder, `company_system`);
-
-  deleteDir(projectPath);
-  mkdir(projectPath);
-  fs.cpSync(fixturePath, projectPath, {recursive: true});
-
-  return projectPath;
-}
-
-export function setupSqlReferencesSystem() {
-  const fixturePath = path.join(__dirname, `sql_references`);
-  const projectPath = path.join(projectFolder, `sql_references`);
-
-  deleteDir(projectPath);
-  mkdir(projectPath);
-  fs.cpSync(fixturePath, projectPath, {recursive: true});
-
-  return projectPath;
-}
-
-export function setupMultiModule() {
-  const fixturePath = path.join(__dirname, `multi_module`);
-  const projectPath = path.join(projectFolder, `multi_module`);
-
-  deleteDir(projectPath);
-  mkdir(projectPath);
-  fs.cpSync(fixturePath, projectPath, {recursive: true});
-
-  return projectPath;
-}
-
-export function setupPseudo() {
-  const fixturePath = path.join(__dirname, `pseudo`);
-  const projectPath = path.join(projectFolder, `pseudo`);
-
-  deleteDir(projectPath);
-  mkdir(projectPath);
-  fs.cpSync(fixturePath, projectPath, {recursive: true});
-
-  return projectPath;
-}
-
-export function setupFixture(folderName: string) {
+export function setupFixture(folderName: string): {cwd: string, setup: () => void, copy: () => void} {
   const fixturePath = path.join(__dirname, folderName);
   const projectPath = path.join(projectFolder, folderName);
 
-  deleteDir(projectPath);
-  mkdir(projectPath);
-  fs.cpSync(fixturePath, projectPath, {recursive: true});
-
-  return projectPath;
+  return {
+    cwd: projectPath,
+    setup: () => {
+      // fs.cpSync(fixturePath, projectPath, {recursive: true});
+    },
+    copy: () => {
+      deleteDir(projectPath);
+      mkdir(projectPath);
+      fs.cpSync(fixturePath, projectPath, {recursive: true});
+    }
+  };
 }
 
 export function createTestBuildScript() {

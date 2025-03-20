@@ -8,25 +8,25 @@ import { setupFixture } from './fixtures/projects';
 import { referencesFileName, scanGlob } from '../src/extensions';
 import { writeFileSync } from 'fs';
 import { BobProject } from '../src/builders/bob';
+import { ReadFileSystem } from '../src/readFileSystem';
 
 const cwd = setupFixture(`override_objref`);
 
 // This issue was occuring when you had two files with the same name, but different extensions.
 
-let files = getFiles(cwd, scanGlob);
-
 describe(`ensure that objrefs can be overridden`, () => {
-  const targets = new Targets(cwd);
+ const project = setupFixture(`override_objref`);
+
+  const fs = new ReadFileSystem();
+  const targets = new Targets(project.cwd, fs);
   targets.setSuggestions({renames: true, includes: true})
 
   test(`Ensure objects are defined`, async () => {
-    await targets.handleRefsFile(path.join(cwd, referencesFileName));
+    await targets.handleRefsFile(path.join(project.cwd, referencesFileName));
     expect(targets.getResolvedObjects().length).toBe(1);
     expect(targets.getTargets().length).toBe(0);
 
-    targets.loadObjectsFromPaths(files);
-    const parsePromises = files.map(f => targets.parseFile(f));
-    await Promise.all(parsePromises);
+    await targets.loadProject();
 
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();
