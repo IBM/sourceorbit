@@ -49,7 +49,7 @@ export interface SourceSymbol {
 export interface ILEObject {
 	systemName: string;
 	longName?: string;
-	type: ObjectType;
+	type: ObjectType; // TODO: standardise on types
 	text?: string,
 	source?: {
 		relativePath: string;
