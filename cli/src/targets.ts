@@ -39,8 +39,10 @@ export interface ILEObject {
 	longName?: string;
 	type: ObjectType;
 	text?: string,
-	relativePath?: string;
-	extension?: string;
+	source?: {
+		relativePath: string;
+		extension: string;
+	}
 
 	reference?: boolean;
 
@@ -166,8 +168,10 @@ export class Targets {
 			systemName: name,
 			type: type,
 			text: newText,
-			relativePath,
-			extension
+			source: {
+				relativePath,
+				extension
+			}
 		};
 
 		// If this file is an SQL file, we need to look to see if it has a long name as we need to resolve all names here
@@ -244,14 +248,14 @@ export class Targets {
 			const target = this.targets[targetId];
 
 			if (target) {
-				const depIndex = target.deps.findIndex(d => (d.systemName === resolvedObject.systemName && d.type === resolvedObject.type) || d.relativePath === resolvedObject.relativePath);
+				const depIndex = target.deps.findIndex(d => (d.systemName === resolvedObject.systemName && d.type === resolvedObject.type) || d.source.relativePath === resolvedObject.source.relativePath);
 
 				if (depIndex >= 0) {
 					impactedTargets.push(target);
 					target.deps.splice(depIndex, 1);
 
-					if (target.relativePath) {
-						this.logger.fileLog(target.relativePath, {
+					if (target.source) {
+						this.logger.fileLog(target.source.relativePath, {
 							type: `info`,
 							message: `This object depended on ${resolvedObject.systemName}.${resolvedObject.type} before it was deleted.`
 						})
@@ -265,8 +269,8 @@ export class Targets {
 		this.resolvedSearches[`${resolvedObject.systemName}.${resolvedObject.type}`] = undefined;
 
 		// Remove possible logs
-		if (resolvedObject.relativePath) {
-			this.logger.flush(resolvedObject.relativePath)
+		if (resolvedObject.source.relativePath) {
+			this.logger.flush(resolvedObject.source.relativePath)
 		}
 
 		return impactedTargets;
@@ -462,11 +466,11 @@ export class Targets {
 			exports: []
 		};
 
-		if (ileObject.extension === `binder`) {
+		if (ileObject.source && target.source.extension === `binder`) {
 			const pathDetail = path.parse(localPath);
 
 			if (this.suggestions.renames) {
-				this.logger.fileLog(ileObject.relativePath, {
+				this.logger.fileLog(ileObject.source.relativePath, {
 					message: `Rename suggestion`,
 					type: `rename`,
 					change: {
@@ -477,8 +481,8 @@ export class Targets {
 					}
 				});
 			} else {
-				this.logger.fileLog(ileObject.relativePath, {
-					message: `Extension is '${ileObject.extension}'. Consolidate by using 'bnd'?`,
+				this.logger.fileLog(ileObject.source.relativePath, {
+					message: `Extension is '${target.source.extension}'. Consolidate by using 'bnd'?`,
 					type: `warning`,
 				});
 			}
@@ -501,7 +505,7 @@ export class Targets {
 					if (symbolTokens.block && symbolTokens.block.length === 1 && symbolTokens.block[0].type === `word` && symbolTokens.block[0].value) {
 						target.exports.push(trimQuotes(symbolTokens.block[0].value, `"`));
 					} else {
-						this.logger.fileLog(ileObject.relativePath, {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `Invalid EXPORT found. Single quote string expected.`,
 							type: `warning`,
 							range: {
@@ -533,7 +537,7 @@ export class Targets {
 			deps: []
 		};
 
-		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
+		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.source.relativePath}`);
 
 		// We have a local cache of refs found so we don't keep doing global lookups
 		// on objects we already know to depend on in this object.
@@ -560,14 +564,14 @@ export class Targets {
 					alreadyFoundRefs.push(upperName);
 				}
 				else {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `no object found for reference '${objectName}'`,
 						type: `warning`,
 						line: recordFormat.range.start
 					});
 				}
 			} else {
-				this.logger.fileLog(ileObject.relativePath, {
+				this.logger.fileLog(ileObject.source.relativePath, {
 					message: `${currentKeyword} reference not included as possible reference to library found.`,
 					type: `info`,
 					line: recordFormat.range.start
@@ -628,11 +632,11 @@ export class Targets {
 			deps: []
 		};
 
-		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
+		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.source.relativePath}`);
 
-		if (ileObject.extension?.toLowerCase() === `clp`) {
+		if (ileObject.source && ileObject.source.extension.toLowerCase() === `clp`) {
 			if (this.suggestions.renames) {
-				this.logger.fileLog(ileObject.relativePath, {
+				this.logger.fileLog(ileObject.source.relativePath, {
 					message: `Rename suggestion`,
 					type: `rename`,
 					change: {
@@ -643,8 +647,8 @@ export class Targets {
 					}
 				});
 			} else {
-				this.logger.fileLog(ileObject.relativePath, {
-					message: `Extension is '${ileObject.extension}', but Source Orbit doesn't support CLP. Is it possible the extension should use '.pgm.clle'?`,
+				this.logger.fileLog(ileObject.source.relativePath, {
+					message: `Extension is '${ileObject.source.extension}', but Source Orbit doesn't support CLP. Is it possible the extension should use '.pgm.clle'?`,
 					type: `warning`,
 				});
 			}
@@ -652,7 +656,7 @@ export class Targets {
 		} else {
 			if (ileObject.type === `MODULE`) {
 				if (this.suggestions.renames) {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `Rename suggestion`,
 						type: `rename`,
 						change: {
@@ -663,7 +667,7 @@ export class Targets {
 						}
 					});
 				} else {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `Type detected as ${ileObject.type} but Source Orbit doesn't support CL modules. Is it possible the extension should include '.pgm'?`,
 						type: `warning`,
 					});
@@ -678,7 +682,7 @@ export class Targets {
 			const possibleObject = def.file;
 			if (possibleObject) {
 				if (possibleObject.library) {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `Definition to ${possibleObject.library}/${possibleObject.name} ignored due to qualified path.`,
 						range: {
 							start: def.range.start,
@@ -693,7 +697,7 @@ export class Targets {
 					const resolvedPath = this.searchForObject({ systemName: possibleObject.name.toUpperCase(), type: `FILE` });
 					if (resolvedPath) target.deps.push(resolvedPath);
 					else {
-						this.logger.fileLog(ileObject.relativePath, {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `no object found for reference '${possibleObject.name}'`,
 							range: {
 								start: def.range.start,
@@ -724,7 +728,7 @@ export class Targets {
 					const resolvedPath = this.searchForObject({ systemName: name.toUpperCase(), type: `PGM` });
 					if (resolvedPath) target.deps.push(resolvedPath);
 					else {
-						this.logger.fileLog(ileObject.relativePath, {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `no object found for reference '${name}'`,
 							range: {
 								start: pgmParm.range.start,
@@ -734,7 +738,7 @@ export class Targets {
 						});
 					}
 				} else {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `PGM call not included as possible reference to library.`,
 						range: {
 							start: pgmParm.range.start,
@@ -824,7 +828,7 @@ export class Targets {
 
 							// if (currentTarget) {
 							// 	info(`${currentTarget.name}.${currentTarget.type}`);
-							// 	info(`\tSource: ${currentTarget.relativePath}`);
+							// 	info(`\tSource: ${currentTarget.source.relativePath}`);
 
 							// 	if (defs.length > 1) {
 							// 		for (const def of defs.slice(1)) {
@@ -854,8 +858,10 @@ export class Targets {
 								longName: hasLongName,
 								type: this.getObjectType(relativePath, mainDef.createType),
 								text: options.text,
-								relativePath,
-								extension
+								source: {
+									relativePath,
+									extension
+								}
 							}
 
 							let suggestRename = false;
@@ -875,7 +881,7 @@ export class Targets {
 
 							// Let them know to use a system name in the create statement if one is not present
 							if (ileObject.systemName.length > 10 && mainDef.object.system === undefined) {
-								this.logger.fileLog(ileObject.relativePath, {
+								this.logger.fileLog(ileObject.source.relativePath, {
 									message: `${ileObject.systemName} (${ileObject.type}) name is longer than 10 characters. Consider using 'FOR SYSTEM NAME' in the CREATE statement.`,
 									type: `warning`,
 									range: {
@@ -892,7 +898,7 @@ export class Targets {
 								deps: []
 							};
 
-							infoOut(`${newTarget.systemName}.${newTarget.type}: ${newTarget.relativePath}`);
+							infoOut(`${newTarget.systemName}.${newTarget.type}: ${newTarget.source.relativePath}`);
 
 							// Now, let's go through all the other statements in this group (BEGIN/END)
 							// and grab any references to other objects :eyes:
@@ -912,7 +918,7 @@ export class Targets {
 								const resolvedObject = this.searchForAnyObject({ name: simpleName, types: [`FILE`, `SRVPGM`, `PGM`] });
 								if (resolvedObject) newTarget.deps.push(resolvedObject);
 								else if (!isSqlFunction(def.object.name)) {
-									this.logger.fileLog(newTarget.relativePath, {
+									this.logger.fileLog(newTarget.source.relativePath, {
 										message: `No object found for reference '${def.object.name}'`,
 										type: `warning`,
 										range: {
@@ -1013,7 +1019,7 @@ export class Targets {
 				.map(ref => ref.name.toUpperCase());
 		}
 
-		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
+		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.source.relativePath}`);
 
 		if (cache.includes && cache.includes.length > 0) {
 			ileObject.headers = [];
@@ -1059,7 +1065,7 @@ export class Targets {
 				ileObject.headers.push(theIncludePath);
 
 				if (this.suggestions.includes) {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `Will update to use unix style path.`,
 						type: `includeFix`,
 						line: include.line,
@@ -1068,7 +1074,7 @@ export class Targets {
 						}
 					});
 				} else {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `Include at line ${include.line} found, to path '${theIncludePath}'`,
 						type: `info`,
 						line: include.line,
@@ -1087,7 +1093,7 @@ export class Targets {
 			const possibleName = pathDetail.name.toLowerCase().endsWith(`.pgm`) ? pathDetail.name.substring(0, pathDetail.name.length - 4) : pathDetail.name;
 
 			if (this.suggestions.renames) {
-				this.logger.fileLog(ileObject.relativePath, {
+				this.logger.fileLog(ileObject.source.relativePath, {
 					message: `Rename suggestion`,
 					type: `rename`,
 					change: {
@@ -1098,7 +1104,7 @@ export class Targets {
 					}
 				})
 			} else {
-				this.logger.fileLog(ileObject.relativePath, {
+				this.logger.fileLog(ileObject.source.relativePath, {
 					message: `type detected as ${ileObject.type} but NOMAIN keyword found.`,
 					type: `warning`,
 				});
@@ -1109,7 +1115,7 @@ export class Targets {
 		// We need to do this for other language too down the line
 		if (ileObject.type === `MODULE` && !cache.keyword[`NOMAIN`]) {
 			if (this.suggestions.renames) {
-				this.logger.fileLog(ileObject.relativePath, {
+				this.logger.fileLog(ileObject.source.relativePath, {
 					message: `Rename suggestion`,
 					type: `rename`,
 					change: {
@@ -1120,7 +1126,7 @@ export class Targets {
 					}
 				});
 			} else {
-				this.logger.fileLog(ileObject.relativePath, {
+				this.logger.fileLog(ileObject.source.relativePath, {
 					message: `type detected as ${ileObject.type} but NOMAIN keyword was not found. Is it possible the extension should include '.pgm'?`,
 					type: `warning`,
 				});
@@ -1128,7 +1134,7 @@ export class Targets {
 		}
 
 		if (cache.keyword[`BNDDIR`]) {
-			this.logger.fileLog(ileObject.relativePath, {
+			this.logger.fileLog(ileObject.source.relativePath, {
 				message: `has the BNDDIR keyword. 'binders' property in iproj.json should be used instead.`,
 				type: `info`,
 			});
@@ -1166,7 +1172,7 @@ export class Targets {
 				}
 
 				else {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `No object found for reference '${ref.lookup}'`,
 						type: `warning`,
 						line: ref.line
@@ -1195,7 +1201,7 @@ export class Targets {
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
-						this.logger.fileLog(ileObject.relativePath, {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
 							line: ref.line
@@ -1219,7 +1225,7 @@ export class Targets {
 						if (extDescValue) {
 							possibleName = trimQuotes(extDescValue);
 						} else {
-							this.logger.fileLog(ileObject.relativePath, {
+							this.logger.fileLog(ileObject.source.relativePath, {
 								message: `*EXTDESC is used for '${file.name}' but EXTDESC keyword not found`,
 								type: `warning`,
 							});
@@ -1240,7 +1246,7 @@ export class Targets {
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
-						this.logger.fileLog(ileObject.relativePath, {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
 							line: ref.line
@@ -1261,7 +1267,7 @@ export class Targets {
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else if (!isSqlFunction(ref.lookup)) {
-						this.logger.fileLog(ileObject.relativePath, {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
 							line: ref.line
@@ -1292,7 +1298,7 @@ export class Targets {
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
-						this.logger.fileLog(ileObject.relativePath, {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
 							line: ref.line
@@ -1320,7 +1326,7 @@ export class Targets {
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` });
 					if (resolvedObject) target.deps.push(resolvedObject)
 					else {
-						this.logger.fileLog(ileObject.relativePath, {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
 							line: ref.line
@@ -1394,8 +1400,8 @@ export class Targets {
 					// This service program target doesn't have any deps... so, it's not used?
 					this.removeObject(target);
 
-					if (target.relativePath) {
-						this.logger.fileLog(target.relativePath, {
+					if (target.source.relativePath) {
+						this.logger.fileLog(target.source.relativePath, {
 							message: `Removed as target because no modules were found with matching exports.`,
 							type: `info`
 						});
@@ -1483,7 +1489,7 @@ export class Targets {
 			} else {
 
 				this.removeObject(cmdObject);
-				this.logger.fileLog(cmdObject.relativePath, {
+				this.logger.fileLog(cmdObject.source.relativePath, {
 					message: `Removed as target because no program was found with a matching name.`,
 					type: `info`
 				});
@@ -1492,12 +1498,14 @@ export class Targets {
 	}
 
 	private convertBoundProgramToMultiModuleProgram(currentTarget: ILEObjectTarget) {
-		const basePath = currentTarget.relativePath;
+		const basePath = currentTarget.source.relativePath;
 
 		// First, let's change this current target to be solely a program
 		// Change the extension so it's picked up correctly during the build process.
-		currentTarget.extension = `pgm`;
-		currentTarget.relativePath = undefined;
+		currentTarget.source = {
+			extension: `pgm`,
+			relativePath: undefined
+		}
 
 		// Store a fake path for this program object
 		this.storeResolved(path.join(this.cwd, `${currentTarget.systemName}.PGM`), currentTarget);
@@ -1508,8 +1516,10 @@ export class Targets {
 			imports: currentTarget.imports,
 			exports: [],
 			type: `MODULE`,
-			relativePath: basePath,
-			extension: path.extname(basePath).substring(1)
+			source: {
+				relativePath: basePath,
+				extension: path.extname(basePath).substring(1)
+			}
 		};
 
 		// Replace the old resolved object with the module
@@ -1583,8 +1593,8 @@ export class Targets {
 		}
 
 		return Object.values(this.resolvedObjects).filter(obj =>
-			(obj.extension?.toUpperCase() === extension && (obj.type === `PGM`) === shouldBeProgram) ||
-			(anyPrograms === true && obj.type === `PGM` && obj.extension.toUpperCase() === extension)
+			(obj.source?.extension.toUpperCase() === extension && (obj.type === `PGM`) === shouldBeProgram) ||
+			(anyPrograms === true && obj.type === `PGM` && obj.source?.extension.toUpperCase() === extension)
 		);
 	}
 

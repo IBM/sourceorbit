@@ -35,7 +35,7 @@ describe(`sql long name lookup`, () => {
 
     expect(trans).toMatchObject(transaction);
 
-    const moduleLogs = targets.logger.getLogsFor(trans.relativePath);
+    const moduleLogs = targets.logger.getLogsFor(trans.source.relativePath);
     expect(moduleLogs).toBeUndefined();
   });
 
