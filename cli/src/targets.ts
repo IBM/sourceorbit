@@ -9,7 +9,7 @@ import Document from "vscode-db2i/src/language/sql/document";
 import { ObjectRef, StatementType } from 'vscode-db2i/src/language/sql/types';
 import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensions, cmdExtensions } from './extensions';
 import Parser from "vscode-rpgle/language/parser";
-import { setupParser } from './languages/rpgle';
+import { rpgleDocToSymbolList, setupParser } from './languages/rpgle';
 import { Logger } from './logger';
 import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
 import { extCanBeProgram, getObjectType } from './builders/environment';
@@ -32,7 +32,19 @@ const sqlTypeExtension = {
 
 const bindingDirectoryTarget: ILEObject = { systemName: `$(APP_BNDDIR)`, type: `BNDDIR` };
 
-const TextRegex = /\%TEXT.*(?=\n|\*)/gm
+const TextRegex = /\%TEXT.*(?=\n|\*)/gm;
+
+export type SymbolReferences = {
+	[relativePath: string]: {start: number, end: number}[]
+};
+
+export interface SourceSymbol {
+	name: string;
+	type: string;
+	relativePath: string;
+	children?: SourceSymbol[],
+	references: SymbolReferences;
+}
 
 export interface ILEObject {
 	systemName: string;
@@ -42,6 +54,7 @@ export interface ILEObject {
 	source?: {
 		relativePath: string;
 		extension: string;
+		symbols: SourceSymbol[];
 	}
 
 	reference?: boolean;
@@ -105,6 +118,7 @@ export class Targets {
 	private resolvedExports: { [name: string]: ILEObject } = {};
 	private targets: { [name: string]: ILEObjectTarget } = {};
 	private needsBinder = false;
+	private withReferences = true;
 
 	private suggestions: TargetSuggestions = {};
 
@@ -170,7 +184,8 @@ export class Targets {
 			text: newText,
 			source: {
 				relativePath,
-				extension
+				extension,
+				symbols: [],
 			}
 		};
 
@@ -388,12 +403,17 @@ export class Targets {
 						content,
 						{
 							ignoreCache: true,
-							withIncludes: true
+							withIncludes: true,
+							collectReferences: this.withReferences,
 						}
 					);
 
 					if (rpgDocs) {
 						const ileObject = await this.resolvePathToObject(filePath, options.text);
+						if (this.withReferences && ileObject.source) {
+							ileObject.source.symbols = rpgleDocToSymbolList(rpgDocs);
+						}
+
 						this.createRpgTarget(ileObject, filePath, rpgDocs, options);
 					}
 
@@ -860,7 +880,8 @@ export class Targets {
 								text: options.text,
 								source: {
 									relativePath,
-									extension
+									extension,
+									symbols: [],
 								}
 							}
 
@@ -1504,7 +1525,8 @@ export class Targets {
 		// Change the extension so it's picked up correctly during the build process.
 		currentTarget.source = {
 			extension: `pgm`,
-			relativePath: undefined
+			relativePath: undefined,
+			symbols: []
 		}
 
 		// Store a fake path for this program object
@@ -1518,7 +1540,8 @@ export class Targets {
 			type: `MODULE`,
 			source: {
 				relativePath: basePath,
-				extension: path.extname(basePath).substring(1)
+				extension: path.extname(basePath).substring(1),
+				symbols: []
 			}
 		};
 

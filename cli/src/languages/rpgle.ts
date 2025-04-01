@@ -3,7 +3,9 @@ import { readFileSync } from 'fs';
 import * as path from 'path';
 
 import Parser from "vscode-rpgle/language/parser";
-import { Targets } from '../targets';
+import { SourceSymbol, SymbolReferences, Targets } from '../targets';
+import Cache from "vscode-rpgle/language/models/cache";
+import Declaration from 'vscode-rpgle/language/models/declaration';
 
 let includeFileCache: { [path: string]: string } = {};
 
@@ -75,4 +77,70 @@ export function setupParser(targets: Targets): Parser {
 	});
 
 	return parser;
+}
+
+export function toSymbolRefs(def: Declaration): SymbolReferences {
+	if (def.references.length > 0) {
+		let refs: SymbolReferences = {};
+		for (const ref of def.references) {
+			if (!refs[ref.uri]) {
+				refs[ref.uri] = [];
+			}
+			refs[ref.uri].push(ref.offset);
+		}
+
+		return refs;
+	}
+
+	return {};
+}
+
+export function rpgleDocToSymbolList(doc: Cache): SourceSymbol[] {
+	let symbols: SourceSymbol[] = []
+
+	const allDefs = [
+		...doc.constants,
+		...doc.files,
+		...doc.sqlReferences,
+		...doc.structs,
+		...doc.subroutines,
+		...doc.variables
+	];
+
+	for (const def of allDefs) {
+		let newSymbol: SourceSymbol = {
+			name: def.name,
+			type: def.type,
+			relativePath: def.position.path, // TODO: make sure this is relative!!
+			references: toSymbolRefs(def)
+		}
+
+		if (def.subItems.length > 0) {
+			newSymbol.children = def.subItems.map(sub => {
+				return {
+					name: sub.name,
+					type: sub.type,
+					relativePath: def.position.path, // subitems are in the same file
+					references: toSymbolRefs(def)
+				};
+			});
+		}
+
+		symbols.push(newSymbol);
+	}
+
+	for (const proc of doc.procedures) {
+		let newSymbol: SourceSymbol = {
+			name: proc.name,
+			type: `procedure`,
+			relativePath: proc.position.path, // TODO: make sure this is relative!!
+			references: toSymbolRefs(proc)
+		};
+
+		newSymbol.children = rpgleDocToSymbolList(proc.scope);
+
+		symbols.push(newSymbol);
+	}
+
+	return symbols;
 }
