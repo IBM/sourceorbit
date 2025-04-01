@@ -11,9 +11,9 @@ import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensi
 import Parser from "vscode-rpgle/language/parser";
 import { rpgleDocToSymbolList, setupParser } from './languages/rpgle';
 import { Logger } from './logger';
-import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
+import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath, trimQuotes } from './utils';
 import { extCanBeProgram, getObjectType } from './builders/environment';
-import { isSqlFunction } from './languages/sql';
+import { getSymbolFromDef, isSqlFunction } from './languages/sql';
 import { ReadFileSystem } from './readFileSystem';
 import { collectClReferences } from './languages/clle';
 
@@ -879,6 +879,8 @@ export class Targets {
 
 							const extension = pathDetail.ext.substring(1);
 
+							const symbol = this.withReferences ? getSymbolFromDef(relativePath, statement, mainDef) : undefined;
+
 							let ileObject: ILEObject = {
 								systemName: objectName.toUpperCase(),
 								longName: hasLongName,
@@ -887,7 +889,7 @@ export class Targets {
 								source: {
 									relativePath,
 									extension,
-									symbols: [],
+									symbols: symbol ? [symbol] : [],
 								}
 							}
 
@@ -1705,12 +1707,3 @@ export class Targets {
 	}
 }
 
-function trimQuotes(input: string|boolean, value = `'`) {
-	if (typeof input === `string`) {
-		if (input[0] === value) input = input.substring(1);
-		if (input[input.length - 1] === value) input = input.substring(0, input.length - 1);
-		return input;
-	} else {
-		return '';
-	}
-}
