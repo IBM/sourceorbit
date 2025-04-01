@@ -15,6 +15,7 @@ import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath } 
 import { extCanBeProgram, getObjectType } from './builders/environment';
 import { isSqlFunction } from './languages/sql';
 import { ReadFileSystem } from './readFileSystem';
+import { collectClReferences } from './languages/clle';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -426,6 +427,11 @@ export class Targets {
 					module.parseStatements(tokens);
 
 					const ileObject = await this.resolvePathToObject(filePath);
+
+					if (this.withReferences && ileObject.source) {
+						ileObject.source.symbols = collectClReferences(relative, module);
+					}
+
 					this.createClTarget(ileObject, filePath, module, options);
 				}
 				else if (ddsExtension.includes(ext)) {
