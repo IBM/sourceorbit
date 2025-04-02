@@ -1042,10 +1042,23 @@ export class Targets {
 
 	private createRpgTarget(ileObject: ILEObject, localPath: string, cache: Cache, options: FileOptions = {}) {
 		const pathDetail = path.parse(localPath);
+
+		const setExternal = (symbolName: string, external: string) => {
+			if (this.withReferences && ileObject.source && ileObject.source.symbols) {
+				const symbol = ileObject.source.symbols.find(s => s.name === symbolName);
+				if (symbol) symbol.external = external;
+			}
+		}
+
 		// define internal imports
-		ileObject.imports = cache.procedures
+		ileObject.imports = [];
+		cache.procedures
 			.filter((proc: any) => proc.keyword[`EXTPROC`])
-			.map((r) => getExtPrRef(r, `EXTPROC`));
+			.forEach((r) => {
+				const ref = getExtPrRef(r, `EXTPROC`);
+				ileObject.imports.push(ref);
+				setExternal(ref, r.name);
+			});
 
 		// define exported functions
 		if (cache.keyword[`NOMAIN`]) {
@@ -1055,13 +1068,6 @@ export class Targets {
 			ileObject.exports = cache.procedures
 				.filter((proc: any) => proc.keyword[`EXPORT`])
 				.map(ref => ref.name.toUpperCase());
-		}
-
-		const setExternal = (symbolName: string, external: string) => {
-			if (this.withReferences && ileObject.source && ileObject.source.symbols) {
-				const symbol = ileObject.source.symbols.find(s => s.name === symbolName);
-				if (symbol) symbol.external = external;
-			}
 		}
 
 		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.source.relativePath}`);

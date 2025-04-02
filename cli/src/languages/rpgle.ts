@@ -80,14 +80,15 @@ export function setupParser(targets: Targets): Parser {
 	return parser;
 }
 
-function toSymbolRefs(def: Declaration): SymbolReferences {
+function toSymbolRefs(cwd: string, def: Declaration): SymbolReferences {
 	if (def.references.length > 0) {
 		let refs: SymbolReferences = {};
 		for (const ref of def.references) {
-			if (!refs[ref.uri]) {
-				refs[ref.uri] = [];
+			const relative = path.relative(cwd, ref.uri);
+			if (!refs[relative]) {
+				refs[relative] = [];
 			}
-			refs[ref.uri].push(ref.offset);
+			refs[relative].push(ref.offset);
 		}
 
 		return refs;
@@ -103,7 +104,7 @@ function handleSubitems(cwd, def: Declaration, newSymbol: SourceSymbol) {
 				name: sub.name,
 				type: sub.type,
 				relativePath: path.relative(cwd, def.position.path), // subitems are in the same file
-				references: toSymbolRefs(def)
+				references: toSymbolRefs(cwd, def)
 			};
 		});
 	}
@@ -149,7 +150,7 @@ export function rpgleDocToSymbolList(cwd: string, doc: Cache): SourceSymbol[] {
 			name: def.name,
 			type: def.type,
 			relativePath: path.relative(cwd, def.position.path),
-			references: toSymbolRefs(def)
+			references: toSymbolRefs(cwd, def)
 		}
 
 		handleSubitems(cwd, def, newSymbol);
@@ -162,7 +163,7 @@ export function rpgleDocToSymbolList(cwd: string, doc: Cache): SourceSymbol[] {
 			name: proc.name,
 			type: `procedure`,
 			relativePath: path.relative(cwd, proc.position.path),
-			references: toSymbolRefs(proc)
+			references: toSymbolRefs(cwd, proc)
 		};
 
 		// TODO: check on parameters when there is and isn't a scope
