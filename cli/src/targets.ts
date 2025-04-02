@@ -9,13 +9,14 @@ import Document from "vscode-db2i/src/language/sql/document";
 import { ObjectRef, StatementType } from 'vscode-db2i/src/language/sql/types';
 import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensions, cmdExtensions } from './extensions';
 import Parser from "vscode-rpgle/language/parser";
-import { rpgleDocToSymbolList, setupParser } from './languages/rpgle';
+import { getExtPrRef, rpgleDocToSymbolList, setupParser } from './languages/rpgle';
 import { Logger } from './logger';
 import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath, trimQuotes } from './utils';
 import { extCanBeProgram, getObjectType } from './builders/environment';
 import { getSymbolFromCreate, isSqlFunction } from './languages/sql';
 import { ReadFileSystem } from './readFileSystem';
 import { collectClReferences } from './languages/clle';
+import Declaration from 'vscode-rpgle/language/models/declaration';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -85,6 +86,7 @@ export interface ImpactedObject {
 }
 
 interface RpgLookup {
+	def: Declaration,
 	lookup: string,
 	line?: number
 }
@@ -1042,28 +1044,7 @@ export class Targets {
 		// define internal imports
 		ileObject.imports = cache.procedures
 			.filter((proc: any) => proc.keyword[`EXTPROC`])
-			.map(ref => {
-				const keyword = ref.keyword;
-				let importName: string = ref.name;
-				const extproc: string | boolean = keyword[`EXTPROC`];
-				if (extproc) {
-					if (extproc === true) importName = ref.name;
-					else importName = extproc;
-				}
-
-				if (importName.includes(`:`)) {
-					const parmParms = importName.split(`:`);
-					importName = parmParms.filter(p => !p.startsWith(`*`)).join(``);
-				}
-
-				if (importName.startsWith(`*`)) {
-					importName = ref.name;
-				} else {
-					importName = trimQuotes(importName);
-				}
-
-				return importName;
-			});
+			.map((r) => getExtPrRef(r, `EXTPROC`));
 
 		// define exported functions
 		if (cache.keyword[`NOMAIN`]) {
@@ -1073,6 +1054,13 @@ export class Targets {
 			ileObject.exports = cache.procedures
 				.filter((proc: any) => proc.keyword[`EXPORT`])
 				.map(ref => ref.name.toUpperCase());
+		}
+
+		const setExternal = (symbolName: string, external: string) => {
+			if (this.withReferences && ileObject.source && ileObject.source.symbols) {
+				const symbol = ileObject.source.symbols.find(s => s.name === symbolName);
+				if (symbol) symbol.external = external;
+			}
 		}
 
 		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.source.relativePath}`);
@@ -1201,14 +1189,10 @@ export class Targets {
 			.filter((proc: any) => proc.keyword[`EXTPGM`])
 			.map((ref): RpgLookup => {
 				const keyword = ref.keyword;
-				let fileName = ref.name;
-				const extpgm = keyword[`EXTPGM`];
-				if (extpgm) {
-					if (extpgm === true) fileName = ref.name;
-					else fileName = trimQuotes(extpgm);
-				}
+				const fileName = getExtPrRef(ref, `EXTPGM`);
 
 				return {
+					def: ref,
 					lookup: fileName.toUpperCase(),
 					line: ref.position ? ref.position.range.line : undefined
 				};
@@ -1223,7 +1207,8 @@ export class Targets {
 				if (resolvedObject) {
 					// because of legacy fixed CALL, there can be dupliicate EXTPGMs with the same name :(
 					if (!target.deps.some(d => d.systemName === resolvedObject.systemName && d.type && resolvedObject.type)) {
-						target.deps.push(resolvedObject)
+						target.deps.push(resolvedObject);
+						setExternal(ref.def.name, resolvedObject.systemName);
 					}
 				}
 
@@ -1243,20 +1228,23 @@ export class Targets {
 
 			// Find external data structure sources
 			scope.structs
-				.filter((struct: any) => struct.keyword[`EXTNAME`])
+				.filter((struct) => struct.keyword[`EXTNAME`])
 				.map((struct): RpgLookup => {
 					const keyword = struct.keyword;
 					const value = trimQuotes(keyword[`EXTNAME`]);
 
 					return {
+						def: struct,
 						lookup: value.split(`:`)[0].toUpperCase(),
 						line: struct.position ? struct.position.range.line : undefined
 					};
 				})
 				.forEach((ref: RpgLookup) => {
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
-					if (resolvedObject) target.deps.push(resolvedObject)
-					else {
+					if (resolvedObject) {
+						target.deps.push(resolvedObject);
+						setExternal(ref.def.name, resolvedObject.systemName);
+					} else {
 						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
@@ -1289,6 +1277,7 @@ export class Targets {
 					}
 
 					return {
+						def: file,
 						lookup: possibleName.toUpperCase(),
 						line: file.position ? file.position.range.line : undefined
 					};
@@ -1300,8 +1289,10 @@ export class Targets {
 					if (previouslyScanned) return;
 
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
-					if (resolvedObject) target.deps.push(resolvedObject)
-					else {
+					if (resolvedObject) {
+						target.deps.push(resolvedObject);
+						setExternal(ref.def.name, resolvedObject.systemName);
+					} else {
 						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
@@ -1314,6 +1305,7 @@ export class Targets {
 			scope.sqlReferences
 				.filter(ref => !ref.description)
 				.map((ref): RpgLookup => ({
+					def: ref,
 					lookup: trimQuotes(ref.name, `"`).toUpperCase(),
 					line: ref.position ? ref.position.range.line : undefined
 				}))
@@ -1321,8 +1313,12 @@ export class Targets {
 					const previouslyScanned = target.deps.some((r => (ref.lookup === r.systemName || ref.lookup === r.longName?.toUpperCase()) && r.type === `FILE`));
 					if (previouslyScanned) return;
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
-					if (resolvedObject) target.deps.push(resolvedObject)
-					else if (!isSqlFunction(ref.lookup)) {
+
+					if (resolvedObject) {
+						target.deps.push(resolvedObject);
+						setExternal(ref.def.name, resolvedObject.systemName);
+
+					} else if (!isSqlFunction(ref.lookup)) {
 						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
@@ -1344,6 +1340,7 @@ export class Targets {
 					}
 
 					return {
+						def: ref,
 						lookup: fileName.toUpperCase(),
 						line: ref.position ? ref.position.range.line : undefined
 					};
@@ -1352,7 +1349,10 @@ export class Targets {
 					if (ignoredObjects.includes(ref.lookup.toUpperCase())) return;
 
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` });
-					if (resolvedObject) target.deps.push(resolvedObject)
+					if (resolvedObject) {
+						target.deps.push(resolvedObject);
+						setExternal(ref.def.name, resolvedObject.systemName);
+					}
 					else {
 						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
@@ -1374,13 +1374,17 @@ export class Targets {
 					}
 
 					return {
+						def: ref,
 						lookup: fileName.toUpperCase(),
 						line: ref.position ? ref.position.range.line : undefined
 					};
 				})
 				.forEach((ref: RpgLookup) => {
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` });
-					if (resolvedObject) target.deps.push(resolvedObject)
+					if (resolvedObject) {
+						target.deps.push(resolvedObject);
+						setExternal(ref.def.name, resolvedObject.systemName);
+					}
 					else {
 						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,

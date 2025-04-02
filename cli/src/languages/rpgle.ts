@@ -6,6 +6,7 @@ import Parser from "vscode-rpgle/language/parser";
 import { SourceSymbol, SymbolReferences, Targets } from '../targets';
 import Cache from "vscode-rpgle/language/models/cache";
 import Declaration from 'vscode-rpgle/language/models/declaration';
+import { trimQuotes } from '../utils';
 
 let includeFileCache: { [path: string]: string } = {};
 
@@ -95,8 +96,6 @@ function toSymbolRefs(def: Declaration): SymbolReferences {
 	return {};
 }
 
-
-
 function handleSubitems(def: Declaration, newSymbol: SourceSymbol) {
 	if (def.subItems.length > 0) {
 		newSymbol.children = def.subItems.map(sub => {
@@ -108,6 +107,29 @@ function handleSubitems(def: Declaration, newSymbol: SourceSymbol) {
 			};
 		});
 	}
+}
+
+export function getExtPrRef(ref: Declaration, type: "EXTPROC"|"EXTPGM" = "EXTPROC"): string {
+	const keyword = ref.keyword;
+	let importName: string = ref.name;
+	const ext: string | boolean = keyword[type];
+	if (ext) {
+		if (ext === true) importName = ref.name;
+		else importName = ext;
+	}
+
+	if (importName.includes(`:`)) {
+		const parmParms = importName.split(`:`);
+		importName = parmParms.filter(p => !p.startsWith(`*`)).join(``);
+	}
+
+	if (importName.startsWith(`*`)) {
+		importName = ref.name;
+	} else {
+		importName = trimQuotes(importName);
+	}
+
+	return importName;
 }
 
 export function rpgleDocToSymbolList(doc: Cache): SourceSymbol[] {
