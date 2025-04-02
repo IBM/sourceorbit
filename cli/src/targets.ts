@@ -13,7 +13,7 @@ import { rpgleDocToSymbolList, setupParser } from './languages/rpgle';
 import { Logger } from './logger';
 import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath, trimQuotes } from './utils';
 import { extCanBeProgram, getObjectType } from './builders/environment';
-import { getSymbolFromDef, isSqlFunction } from './languages/sql';
+import { getSymbolFromCreate, isSqlFunction } from './languages/sql';
 import { ReadFileSystem } from './readFileSystem';
 import { collectClReferences } from './languages/clle';
 
@@ -904,7 +904,9 @@ export class Targets {
 
 							const extension = pathDetail.ext.substring(1);
 
-							const symbol = this.withReferences ? getSymbolFromDef(relativePath, statement, mainDef) : undefined;
+							const symbol = this.withReferences ? getSymbolFromCreate(relativePath, statement, mainDef) : undefined;
+
+							// TODO: consider procedure/function bodies?
 
 							let ileObject: ILEObject = {
 								systemName: objectName.toUpperCase(),

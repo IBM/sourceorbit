@@ -297,7 +297,7 @@ export function isSqlFunction(name: string): boolean {
   );
 }
 
-export function getSymbolFromDef(relativePath: string, statement: Statement, mainDef: ObjectRef) {
+export function getSymbolFromCreate(relativePath: string, statement: Statement, mainDef: ObjectRef) {
   const symbol: SourceSymbol = {
     name: mainDef.object.system || trimQuotes(mainDef.object.name, `"`),
     type: mainDef.createType || `object`,
@@ -308,15 +308,19 @@ export function getSymbolFromDef(relativePath: string, statement: Statement, mai
     }]}
   }
 
-  const children = statement.getRoutineParameters();
+  const createTypesWithFields = [`table`];
 
-  if (children && children.length > 0) {
-    symbol.children = children.map(child => ({
-      name: child.alias,
-      type: child.createType,
-      relativePath,
-      references: { [relativePath]: [child.tokens[0].range] }
-    }))
+  if (createTypesWithFields.includes(mainDef.createType.toLowerCase())) { 
+    const children = statement.getRoutineParameters();
+
+    if (children && children.length > 0) {
+      symbol.children = children.map(child => ({
+        name: child.alias,
+        type: child.createType,
+        relativePath,
+        references: { [relativePath]: [child.tokens[0].range] }
+      }))
+    }
   }
 
   return symbol;
