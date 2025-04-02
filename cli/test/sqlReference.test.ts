@@ -26,12 +26,12 @@ describe(`sql_references tests (internal scope analysis)`, () => {
 
   test(`Check stock (with internal scope analysis)`, async () => {
     const myPgm = targets.getTarget({ systemName: `SQLREFPGM`, type: `PGM` });
-    expect(myPgm.relativePath).toBe(path.join(`qrpglesrc`, `sqlrefpgm.pgm.sqlrpgle`));
+    expect(myPgm.source.relativePath).toBe(path.join(`qrpglesrc`, `sqlrefpgm.pgm.sqlrpgle`));
     expect(myPgm.deps.length).toBe(1);
 
     const empTable = myPgm.deps[0];
     expect(empTable.systemName).toBe(`STOCK`);
     expect(empTable.type).toBe(`FILE`);
-    expect(empTable.relativePath).toBe(path.join(`qddssrc`, `stock.table`));
+    expect(empTable.source.relativePath).toBe(path.join(`qddssrc`, `stock.table`));
   });
 });

@@ -46,9 +46,9 @@ export class MakeProject {
 	public getObjectAttributes(compileData: CompileData, ileObject: ILEObject): CommandParameters {
 		let customAttributes = this.settings.objectAttributes[`${ileObject.systemName}.${ileObject.type}`] || {};
 
-		if (ileObject.relativePath) {
+		if (ileObject.source) {
 			// We need to take in the current folders .ibmi.json file for any specific values
-			const folder = path.dirname(ileObject.relativePath);
+			const folder = ileObject.source && ileObject.source.relativePath ? path.dirname(ileObject.source.relativePath) : undefined;
 			const folderSettings = this.folderSettings[folder];
 			if (folderSettings) {
 				// If there is a tgtccsid, we only want to apply it to commands
@@ -174,8 +174,8 @@ export class MakeProject {
 
 				for (const ileObject of objects) {
 					if (ileObject.reference) continue;
-					if (ileObject.relativePath) {
-						const sourcePath = path.join(this.cwd, ileObject.relativePath);
+					if (ileObject.source) {
+						const sourcePath = path.join(this.cwd, ileObject.source.relativePath);
 						const exists = existsSync(sourcePath); // Is this even needed? We already have relativePath??
 
 						if (exists) {
@@ -187,13 +187,13 @@ export class MakeProject {
 								const customAttributes = this.settings.objectAttributes[`${ileObject.systemName}.${ileObject.type}`];
 
 								lines.push(
-									`$(PREPATH)/${ileObject.systemName}.${data.becomes}: ${asPosix(ileObject.relativePath)}`,
+									`$(PREPATH)/${ileObject.systemName}.${data.becomes}: ${asPosix(ileObject.source.relativePath)}`,
 									...(commands.map(l => `\t-system -q "${toCl(l, customAttributes)}"`)),
 									``,
 								);
 
 							} catch (e) {
-								console.log(`Failed to parse '${ileObject.relativePath}'`);
+								console.log(`Failed to parse '${ileObject.source.relativePath}'`);
 								process.exit();
 							}
 						}
@@ -245,13 +245,13 @@ export class MakeProject {
 	static generateSpecificTarget(data: CompileData, ileObject: ILEObjectTarget, customAttributes?: CommandParameters): string[] {
 		let lines: string[] = [];
 
-		const parentName = ileObject.relativePath ? path.dirname(ileObject.relativePath) : undefined;
+		const parentName = ileObject.source?.relativePath ? path.dirname(ileObject.source.relativePath) : undefined;
 		const qsysTempName: string | undefined = (parentName && parentName.length > 10 ? parentName.substring(0, 10) : parentName);
 
 		const resolve = (command: string) => {
 			command = command.replace(new RegExp(`\\*CURLIB`, `g`), `$(BIN_LIB)`);
 			command = command.replace(new RegExp(`\\$\\*`, `g`), ileObject.systemName);
-			command = command.replace(new RegExp(`\\$<`, `g`), asPosix(ileObject.relativePath));
+			command = command.replace(new RegExp(`\\$<`, `g`), asPosix(ileObject.source.relativePath));
 			command = command.replace(new RegExp(`\\$\\(SRCPF\\)`, `g`), qsysTempName);
 
 			if (ileObject.deps && ileObject.deps.length > 0) {
@@ -287,12 +287,12 @@ export class MakeProject {
 		const resolvedCommand = resolve(toCl(data.command, data.parameters));
 
 		lines.push(
-			`$(PREPATH)/${objectKey}: ${asPosix(ileObject.relativePath)}`,
+			`$(PREPATH)/${objectKey}: ${asPosix(ileObject.source.relativePath)}`,
 			...(qsysTempName && data.member ?
 				[
 					// TODO: consider CCSID when creating the source file
 					`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/${qsysTempName}) RCDLEN(112) CCSID(${sourceFileCcsid})"`,
-					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${ileObject.systemName}.MBR') MBROPT(*REPLACE)"`
+					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.source.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${ileObject.systemName}.MBR') MBROPT(*REPLACE)"`
 				] : []),
 			...(data.preCommands ? data.preCommands.map(cmd => `\t${resolve(cmd)}`) : []),
 			...(data.command ?

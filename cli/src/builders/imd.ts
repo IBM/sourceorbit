@@ -30,11 +30,11 @@ export class ImpactMarkdown {
     if (this.relativePaths.length > 0) {
       lines.push(`## Impact Analysis`, ``);
 
-      const possibleObjects = this.relativePaths.map(r => this.targets.getResolvedObject(path.join(this.cwd, r))).filter(x => x && x.relativePath);
+      const possibleObjects = this.relativePaths.map(r => this.targets.getResolvedObject(path.join(this.cwd, r))).filter(x => x && x.source);
 
       lines.push(
         `Touched objects: `, ``,
-        ...possibleObjects.map(ileObject => `* ${TypeEmoji[ileObject.type] || `❔`} \`${ileObject.systemName}.${ileObject.type}\`: \`${ileObject.relativePath}\``),
+        ...possibleObjects.map(ileObject => `* ${TypeEmoji[ileObject.type] || `❔`} \`${ileObject.systemName}.${ileObject.type}\`: \`${ileObject.source.relativePath}\``),
         ``,
         `---`,
         ``
@@ -141,7 +141,7 @@ export class ImpactMarkdown {
     function lookupObject(ileObject: ILEObject) {
       let resultLines: string[] = [];
 
-      resultLines.push(`${''.padEnd(currentTree.length, `\t`)}* ${TypeEmoji[ileObject.type] || `❔`} \`${ileObject.systemName}.${ileObject.type}\` (${ileObject.relativePath ? `\`${ileObject.relativePath}\`` : `no source`})`);
+      resultLines.push(`${''.padEnd(currentTree.length, `\t`)}* ${TypeEmoji[ileObject.type] || `❔`} \`${ileObject.systemName}.${ileObject.type}\` (${ileObject.source ? `\`${ileObject.source.relativePath}\`` : `no source`})`);
 
       currentTree.push(ileObject);
 
@@ -180,7 +180,7 @@ export class ImpactMarkdown {
 
     this.targets.getResolvedObjects().forEach(ileObject => {
 
-      let logs = this.targets.logger.getLogsFor(ileObject.relativePath) || [];
+      let logs = this.targets.logger.getLogsFor(ileObject.source?.relativePath) || [];
       let parents = this.targets.getTargets().filter(t => t.deps.some(d => d.systemName === ileObject.systemName && d.type === ileObject.type));
       let children = this.targets.getTarget(ileObject)?.deps || [];
 
@@ -188,7 +188,7 @@ export class ImpactMarkdown {
         TypeEmoji[ileObject.type] || `❔`,
         ileObject.systemName,
         ileObject.type,
-        `\`${ileObject.relativePath}\``,
+        `\`${ileObject.source?.relativePath}\``,
         ImpactMarkdown.createLogExpand(logs),
         ImpactMarkdown.createObjectExpand(parents),
         ImpactMarkdown.createObjectExpand(children)

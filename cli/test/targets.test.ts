@@ -51,12 +51,12 @@ test('resolveBinder', async () => {
   expect(targets.getTarget({systemName: `UNUSEDSRV`, type: `SRVPGM`})).toBeUndefined();
   expect(targets.getTarget({systemName: `UNUSED`, type: `CMD`})).toBeUndefined();
 
-  const unusedSrvLogs = targets.logger.getLogsFor(unusedSrvPgm.relativePath);
+  const unusedSrvLogs = targets.logger.getLogsFor(unusedSrvPgm.source.relativePath);
   expect(unusedSrvLogs.length).toBe(1);
   expect(unusedSrvLogs[0].message).toBe(`Removed as target because no modules were found with matching exports.`);
   expect(unusedSrvLogs[0].type).toBe(`info`);
 
-  const unusedCmdLogs = targets.logger.getLogsFor(unusedCmd.relativePath);
+  const unusedCmdLogs = targets.logger.getLogsFor(unusedCmd.source.relativePath);
   expect(unusedCmdLogs.length).toBe(1);
   expect(unusedCmdLogs[0].message).toBe(`Removed as target because no program was found with a matching name.`);
   expect(unusedCmdLogs[0].type).toBe(`info`);
@@ -68,8 +68,7 @@ test('resolveBinder', async () => {
 
   const bnddir = deps.find(d => d.systemName === `$(APP_BNDDIR)` && d.type === `BNDDIR`);
   expect(bnddir).toBeDefined();
-  expect(bnddir.extension).toBeUndefined();
-  expect(bnddir.relativePath).toBeUndefined();
+  expect(bnddir.source).toBeUndefined();
   expect(bnddir.deps.length).toBe(2);
 
   for (const srvPgmDep of bnddir.deps) {
@@ -79,8 +78,8 @@ test('resolveBinder', async () => {
     expect(srvPgm).toBeDefined();
     expect(srvPgm.deps.length).toBe(1);
 
-    expect(srvPgm.relativePath).toBeDefined();
-    expect(srvPgm.extension).toBeDefined();
+    expect(srvPgm.source.relativePath).toBeDefined();
+    expect(srvPgm.source.extension).toBeDefined();
   }
 
   const programACmd = deps.find(d => d.systemName === `PROGRAMA` && d.type === `CMD`);
@@ -89,17 +88,17 @@ test('resolveBinder', async () => {
   expect(programACmd.deps[0].type).toBe(`PGM`);
 });
 
-test('getObjectsByExtension', async () => {
+test('getObjectsBysource.Extension', async () => {
   const targets = await baseTargets(true);
 
   const rpglePrograms = targets.getResolvedObjectsByFileExtension(`pgm.rpgle`);
   expect(rpglePrograms.length).toBe(1);
-  expect(rpglePrograms[0].relativePath).toBe(path.join(`qrpglesrc`, `programA.pgm.rpgle`));
+  expect(rpglePrograms[0].source.relativePath).toBe(path.join(`qrpglesrc`, `programA.pgm.rpgle`));
 
   const rpgleModules = targets.getResolvedObjectsByFileExtension(`rpgle`);
   expect(rpgleModules.length).toBe(2);
-  expect(rpgleModules[0].relativePath).toBe(path.join(`qrpglesrc`, `moduleA.rpgle`));
-  expect(rpgleModules[1].relativePath).toBe(path.join(`qrpglesrc`, `ordentmod.rpgle`));
+  expect(rpgleModules[0].source.relativePath).toBe(path.join(`qrpglesrc`, `moduleA.rpgle`));
+  expect(rpgleModules[1].source.relativePath).toBe(path.join(`qrpglesrc`, `ordentmod.rpgle`));
 })
 
 test(`Multi-module program and service programs`, async () => {
@@ -116,10 +115,10 @@ test(`Multi-module program and service programs`, async () => {
   expect(modules.length).toBe(5);
 
   const webappPgm = programs[0];
-  expect(webappPgm.extension).toBe(`pgm`);
+  expect(webappPgm.source.extension).toBe(`pgm`);
   const webappDef = deps.find(d => d.systemName === webappPgm.systemName && d.type === webappPgm.type);
   expect(webappDef).toBeDefined();
-  expect(webappDef.extension).toBe(`pgm`);
+  expect(webappDef.source.extension).toBe(`pgm`);
   
   expect(webappDef.deps.length).toBe(4);
   expect(webappDef.deps.filter(d => d.type === `MODULE`).length).toBe(3);
