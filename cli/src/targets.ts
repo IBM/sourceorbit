@@ -45,6 +45,7 @@ export interface SourceSymbol {
 	relativePath: string;
 	children?: SourceSymbol[],
 	references: SymbolReferences;
+	external?: string;
 }
 
 export interface ILEObject {
@@ -610,7 +611,17 @@ export class Targets {
 
 		const ddsRefKeywords = [`PFILE`, `REF`, `JFILE`];
 
+		let symbols: SourceSymbol[] = [];
+
 		for (const recordFormat of dds.formats) {
+
+			let recordFormatSymbol: SourceSymbol = {
+				name: recordFormat.name,
+				type: `recordFormat`,
+				relativePath: localPath,
+				references: {},
+				children: []
+			};
 
 			// Look through this record format keywords for the keyword we're looking for
 			for (const keyword of ddsRefKeywords) {
@@ -633,6 +644,13 @@ export class Targets {
 
 			// Then, let's loop through the fields in this format and see if we can find REFFLD
 			for (const field of recordFormat.fields) {
+				let currentFieldSymbol: SourceSymbol = {
+					name: field.name,
+					type: `field`,
+					references: {},
+					relativePath: localPath,
+				}
+
 				const refFld = field.keywords.find(k => k.name === `REFFLD`);
 
 				if (refFld) {
@@ -640,10 +658,17 @@ export class Targets {
 
 					if (fileRef) {
 						handleObjectPath(`REFFLD`, recordFormat, fileRef);
+						currentFieldSymbol.external = fileRef;
 					}
 				}
+
+				recordFormatSymbol.children.push(currentFieldSymbol);
 			}
+
+			symbols.push(recordFormatSymbol);
 		}
+
+		ileObject.source.symbols = symbols;
 
 		if (target.deps.length > 0)
 			infoOut(`Depends on: ${target.deps.map(d => `${d.systemName}.${d.type}`).join(` `)}`);
