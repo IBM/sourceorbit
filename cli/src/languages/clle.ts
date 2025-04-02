@@ -23,7 +23,7 @@ export function collectClReferences(relativePath: string, doc: Module): SourceSy
 		if (def instanceof Variable && def.name) {
       newSymbol = {
         name: def.name.value,
-        type: String(def.dataType), // TODO: what is this?
+        type: String(def.dataType), // RTODO: what is this?
         relativePath,
         references: getRefs(def)
       }
@@ -32,12 +32,13 @@ export function collectClReferences(relativePath: string, doc: Module): SourceSy
 		else if (def instanceof File && def.file) {
       newSymbol = {
         name: def.file.name,
-        type: `table`, //TODO: is table correct?
+        type: `table`, //RTODO: is table correct?
         relativePath,
-        references: {} // File's don't have refs, but children do
+        references: {}, // File's don't have refs, but children do
+        external: def.file.name
       }
 
-      // TODO: get children of file
+      // RTODO: get children of file
 		}
 
 		else if (def instanceof Subroutine && def.name) {

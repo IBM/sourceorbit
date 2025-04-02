@@ -96,13 +96,13 @@ function toSymbolRefs(def: Declaration): SymbolReferences {
 	return {};
 }
 
-function handleSubitems(def: Declaration, newSymbol: SourceSymbol) {
+function handleSubitems(cwd, def: Declaration, newSymbol: SourceSymbol) {
 	if (def.subItems.length > 0) {
 		newSymbol.children = def.subItems.map(sub => {
 			return {
 				name: sub.name,
 				type: sub.type,
-				relativePath: def.position.path, // subitems are in the same file
+				relativePath: path.relative(cwd, def.position.path), // subitems are in the same file
 				references: toSymbolRefs(def)
 			};
 		});
@@ -132,7 +132,7 @@ export function getExtPrRef(ref: Declaration, type: "EXTPROC"|"EXTPGM" = "EXTPRO
 	return importName;
 }
 
-export function rpgleDocToSymbolList(doc: Cache): SourceSymbol[] {
+export function rpgleDocToSymbolList(cwd: string, doc: Cache): SourceSymbol[] {
 	let symbols: SourceSymbol[] = [];
 
 	const allDefs = [
@@ -148,11 +148,11 @@ export function rpgleDocToSymbolList(doc: Cache): SourceSymbol[] {
 		let newSymbol: SourceSymbol = {
 			name: def.name,
 			type: def.type,
-			relativePath: def.position.path, // TODO: make sure this is relative!!
+			relativePath: path.relative(cwd, def.position.path),
 			references: toSymbolRefs(def)
 		}
 
-		handleSubitems(def, newSymbol);
+		handleSubitems(cwd, def, newSymbol);
 
 		symbols.push(newSymbol);
 	}
@@ -161,15 +161,15 @@ export function rpgleDocToSymbolList(doc: Cache): SourceSymbol[] {
 		let newSymbol: SourceSymbol = {
 			name: proc.name,
 			type: `procedure`,
-			relativePath: proc.position.path, // TODO: make sure this is relative!!
+			relativePath: path.relative(cwd, proc.position.path),
 			references: toSymbolRefs(proc)
 		};
 
 		// TODO: check on parameters when there is and isn't a scope
 		if (proc.scope) {
-			newSymbol.children = rpgleDocToSymbolList(proc.scope);
+			newSymbol.children = rpgleDocToSymbolList(cwd, proc.scope);
 		} else if (proc.subItems.length > 0) {
-			handleSubitems(proc, newSymbol);
+			handleSubitems(cwd, proc, newSymbol);
 		}
 
 		symbols.push(newSymbol);

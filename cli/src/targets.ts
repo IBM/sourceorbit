@@ -52,7 +52,7 @@ export interface SourceSymbol {
 export interface ILEObject {
 	systemName: string;
 	longName?: string;
-	type: ObjectType; // TODO: standardise on types
+	type: ObjectType; // RTODO: standardise on types
 	text?: string,
 	source?: {
 		relativePath: string;
@@ -122,13 +122,12 @@ export class Targets {
 	private resolvedExports: { [name: string]: ILEObject } = {};
 	private targets: { [name: string]: ILEObjectTarget } = {};
 	private needsBinder = false;
-	private withReferences = true;
 
 	private suggestions: TargetSuggestions = {};
 
 	public logger: Logger;
 
-	constructor(private cwd: string, private fs: ReadFileSystem) {
+	constructor(private cwd: string, private fs: ReadFileSystem, private withReferences = false) {
 		this.rpgParser = setupParser(this);
 		this.logger = new Logger();
 	}
@@ -415,7 +414,7 @@ export class Targets {
 					if (rpgDocs) {
 						const ileObject = await this.resolvePathToObject(filePath, options.text);
 						if (this.withReferences && ileObject.source) {
-							ileObject.source.symbols = rpgleDocToSymbolList(rpgDocs);
+							ileObject.source.symbols = rpgleDocToSymbolList(this.cwd, rpgDocs);
 						}
 
 						this.createRpgTarget(ileObject, filePath, rpgDocs, options);
@@ -661,7 +660,7 @@ export class Targets {
 					if (fileRef) {
 						handleObjectPath(`REFFLD`, recordFormat, fileRef);
 
-						// TODO: how does handleObjectPath also add an external symbol?
+						// RTODO: how does handleObjectPath also add an external symbol?
 						currentFieldSymbol.external = fileRef;
 					}
 				}
@@ -910,7 +909,7 @@ export class Targets {
 
 							const symbol = this.withReferences ? getSymbolFromCreate(relativePath, statement, mainDef) : undefined;
 
-							// TODO: consider procedure/function bodies?
+							// RTODO: consider procedure/function bodies for children symbols?
 
 							let ileObject: ILEObject = {
 								systemName: objectName.toUpperCase(),
