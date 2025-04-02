@@ -51,5 +51,7 @@ describe(`company_system tests`, () => {
       // toLowerCase because RPGLE is not case sensitive
       expect(text.toLowerCase()).toBe(`printf`);
     }
+
+    // RTODO: check symbols from a copybook
   });
 });
