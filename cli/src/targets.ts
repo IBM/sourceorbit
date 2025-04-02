@@ -660,6 +660,8 @@ export class Targets {
 
 					if (fileRef) {
 						handleObjectPath(`REFFLD`, recordFormat, fileRef);
+
+						// TODO: how does handleObjectPath also add an external symbol?
 						currentFieldSymbol.external = fileRef;
 					}
 				}
