@@ -30,8 +30,6 @@ describe(`company_system tests`, () => {
     const printf = myPgm.source.symbols.find(s => s.name === `printf`);
     expect(printf).toBeDefined();
 
-    console.log(printf);
-
     expect(printf.name).toBe(`printf`);
     expect(printf.relativePath).toBe(myPgm.source.relativePath);
     expect(printf.external).toBe(`printf`);
@@ -52,6 +50,11 @@ describe(`company_system tests`, () => {
       expect(text.toLowerCase()).toBe(`printf`);
     }
 
-    // RTODO: check symbols from a copybook
+    const f1 = myPgm.source.symbols.find(s => s.name === `F01`);
+    expect(f1).toBeDefined();
+
+    expect(f1.relativePath).not.toBe(myPgm.source.relativePath);
+    expect(f1.references[f1.relativePath].length).toBe(1);
+    expect(f1.references[myPgm.source.relativePath].length).toBe(1);
   });
 });
