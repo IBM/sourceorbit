@@ -79,7 +79,7 @@ export function setupParser(targets: Targets): Parser {
 	return parser;
 }
 
-export function toSymbolRefs(def: Declaration): SymbolReferences {
+function toSymbolRefs(def: Declaration): SymbolReferences {
 	if (def.references.length > 0) {
 		let refs: SymbolReferences = {};
 		for (const ref of def.references) {
@@ -95,8 +95,23 @@ export function toSymbolRefs(def: Declaration): SymbolReferences {
 	return {};
 }
 
+
+
+function handleSubitems(def: Declaration, newSymbol: SourceSymbol) {
+	if (def.subItems.length > 0) {
+		newSymbol.children = def.subItems.map(sub => {
+			return {
+				name: sub.name,
+				type: sub.type,
+				relativePath: def.position.path, // subitems are in the same file
+				references: toSymbolRefs(def)
+			};
+		});
+	}
+}
+
 export function rpgleDocToSymbolList(doc: Cache): SourceSymbol[] {
-	let symbols: SourceSymbol[] = []
+	let symbols: SourceSymbol[] = [];
 
 	const allDefs = [
 		...doc.constants,
@@ -115,16 +130,7 @@ export function rpgleDocToSymbolList(doc: Cache): SourceSymbol[] {
 			references: toSymbolRefs(def)
 		}
 
-		if (def.subItems.length > 0) {
-			newSymbol.children = def.subItems.map(sub => {
-				return {
-					name: sub.name,
-					type: sub.type,
-					relativePath: def.position.path, // subitems are in the same file
-					references: toSymbolRefs(def)
-				};
-			});
-		}
+		handleSubitems(def, newSymbol);
 
 		symbols.push(newSymbol);
 	}
@@ -137,7 +143,12 @@ export function rpgleDocToSymbolList(doc: Cache): SourceSymbol[] {
 			references: toSymbolRefs(proc)
 		};
 
-		newSymbol.children = rpgleDocToSymbolList(proc.scope);
+		// TODO: check on parameters when there is and isn't a scope
+		if (proc.scope) {
+			newSymbol.children = rpgleDocToSymbolList(proc.scope);
+		} else if (proc.subItems.length > 0) {
+			handleSubitems(proc, newSymbol);
+		}
 
 		symbols.push(newSymbol);
 	}
