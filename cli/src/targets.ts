@@ -979,7 +979,7 @@ export class Targets {
 		const pathDetail = path.parse(localPath);
 		// define internal imports
 		ileObject.imports = cache.procedures
-			.filter((proc: any) => proc.keyword[`EXTPROC`])
+			.filter((proc: any) => proc.keyword[`EXTPROC`] && !proc.keyword[`EXPORT`])
 			.map(ref => {
 				const keyword = ref.keyword;
 				let importName: string = ref.name;
@@ -1507,6 +1507,7 @@ export class Targets {
 			systemName: currentTarget.systemName,
 			imports: currentTarget.imports,
 			exports: [],
+			headers: currentTarget.headers,
 			type: `MODULE`,
 			relativePath: basePath,
 			extension: path.extname(basePath).substring(1)
@@ -1521,6 +1522,7 @@ export class Targets {
 		// Clean up imports for module and program
 		newModTarget.imports = currentTarget.imports;
 		currentTarget.imports = undefined;
+		currentTarget.headers = undefined;
 
 		this.createOrAppend(currentTarget, newModule);
 	}

@@ -15,8 +15,18 @@ export class BobProject {
 		let list: DirectoryTargets = {};
 
 		for (let target of targets.getTargets()) {
+			let dirname: string|undefined;
 			if (target.relativePath) {
-				const dirname = path.dirname(target.relativePath);
+				dirname = path.dirname(target.relativePath);
+			} else if (target.type === `PGM`) {
+				// If there is no relative path, this might mean it's a multimodule program
+				const possibleModule = targets.getTarget({systemName: target.systemName, type: `MODULE`});
+				if (possibleModule) {
+					dirname = path.dirname(possibleModule.relativePath);
+				}
+			}
+
+			if (dirname) {
 				if (list[dirname] === undefined) list[dirname] = [];
 
 				list[dirname].push(target);
@@ -85,7 +95,7 @@ class RulesFile {
 
 		const existingLine = this.parsed.find(r => r.target === objName && r.isUserWritten !== true);
 
-		const lineContent = `${path.relative(this.subdir, target.relativePath)} ${target.headers ? target.headers.join(` `) + ` ` : ``}${target.deps.filter(d => d.reference !== true).map(d => `${d.systemName}.${d.type}`).join(` `)}`.trimEnd();
+		const lineContent = `${target.relativePath ? path.relative(this.subdir, target.relativePath) + ' ' : ``}${target.headers ? target.headers.join(` `) + ` ` : ``}${target.deps.filter(d => d.reference !== true).map(d => `${d.systemName}.${d.type}`).join(` `)}`.trimEnd();
 
 		if (existingLine) {
 			existingLine.ogLine = `${objName}: ${lineContent}`;

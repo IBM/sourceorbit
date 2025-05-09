@@ -1,0 +1,50 @@
+     A                                      INDARA
+     A                                      CA12(12)
+     A          R DETAIL                    
+     A                                  6 10'ID'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A            XID            6A  O  6 14
+
+     A                                  7  7'First'
+     A                                      DSPATR(UL)
+     A                                      COLOR(WHT)
+     A            XFIRST        12A  B  7 14
+
+     A                                  8  5'Initial'
+     A                                      DSPATR(UL)
+     A                                      COLOR(WHT)
+     A            XINIT          1A  B  8 14
+
+     A                                  9  8'Last'
+     A                                      DSPATR(UL)
+     A                                      COLOR(WHT)
+     A            XLAST         15A  B  9 14
+
+     A                                 10  2'Department'
+     A                                      DSPATR(UL)
+     A                                      COLOR(WHT)
+     A            XDEPT          3A  O 10 14
+
+     A                                 11  9'Job'
+     A                                      DSPATR(UL)
+     A                                      COLOR(WHT)
+     A            XJOB           8A  B 11 14
+
+     A                                 12  6'Salary'
+     A                                      DSPATR(UL)
+     A                                      COLOR(WHT)
+     A            XSAL          10A  B 12 14
+
+     A                                 13  7'Phone'
+     A                                      DSPATR(UL)
+     A                                      COLOR(WHT)
+     A            XTEL           4A  B 13 14
+
+     A            XERR          50A  O 15 14COLOR(RED)
+     A          R HEADER_FMT
+     A                                      OVERLAY
+     A                                  3 06'F12=Back Enter=Create'
+     A                                      COLOR(BLU)
+     A                                  2 33'New Employee'
+     A                                      DSPATR(UL)

@@ -27,6 +27,10 @@ export function getSystemNameFromPath(inputName: string) {
 		name = parts[1];
 	}
 
+	if (baseName.toUpperCase().endsWith(`.TEST`)) {
+		name = name.substring(0, name.length - 5);
+	}
+
 	// We start the system name with the suppliedPrefix
 	let systemName = prefix;
 
