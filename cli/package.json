@@ -1,6 +1,6 @@
 {
   "name": "@ibm/sourceorbit",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "IBM i dependency management tool",
   "bin": {
     "so": "./dist/index.js"
