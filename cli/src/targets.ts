@@ -104,7 +104,7 @@ export class Targets {
 	private targets: { [name: string]: ILEObjectTarget } = {};
 
 	private needsBinder = false;
-	private bindingDirectoryObject = DEFAULT_BINDER_TARGET;
+	private projectBindingDirectory = DEFAULT_BINDER_TARGET;
 
 	private suggestions: TargetSuggestions = {};
 
@@ -119,10 +119,6 @@ export class Targets {
 		return this.cwd;
 	}
 
-	public overrideBindirName(name: string) {
-		this.bindingDirectoryObject.systemName = name;
-	}
-
 	public setAssumePrograms(assumePrograms: boolean) {
 		this.assumePrograms = assumePrograms;
 	}
@@ -132,7 +128,7 @@ export class Targets {
 	}
 
 	public getBinderTarget() {
-		return this.bindingDirectoryObject;
+		return this.projectBindingDirectory;
 	}
 
 	public getRelative(fullPath: string) {
@@ -184,6 +180,10 @@ export class Targets {
 				if (ref.object.name) theObject.longName = ref.object.name;
 				// theObject.type = ref.type;
 			}
+		}
+
+		if (type === `BNDDIR`) {
+			this.projectBindingDirectory = theObject;
 		}
 
 		// This allows us to override the .objrefs if the source actually exists.
@@ -1390,7 +1390,7 @@ export class Targets {
 
 				if (target.deps.length > 0) {
 					// Add this new service program to the project binding directory
-					this.createOrAppend(this.bindingDirectoryObject, target);
+					this.createOrAppend(this.projectBindingDirectory, target);
 
 					// Make sure we can resolve to this service program
 					for (const e of target.exports) {

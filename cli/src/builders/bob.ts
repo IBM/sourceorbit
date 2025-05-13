@@ -8,7 +8,6 @@ type DirectoryTargets = {[dirname: string]: ILEObjectTarget[]};
 export class BobProject {
 	private dirTargets: DirectoryTargets = {};
 	constructor(private targets: Targets) {
-		targets.overrideBindirName(`APP`);
 		this.dirTargets = BobProject.buildDirTargets(targets);
 	}
 
