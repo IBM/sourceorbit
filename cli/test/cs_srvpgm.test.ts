@@ -25,6 +25,7 @@ describe(`pseudo tests`, () => {
 
   test(`That test files are understood`, () => {
     expect(targets).toBeDefined();
+    expect(targets.binderRequired()).toBeFalsy();
 
     const testModule = targets.getTarget({systemName: `EMPTEST`, type: `MODULE`});
     expect(testModule).toBeDefined();
@@ -32,7 +33,7 @@ describe(`pseudo tests`, () => {
     expect(testModule.deps.length).toBe(3);
     expect(testModule.deps.find(f => f.systemName === `EMPLOYEE`)).toBeDefined();
     expect(testModule.deps.find(f => f.systemName === `DEPARTMENT`)).toBeDefined();
-    expect(testModule.deps.find(f => f.systemName === `EMPDET`)).toBeDefined();
+    expect(testModule.deps.find(f => f.systemName === `EMPDET` && f.type === `MODULE`)).toBeDefined();
   });
 
   test('Deps are picked up for the module', () => {
@@ -66,6 +67,7 @@ describe(`pseudo tests`, () => {
     console.log(files[`qrpglesrc/Rules.mk`]);
     expect(files[`qrpglesrc/Rules.mk`]).toContain(`EMPLOYEES.MODULE: employees.pgm.sqlrpgle qrpgleref/constants.rpgleinc qrpgleref/empdet.rpgleinc`);
     expect(files[`qrpglesrc/Rules.mk`]).toContain(`EMPLOYEES.PGM: EMPLOYEE.FILE EMPS.FILE EMPDET.MODULE EMPLOYEES.MODULE`);
+    expect(files[`qrpglesrc/Rules.mk`]).not.toContain(`EMPDET.SRVPGM`); // Ensure no service program is created
   });
 
   test('makefile', () => {
@@ -75,5 +77,8 @@ describe(`pseudo tests`, () => {
 
     expect(contents).toContain(`$(PREPATH)/EMPLOYEES.PGM:`);
     expect(contents).toContain(`system "CRTPGM PGM($(BIN_LIB)/EMPLOYEES) ENTMOD(EMPLOYEES) MODULE(EMPDET EMPLOYEES) TGTRLS(*CURRENT) BNDDIR($(BNDDIR)) ACTGRP(*NEW)" > .logs/employees.splf`);
+
+    expect(contents).not.toContain(`EMPDET.SRVPGM`); // Ensure no service program is created
+    expect(contents).toContain(`EMPDET.MODULE`);
   });
 });

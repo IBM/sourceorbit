@@ -82,6 +82,8 @@ export class MakeProject {
 	}
 
 	public generateHeader(): string[] {
+		const bindingDirectory = this.targets.getBinderTarget();
+
 		let baseBinders = [
 			...(this.targets.binderRequired() ? [`($(BIN_LIB)/$(APP_BNDDIR))`] : []),
 			...this.settings.binders.map(b => `(${b})`)
@@ -91,7 +93,7 @@ export class MakeProject {
 
 		return [
 			`BIN_LIB=DEV`,
-			`APP_BNDDIR=APP`,
+			`APP_BNDDIR=${this.targets.binderRequired() ? bindingDirectory.systemName : ``}`,
 			`LIBL=$(BIN_LIB)`,
 			``,
 			`INCDIR="${this.settings.includePaths ? this.settings.includePaths.join(`:`) : `.`}"`,
@@ -282,6 +284,10 @@ export class MakeProject {
 		if (data.parameters.memberCcsid) {
 			sourceFileCcsid = data.parameters.memberCcsid;
 			delete data.parameters.memberCcsid;
+		}
+
+		if (!data.command) {
+			return [];
 		}
 
 		const resolvedCommand = resolve(toCl(data.command, data.parameters));

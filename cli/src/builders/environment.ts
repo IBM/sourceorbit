@@ -84,6 +84,9 @@ export function getObjectType(ext: string): ObjectType {
     case `sqlprc`:
     case `sqltrg`:
       return `PGM`;
+
+    case `bnddir`:
+      return `BNDDIR`;
   }
 
   return undefined;
