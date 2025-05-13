@@ -85,7 +85,6 @@ export class BobProject {
 				rulesFile.applyRule({
 					...this.targets.getBinderTarget(),
 					deps: this.targets.getResolvedObjects(`SRVPGM`),
-					relativePath: `${bnddirRulesDir}/app.bnddir`,
 				});
 			}
 
