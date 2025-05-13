@@ -53,6 +53,23 @@ describe(`pseudo tests`, () => {
     expect(employees.deps.find(f => f.systemName === `EMPLOYEE` && f.type === `FILE`)).toBeDefined();
   });
 
+    test('makefile', () => {
+    const makefile = new MakeProject(targets.getCwd(), targets);
+
+    const contents = makefile.getMakefile().join(`\n`);
+
+    console.log(contents);
+
+    expect(contents).toContain(`APP_BNDDIR=APP\n`);
+    expect(contents).toContain(`BNDDIR=($(BIN_LIB)/$(APP_BNDDIR))\n`);
+
+    expect(contents).toContain(`$(PREPATH)/EMPLOYEES.PGM: $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/EMPS.FILE $(PREPATH)/EMPDET.SRVPGM`);
+    expect(contents).toContain(`system "CRTSQLRPGI OBJ($(BIN_LIB)/EMPLOYEES) SRCSTMF('qrpglesrc/employees.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)')"`);
+
+    expect(contents).toContain(`$(PREPATH)/APP.BNDDIR: $(PREPATH)/EMPDET.SRVPGM`);
+    expect(contents).toContain(`$(PREPATH)/EMPDET.SRVPGM: $(PREPATH)/EMPDET.MODULE`);
+  });
+
   test('ibmi-bob rules', () => {
     const bobProject = new BobProject(targets);
 
