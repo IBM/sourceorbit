@@ -7,7 +7,7 @@ import { ReadFileSystem } from '../src/readFileSystem';
 import { BobProject } from '../src/builders/bob';
 
 describe(`pseudo tests`, () => {
-  const project = setupFixture(`cs_srvpgm`);
+  const project = setupFixture(`cs_with_bnddir`);
   
   const fs = new ReadFileSystem();
   const targets = new Targets(project.cwd, fs);
@@ -25,15 +25,15 @@ describe(`pseudo tests`, () => {
 
   test(`That test files are understood`, () => {
     expect(targets).toBeDefined();
-    expect(targets.binderRequired()).toBeFalsy();
+    expect(targets.binderRequired()).toBeTruthy();
 
-    const testModule = targets.getTarget({systemName: `EMPTEST`, type: `MODULE`});
+    const testModule = targets.getTarget({systemName: `EMPDETT`, type: `MODULE`});
     expect(testModule).toBeDefined();
 
     expect(testModule.deps.length).toBe(3);
     expect(testModule.deps.find(f => f.systemName === `EMPLOYEE`)).toBeDefined();
     expect(testModule.deps.find(f => f.systemName === `DEPARTMENT`)).toBeDefined();
-    expect(testModule.deps.find(f => f.systemName === `EMPDET` && f.type === `MODULE`)).toBeDefined();
+    expect(testModule.deps.find(f => f.systemName === `EMPDET` && f.type === `SRVPGM`)).toBeDefined();
   });
 
   test('Deps are picked up for the module', () => {
@@ -47,9 +47,8 @@ describe(`pseudo tests`, () => {
     const employees = targets.getTarget({systemName: `EMPLOYEES`, type: `PGM`});
     expect(employees).toBeDefined();
 
-    expect(employees.deps.length).toBe(4);
-    expect(employees.deps.find(f => f.systemName === `EMPLOYEES` && f.type === `MODULE`)).toBeDefined();
-    expect(employees.deps.find(f => f.systemName === `EMPDET` && f.type === `MODULE`)).toBeDefined();
+    expect(employees.deps.length).toBe(3);
+    expect(employees.deps.find(f => f.systemName === `EMPDET` && f.type === `SRVPGM`)).toBeDefined();
     expect(employees.deps.find(f => f.systemName === `EMPS` && f.type === `FILE`)).toBeDefined();
     expect(employees.deps.find(f => f.systemName === `EMPLOYEE` && f.type === `FILE`)).toBeDefined();
   });
@@ -58,27 +57,16 @@ describe(`pseudo tests`, () => {
     const bobProject = new BobProject(targets);
 
     const files = bobProject.createRules();
+    console.log(files[`qrpglesrc/Rules.mk`]);
 
     expect(files[`Rules.mk`]).toBeDefined();
-    expect(files[`Rules.mk`]).toBe(`SUBDIRS = qddssrc qrpglesrc qtestsrc`);
+    expect(files[`Rules.mk`]).toBe(`SUBDIRS = qddssrc qrpglesrc qsqlsrc qtestsrc`);
 
-    expect(files[`qtestsrc/Rules.mk`]).toBe(`EMPTEST.MODULE: emptest.test.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE EMPDET.MODULE`)
+    expect(files[`qtestsrc/Rules.mk`]).toBe(`EMPDETT.MODULE: empdett.test.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE APP.BNDDIR`)
 
-    console.log(files[`qrpglesrc/Rules.mk`]);
-    expect(files[`qrpglesrc/Rules.mk`]).toContain(`EMPLOYEES.MODULE: employees.pgm.sqlrpgle qrpgleref/constants.rpgleinc qrpgleref/empdet.rpgleinc`);
-    expect(files[`qrpglesrc/Rules.mk`]).toContain(`EMPLOYEES.PGM: EMPLOYEE.FILE EMPS.FILE EMPDET.MODULE EMPLOYEES.MODULE`);
-    expect(files[`qrpglesrc/Rules.mk`]).not.toContain(`EMPDET.SRVPGM`); // Ensure no service program is created
-  });
-
-  test('makefile', () => {
-    const makefile = new MakeProject(targets.getCwd(), targets);
-
-    const contents = makefile.getMakefile().join(`\n`);
-
-    expect(contents).toContain(`$(PREPATH)/EMPLOYEES.PGM:`);
-    expect(contents).toContain(`system "CRTPGM PGM($(BIN_LIB)/EMPLOYEES) ENTMOD(EMPLOYEES) MODULE(EMPDET EMPLOYEES) TGTRLS(*CURRENT) BNDDIR($(BNDDIR)) ACTGRP(*NEW)" > .logs/employees.splf`);
-
-    expect(contents).not.toContain(`EMPDET.SRVPGM`); // Ensure no service program is created
-    expect(contents).toContain(`EMPDET.MODULE`);
+    expect(files[`qrpglesrc/Rules.mk`]).toContain(`EMPDET.MODULE: empdet.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE`);
+    expect(files[`qrpglesrc/Rules.mk`]).toContain(`EMPDET.SRVPGM: empdet.bnd EMPDET.MODULE`); 
+    expect(files[`qrpglesrc/Rules.mk`]).toContain(`EMPLOYEES.PGM: employees.pgm.sqlrpgle qrpgleref/constants.rpgleinc qrpgleref/empdet.rpgleinc EMPLOYEE.FILE EMPS.FILE APP.BNDDIR`);
+    expect(files[`qrpglesrc/Rules.mk`]).toContain(`APP.BNDDIR: app.bnddir EMPDET.SRVPGM`);
   });
 });

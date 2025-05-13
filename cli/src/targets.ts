@@ -30,7 +30,7 @@ const sqlTypeExtension = {
 	'SEQUENCE': `sqlseq`
 };
 
-const bindingDirectoryTarget: ILEObject = { systemName: `$(APP_BNDDIR)`, type: `BNDDIR` };
+const DEFAULT_BINDER_TARGET: ILEObject = { systemName: `$(APP_BNDDIR)`, type: `BNDDIR` };
 
 const TextRegex = /\%TEXT.*(?=\n|\*)/gm
 
@@ -102,7 +102,9 @@ export class Targets {
 	private resolvedObjects: { [localPath: string]: ILEObject } = {};
 	private resolvedExports: { [name: string]: ILEObject } = {};
 	private targets: { [name: string]: ILEObjectTarget } = {};
+
 	private needsBinder = false;
+	private bindingDirectoryObject = DEFAULT_BINDER_TARGET;
 
 	private suggestions: TargetSuggestions = {};
 
@@ -117,6 +119,10 @@ export class Targets {
 		return this.cwd;
 	}
 
+	public overrideBindirName(name: string) {
+		this.bindingDirectoryObject.systemName = name;
+	}
+
 	public setAssumePrograms(assumePrograms: boolean) {
 		this.assumePrograms = assumePrograms;
 	}
@@ -126,7 +132,7 @@ export class Targets {
 	}
 
 	public getBinderTarget() {
-		return bindingDirectoryTarget;
+		return this.bindingDirectoryObject;
 	}
 
 	public getRelative(fullPath: string) {
@@ -1384,7 +1390,7 @@ export class Targets {
 
 				if (target.deps.length > 0) {
 					// Add this new service program to the project binding directory
-					this.createOrAppend(bindingDirectoryTarget, target);
+					this.createOrAppend(this.bindingDirectoryObject, target);
 
 					// Make sure we can resolve to this service program
 					for (const e of target.exports) {

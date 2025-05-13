@@ -1,0 +1,11 @@
+{
+    "RPGUnit": {
+        "RUCRTRPG": {
+            "tgtCcsid": 37,
+            "dbgView": "*SOURCE",
+            "cOption": [
+                "*EVENTF"
+            ]
+        }
+    }
+}

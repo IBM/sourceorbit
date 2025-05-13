@@ -8,6 +8,7 @@ type DirectoryTargets = {[dirname: string]: ILEObjectTarget[]};
 export class BobProject {
 	private dirTargets: DirectoryTargets = {};
 	constructor(private targets: Targets) {
+		targets.overrideBindirName(`APP`);
 		this.dirTargets = BobProject.buildDirTargets(targets);
 	}
 
@@ -23,6 +24,13 @@ export class BobProject {
 				const possibleModule = targets.getTarget({systemName: target.systemName, type: `MODULE`});
 				if (possibleModule) {
 					dirname = path.dirname(possibleModule.relativePath);
+				}
+			}
+
+			if (targets.binderRequired()) {
+				if (target.deps.some(d => d.type === `SRVPGM`)) {
+					target.deps = target.deps.filter(d => d.type !== `SRVPGM`);
+					target.deps.push(targets.getBinderTarget());
 				}
 			}
 
@@ -44,6 +52,20 @@ export class BobProject {
 
 		output[`Rules.mk`] = `SUBDIRS = ${subdirs.join(` `)}`;
 
+		let bnddirRulesDir: string|undefined = undefined;
+
+		if (this.targets.binderRequired()) {
+			const servicePrograms = this.targets.getResolvedObjects(`SRVPGM`);
+			const relativePaths = servicePrograms.map(sp => path.dirname(sp.relativePath));
+
+			if (relativePaths.length === 1) {
+				// We know the rules
+				bnddirRulesDir = relativePaths[0];
+			} else if (relativePaths.length > 1) {
+				throw new Error(`All service programs must be in the same directory.`);
+			}
+		}
+
 		for (const subdir in this.dirTargets) {
 			const targets = this.dirTargets[subdir];
 			const currentRulesFile = path.join(subdir, `Rules.mk`);
@@ -58,6 +80,14 @@ export class BobProject {
 
 			for (let target of targets) {
 				rulesFile.applyRule(target);
+			}
+
+			if (subdir === bnddirRulesDir) {
+				rulesFile.applyRule({
+					...this.targets.getBinderTarget(),
+					deps: this.targets.getResolvedObjects(`SRVPGM`),
+					relativePath: `${bnddirRulesDir}/app.bnddir`,
+				});
 			}
 
 			output[currentRulesFile] = rulesFile.getContent();
