@@ -5,6 +5,7 @@ import { MakeProject } from '../src/builders/make';
 import { setupFixture } from './fixtures/projects';
 import { ReadFileSystem } from '../src/readFileSystem';
 import { BobProject } from '../src/builders/bob';
+import path from 'path';
 
 describe(`pseudo tests`, () => {
   const project = setupFixture(`cs_srvpgm`);
@@ -62,12 +63,11 @@ describe(`pseudo tests`, () => {
     expect(files[`Rules.mk`]).toBeDefined();
     expect(files[`Rules.mk`]).toBe(`SUBDIRS = qddssrc qrpglesrc qtestsrc`);
 
-    expect(files[`qtestsrc/Rules.mk`]).toBe(`EMPTEST.MODULE: emptest.test.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE EMPDET.MODULE`)
-
-    console.log(files[`qrpglesrc/Rules.mk`]);
-    expect(files[`qrpglesrc/Rules.mk`]).toContain(`EMPLOYEES.MODULE: employees.pgm.sqlrpgle qrpgleref/constants.rpgleinc qrpgleref/empdet.rpgleinc`);
-    expect(files[`qrpglesrc/Rules.mk`]).toContain(`EMPLOYEES.PGM: EMPLOYEE.FILE EMPS.FILE EMPDET.MODULE EMPLOYEES.MODULE`);
-    expect(files[`qrpglesrc/Rules.mk`]).not.toContain(`EMPDET.SRVPGM`); // Ensure no service program is created
+    expect(files[path.join(`qtestsrc`, `Rules.mk`)]).toBe(`EMPTEST.MODULE: emptest.test.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE EMPDET.MODULE`)
+    
+    expect(files[path.join(`qrpglesrc`, `Rules.mk`)]).toContain(`EMPLOYEES.MODULE: employees.pgm.sqlrpgle qrpgleref/constants.rpgleinc qrpgleref/empdet.rpgleinc`);
+    expect(files[path.join(`qrpglesrc`, `Rules.mk`)]).toContain(`EMPLOYEES.PGM: EMPLOYEE.FILE EMPS.FILE EMPDET.MODULE EMPLOYEES.MODULE`);
+    expect(files[path.join(`qrpglesrc`, `Rules.mk`)]).not.toContain(`EMPDET.SRVPGM`); // Ensure no service program is created
   });
 
   test('makefile', () => {
