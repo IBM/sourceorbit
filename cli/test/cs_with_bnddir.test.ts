@@ -5,6 +5,7 @@ import { MakeProject } from '../src/builders/make';
 import { setupFixture } from './fixtures/projects';
 import { ReadFileSystem } from '../src/readFileSystem';
 import { BobProject } from '../src/builders/bob';
+import path from 'path';
 
 describe(`pseudo tests`, () => {
   const project = setupFixture(`cs_with_bnddir`);
@@ -79,11 +80,11 @@ describe(`pseudo tests`, () => {
     expect(files[`Rules.mk`]).toBeDefined();
     expect(files[`Rules.mk`]).toBe(`SUBDIRS = qddssrc qrpglesrc qsqlsrc qtestsrc`);
 
-    expect(files[`qtestsrc/Rules.mk`]).toBe(`EMPDETT.MODULE: empdett.test.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE APP.BNDDIR`)
-
-    expect(files[`qrpglesrc/Rules.mk`]).toContain(`EMPDET.MODULE: empdet.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE`);
-    expect(files[`qrpglesrc/Rules.mk`]).toContain(`EMPDET.SRVPGM: empdet.bnd EMPDET.MODULE`); 
-    expect(files[`qrpglesrc/Rules.mk`]).toContain(`EMPLOYEES.PGM: employees.pgm.sqlrpgle qrpgleref/constants.rpgleinc qrpgleref/empdet.rpgleinc EMPLOYEE.FILE EMPS.FILE APP.BNDDIR`);
-    expect(files[`qrpglesrc/Rules.mk`]).toContain(`APP.BNDDIR: app.bnddir EMPDET.SRVPGM`);
+    expect(files[path.join(`qtestsrc`,`Rules.mk`)]).toBe(`EMPDETT.MODULE: empdett.test.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE APP.BNDDIR`)  
+    
+    expect(files[path.join(`qrpglesrc`,`Rules.mk`)]).toContain(`EMPDET.MODULE: empdet.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE`);  
+    expect(files[path.join(`qrpglesrc`,`Rules.mk`)]).toContain(`EMPDET.SRVPGM: empdet.bnd EMPDET.MODULE`); 
+    expect(files[path.join(`qrpglesrc`,`Rules.mk`)]).toContain(`EMPLOYEES.PGM: employees.pgm.sqlrpgle qrpgleref/constants.rpgleinc qrpgleref/empdet.rpgleinc EMPLOYEE.FILE EMPS.FILE APP.BNDDIR`);  
+    expect(files[path.join(`qrpglesrc`,`Rules.mk`)]).toContain(`APP.BNDDIR: app.bnddir EMPDET.SRVPGM`);  
   });
 });
