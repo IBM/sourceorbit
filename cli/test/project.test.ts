@@ -287,10 +287,13 @@ describe(`company_system tests`, () => {
   test(`Makefile targets for all`, () => {
     const makeProject = new MakeProject(project.cwd, targets);
 
-    // Generate targets on it's own will have BNDDIR, PGM, etc
-    const headerContent = makeProject.generateTargets();
+    const header = makeProject.generateHeader();
+    expect(header).toContain(`APP_BNDDIR=$(APP_BNDDIR)`);
 
-    const allTarget = headerContent.find(l => l.startsWith(`all:`));
+    // Generate targets on it's own will have BNDDIR, PGM, etc
+    const targetContent = makeProject.generateTargets();
+
+    const allTarget = targetContent.find(l => l.startsWith(`all:`));
     expect(allTarget).toBeDefined();
 
     expect(allTarget).toContain(`all: .logs .evfevent library`);
