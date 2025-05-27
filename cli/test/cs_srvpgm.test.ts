@@ -5,6 +5,7 @@ import { MakeProject } from '../src/builders/make';
 import { setupFixture } from './fixtures/projects';
 import { ReadFileSystem } from '../src/readFileSystem';
 import { BobProject } from '../src/builders/bob';
+import path from 'path';
 
 describe(`pseudo tests`, () => {
   const project = setupFixture(`cs_srvpgm`);
@@ -25,14 +26,15 @@ describe(`pseudo tests`, () => {
 
   test(`That test files are understood`, () => {
     expect(targets).toBeDefined();
+    expect(targets.binderRequired()).toBeFalsy();
 
-    const testModule = targets.getTarget({systemName: `EMPTEST`, type: `MODULE`});
+    const testModule = targets.getTarget({systemName: `TEMPTEST`, type: `MODULE`});
     expect(testModule).toBeDefined();
 
     expect(testModule.deps.length).toBe(3);
     expect(testModule.deps.find(f => f.systemName === `EMPLOYEE`)).toBeDefined();
     expect(testModule.deps.find(f => f.systemName === `DEPARTMENT`)).toBeDefined();
-    expect(testModule.deps.find(f => f.systemName === `EMPDET`)).toBeDefined();
+    expect(testModule.deps.find(f => f.systemName === `EMPDET` && f.type === `MODULE`)).toBeDefined();
   });
 
   test('Deps are picked up for the module', () => {
@@ -61,11 +63,11 @@ describe(`pseudo tests`, () => {
     expect(files[`Rules.mk`]).toBeDefined();
     expect(files[`Rules.mk`]).toBe(`SUBDIRS = qddssrc qrpglesrc qtestsrc`);
 
-    expect(files[`qtestsrc/Rules.mk`]).toBe(`EMPTEST.MODULE: emptest.test.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE EMPDET.MODULE`)
-
-    console.log(files[`qrpglesrc/Rules.mk`]);
-    expect(files[`qrpglesrc/Rules.mk`]).toContain(`EMPLOYEES.MODULE: employees.pgm.sqlrpgle qrpgleref/constants.rpgleinc qrpgleref/empdet.rpgleinc`);
-    expect(files[`qrpglesrc/Rules.mk`]).toContain(`EMPLOYEES.PGM: EMPLOYEE.FILE EMPS.FILE EMPDET.MODULE EMPLOYEES.MODULE`);
+    expect(files[path.join(`qtestsrc`, `Rules.mk`)]).toBe(`TEMPTEST.MODULE: emptest.test.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE EMPDET.MODULE`)
+    
+    expect(files[path.join(`qrpglesrc`, `Rules.mk`)]).toContain(`EMPLOYEES.MODULE: employees.pgm.sqlrpgle qrpgleref/constants.rpgleinc qrpgleref/empdet.rpgleinc`);
+    expect(files[path.join(`qrpglesrc`, `Rules.mk`)]).toContain(`EMPLOYEES.PGM: EMPLOYEE.FILE EMPS.FILE EMPDET.MODULE EMPLOYEES.MODULE`);
+    expect(files[path.join(`qrpglesrc`, `Rules.mk`)]).not.toContain(`EMPDET.SRVPGM`); // Ensure no service program is created
   });
 
   test('makefile', () => {
@@ -75,5 +77,8 @@ describe(`pseudo tests`, () => {
 
     expect(contents).toContain(`$(PREPATH)/EMPLOYEES.PGM:`);
     expect(contents).toContain(`system "CRTPGM PGM($(BIN_LIB)/EMPLOYEES) ENTMOD(EMPLOYEES) MODULE(EMPDET EMPLOYEES) TGTRLS(*CURRENT) BNDDIR($(BNDDIR)) ACTGRP(*NEW)" > .logs/employees.splf`);
+
+    expect(contents).not.toContain(`EMPDET.SRVPGM`); // Ensure no service program is created
+    expect(contents).toContain(`EMPDET.MODULE`);
   });
 });
