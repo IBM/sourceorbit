@@ -10,10 +10,16 @@ import { CommandParameters } from "./builders/environment";
 import { ReadFileSystem } from "./readFileSystem";
 
 export function getSystemNameFromPath(inputName: string) {
+	const isTest = inputName.toUpperCase().endsWith(`.TEST`);
 	let baseName = inputName.includes(`-`) ? inputName.split(`-`)[0] : inputName;
 
+	if (isTest) {
+		// Remove the .TEST part
+		baseName = baseName.substring(0, baseName.length - 5);
+	}
+
 	// If the name is of valid length, return it
-	if (baseName.length <= 10) {
+	if (baseName.length <= 10 && !isTest) {
 		return baseName.toUpperCase();
 	}
 
@@ -27,8 +33,9 @@ export function getSystemNameFromPath(inputName: string) {
 		name = parts[1];
 	}
 
-	if (baseName.toUpperCase().endsWith(`.TEST`)) {
-		name = name.substring(0, name.length - 5);
+	if (isTest) {
+		prefix = `T`;
+		name = name.toUpperCase();
 	}
 
 	// We start the system name with the suppliedPrefix

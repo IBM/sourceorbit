@@ -28,7 +28,7 @@ describe(`pseudo tests`, () => {
     expect(targets).toBeDefined();
     expect(targets.binderRequired()).toBeTruthy();
 
-    const testModule = targets.getTarget({systemName: `EMPDETT`, type: `MODULE`});
+    const testModule = targets.getTarget({systemName: `TEMPDETT`, type: `MODULE`});
     expect(testModule).toBeDefined();
 
     expect(testModule.deps.length).toBe(3);
@@ -59,8 +59,6 @@ describe(`pseudo tests`, () => {
 
     const contents = makefile.getMakefile().join(`\n`);
 
-    console.log(contents);
-
     expect(contents).toContain(`APP_BNDDIR=APP\n`);
     expect(contents).toContain(`BNDDIR=($(BIN_LIB)/$(APP_BNDDIR))\n`);
 
@@ -75,12 +73,11 @@ describe(`pseudo tests`, () => {
     const bobProject = new BobProject(targets);
 
     const files = bobProject.createRules();
-    console.log(files[`qrpglesrc/Rules.mk`]);
 
     expect(files[`Rules.mk`]).toBeDefined();
     expect(files[`Rules.mk`]).toBe(`SUBDIRS = qddssrc qrpglesrc qsqlsrc qtestsrc`);
 
-    expect(files[path.join(`qtestsrc`,`Rules.mk`)]).toBe(`EMPDETT.MODULE: empdett.test.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE APP.BNDDIR`)  
+    expect(files[path.join(`qtestsrc`,`Rules.mk`)]).toBe(`TEMPDETT.MODULE: empdett.test.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE APP.BNDDIR`)  
     
     expect(files[path.join(`qrpglesrc`,`Rules.mk`)]).toContain(`EMPDET.MODULE: empdet.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE`);  
     expect(files[path.join(`qrpglesrc`,`Rules.mk`)]).toContain(`EMPDET.SRVPGM: empdet.bnd EMPDET.MODULE`); 

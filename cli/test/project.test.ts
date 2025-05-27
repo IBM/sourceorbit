@@ -86,7 +86,6 @@ describe(`company_system tests`, () => {
 
     expect(myPgm.headers).toBeDefined();
     expect(myPgm.headers.length).toBe(2);
-    console.log(myPgm.headers);
   });
 
   test(`Check utils`, async () => {
@@ -438,7 +437,6 @@ describe(`company_system tests`, () => {
     expect(resolvedObject.deps[0].systemName).toBe(`EMPLOYEE`);
 
     const logs = targets.logger.getLogsFor(resolvedObject.relativePath);
-    console.log(logs);
     expect(logs.length).toBe(0);
     // expect(logs[0].message).toBe(`Extension should be based on type. Suggested name is 'getTotalSalary.sqludf'`);
     // expect(logs[0].type).toBe(`warning`);

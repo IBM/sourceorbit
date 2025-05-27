@@ -28,7 +28,7 @@ describe(`pseudo tests`, () => {
     expect(targets).toBeDefined();
     expect(targets.binderRequired()).toBeFalsy();
 
-    const testModule = targets.getTarget({systemName: `EMPTEST`, type: `MODULE`});
+    const testModule = targets.getTarget({systemName: `TEMPTEST`, type: `MODULE`});
     expect(testModule).toBeDefined();
 
     expect(testModule.deps.length).toBe(3);
@@ -63,7 +63,7 @@ describe(`pseudo tests`, () => {
     expect(files[`Rules.mk`]).toBeDefined();
     expect(files[`Rules.mk`]).toBe(`SUBDIRS = qddssrc qrpglesrc qtestsrc`);
 
-    expect(files[path.join(`qtestsrc`, `Rules.mk`)]).toBe(`EMPTEST.MODULE: emptest.test.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE EMPDET.MODULE`)
+    expect(files[path.join(`qtestsrc`, `Rules.mk`)]).toBe(`TEMPTEST.MODULE: emptest.test.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE EMPDET.MODULE`)
     
     expect(files[path.join(`qrpglesrc`, `Rules.mk`)]).toContain(`EMPLOYEES.MODULE: employees.pgm.sqlrpgle qrpgleref/constants.rpgleinc qrpgleref/empdet.rpgleinc`);
     expect(files[path.join(`qrpglesrc`, `Rules.mk`)]).toContain(`EMPLOYEES.PGM: EMPLOYEE.FILE EMPS.FILE EMPDET.MODULE EMPLOYEES.MODULE`);
