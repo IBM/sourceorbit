@@ -32,7 +32,7 @@ const sqlTypeExtension = {
 	'SEQUENCE': `sqlseq`
 };
 
-const bindingDirectoryTarget: ILEObject = { systemName: `$(APP_BNDDIR)`, type: `BNDDIR` };
+const DEFAULT_BINDER_TARGET: ILEObject = { systemName: `$(APP_BNDDIR)`, type: `BNDDIR` };
 
 const TextRegex = /\%TEXT.*(?=\n|\*)/gm;
 
@@ -121,7 +121,9 @@ export class Targets {
 	private resolvedObjects: { [localPath: string]: ILEObject } = {};
 	private resolvedExports: { [name: string]: ILEObject } = {};
 	private targets: { [name: string]: ILEObjectTarget } = {};
+
 	private needsBinder = false;
+	private projectBindingDirectory = DEFAULT_BINDER_TARGET;
 
 	private suggestions: TargetSuggestions = {};
 
@@ -145,7 +147,7 @@ export class Targets {
 	}
 
 	public getBinderTarget() {
-		return bindingDirectoryTarget;
+		return this.projectBindingDirectory;
 	}
 
 	public getRelative(fullPath: string) {
@@ -200,6 +202,10 @@ export class Targets {
 				if (ref.object.name) theObject.longName = ref.object.name;
 				// theObject.type = ref.type;
 			}
+		}
+
+		if (type === `BNDDIR`) {
+			this.projectBindingDirectory = theObject;
 		}
 
 		// This allows us to override the .objrefs if the source actually exists.
@@ -1053,7 +1059,7 @@ export class Targets {
 		// define internal imports
 		ileObject.imports = [];
 		cache.procedures
-			.filter((proc: any) => proc.keyword[`EXTPROC`])
+			.filter((proc: any) => proc.keyword[`EXTPROC`] && !proc.keyword[`EXPORT`])
 			.forEach((r) => {
 				const ref = getExtPrRef(r, `EXTPROC`);
 				ileObject.imports.push(ref);
@@ -1457,7 +1463,7 @@ export class Targets {
 
 				if (target.deps.length > 0) {
 					// Add this new service program to the project binding directory
-					this.createOrAppend(bindingDirectoryTarget, target);
+					this.createOrAppend(this.projectBindingDirectory, target);
 
 					// Make sure we can resolve to this service program
 					for (const e of target.exports) {
@@ -1583,6 +1589,7 @@ export class Targets {
 			systemName: currentTarget.systemName,
 			imports: currentTarget.imports,
 			exports: [],
+			headers: currentTarget.headers,
 			type: `MODULE`,
 			source: {
 				relativePath: basePath,
@@ -1600,6 +1607,7 @@ export class Targets {
 		// Clean up imports for module and program
 		newModTarget.imports = currentTarget.imports;
 		currentTarget.imports = undefined;
+		currentTarget.headers = undefined;
 
 		this.createOrAppend(currentTarget, newModule);
 	}

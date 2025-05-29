@@ -86,7 +86,6 @@ describe(`company_system tests`, () => {
 
     expect(myPgm.headers).toBeDefined();
     expect(myPgm.headers.length).toBe(2);
-    console.log(myPgm.headers);
   });
 
   test(`Check utils`, async () => {
@@ -287,10 +286,13 @@ describe(`company_system tests`, () => {
   test(`Makefile targets for all`, () => {
     const makeProject = new MakeProject(project.cwd, targets);
 
-    // Generate targets on it's own will have BNDDIR, PGM, etc
-    const headerContent = makeProject.generateTargets();
+    const header = makeProject.generateHeader();
+    expect(header).toContain(`APP_BNDDIR=$(APP_BNDDIR)`);
 
-    const allTarget = headerContent.find(l => l.startsWith(`all:`));
+    // Generate targets on it's own will have BNDDIR, PGM, etc
+    const targetContent = makeProject.generateTargets();
+
+    const allTarget = targetContent.find(l => l.startsWith(`all:`));
     expect(allTarget).toBeDefined();
 
     expect(allTarget).toContain(`all: .logs .evfevent library`);
@@ -435,7 +437,6 @@ describe(`company_system tests`, () => {
     expect(resolvedObject.deps[0].systemName).toBe(`EMPLOYEE`);
 
     const logs = targets.logger.getLogsFor(resolvedObject.source.relativePath);
-    console.log(logs);
     expect(logs.length).toBe(0);
     // expect(logs[0].message).toBe(`Extension should be based on type. Suggested name is 'getTotalSalary.sqludf'`);
     // expect(logs[0].type).toBe(`warning`);

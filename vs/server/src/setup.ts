@@ -4,8 +4,9 @@ import { TargetSuggestions } from '@ibm/sourceorbit/dist/src/targets';
 import fs from 'fs';
 import path from 'path';
 import { URI } from 'vscode-uri';
+import { ReadFileSystem } from './readFileSystem';
 import { connection } from './server';
-import { SupportedGlob, TargetsManager, getFiles } from './TargetsManager';
+import { SupportedGlob, TargetsManager } from './TargetsManager';
 
 export async function initAndRefresh(workspaceUri: string) {
 	const progress = await connection.window.createWorkDoneProgress();
@@ -84,9 +85,11 @@ export async function fixProject(workspaceUri: string, suggestions: TargetSugges
 	const progress = await connection.window.createWorkDoneProgress();
 
 	progress.begin(`Source Orbit`, undefined, `Fetching files..`);
-	const files = getFiles(url, SupportedGlob);
+	
+	const rfs = new ReadFileSystem();
+	const files = await rfs.getFiles(url, SupportedGlob);
 
-	const targets = new Targets(url);
+	const targets = new Targets(url, rfs);
 	targets.setSuggestions(suggestions);
 
 	progress.report(`Loading files..`);

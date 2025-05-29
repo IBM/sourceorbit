@@ -3,8 +3,8 @@
 import { Targets, allExtensions } from "@ibm/sourceorbit";
 import { ILEObject } from "@ibm/sourceorbit/dist/src/targets";
 
-import glob from "glob";
 import { URI } from 'vscode-uri';
+import { ReadFileSystem } from './readFileSystem';
 
 import path = require("path");
 
@@ -44,9 +44,10 @@ export class TargetsManager {
     const uri = URI.parse(workspaceUri);
     const url = uri.fsPath;
 
-    const files = getFiles(url, SupportedGlob);
+    const rfs = new ReadFileSystem();
+    const files = await rfs.getFiles(url, SupportedGlob);
 
-    const targets = new Targets(url);
+    const targets = new Targets(url, rfs);
 
     targets.loadObjectsFromPaths(files);
 
@@ -151,12 +152,4 @@ export class TargetsManager {
 
     return [];
   }
-}
-
-export function getFiles(cwd: string, globPath: string): string[] {
-  return glob.sync(globPath, {
-    cwd,
-    absolute: true,
-    nocase: true,
-  });
 }

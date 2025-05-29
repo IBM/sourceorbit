@@ -33,6 +33,7 @@ This page will outline the rules of an IBM i project, including what extensions 
 | `bnd`      | Binder source      |                                     |
 | `binder`   | Binder source      | Should be renamed `bnd`             |
 | `cmd`      | Command            |                                     |
+| `bnddir`   | Binding directory  | Contents are ignored for Source Orbit, but name is important. |
 
 ## The system object name is the basename of the source file
 
@@ -97,8 +98,10 @@ For service programs to be created, binder source must exist for it. Source Orbi
 
 When Source Orbit is resolving programs & service programs, and specifically resolving their import functions/procedures, it will:
 
-1. Look to see if a service program exports this named function/procedure and then depend on that service program
+1. Look to see if a service program exports this named function/procedure and then depend on that service program.
 2. If no service program is found, then Source Orbit will search all available modules for that named function/procedure. If a module is found, then the module will be bound into the program (and therefore will become a multi module program)
+
+For when generating build files, you may or may not need to create a binding directory file (`.bnddir`), but it is recommended so you can set the name of the binding directory.
 
 ## SQL sources
 

@@ -430,7 +430,6 @@ describe(`company_system tests`, () => {
     expect(resolvedObject.deps[0].systemName).toBe(`EMPLOYEE`);
 
     const logs = targets.logger.getLogsFor(resolvedObject.source.relativePath);
-    console.log(logs);
     expect(logs.length).toBe(0);
     // expect(logs[0].message).toBe(`Extension should be based on type. Suggested name is 'getTotalSalary.sqludf'`);
     // expect(logs[0].type).toBe(`warning`);

@@ -204,7 +204,7 @@ export class ImpactMarkdown {
     return objs.length === 0 ? `0` : `<details><summary>${objs.length}</summary>${objs.map(o => `${o.systemName}.${o.type}`).join(`, `)}</details>`;
   }
 
-  static createLogExpand(logs: FileLog[]) {
+  static createLogExpand(logs: FileLog[] = []) {
     let logIcon = LogEmoji.none;
 
     if (logs.length > 0) {
