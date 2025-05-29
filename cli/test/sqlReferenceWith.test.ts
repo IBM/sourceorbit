@@ -25,9 +25,9 @@ describe(`sql_references_with tests`, () => {
 
   test(`SQL with clause`, async () => {
     const myPgm = targets.getTarget({ systemName: `SQLWITHPGM`, type: `PGM` });
-    expect(myPgm.relativePath).toBe(path.join(`sqlwithpgm.pgm.sqlrpgle`));
+    expect(myPgm.source.relativePath).toBe(path.join(`sqlwithpgm.pgm.sqlrpgle`));
     
-    const moduleLogs = targets.logger.getLogsFor(myPgm.relativePath);
+    const moduleLogs = targets.logger.getLogsFor(myPgm.source.relativePath);
     expect(moduleLogs.length).toBe(1);
     expect(moduleLogs[0].message).toBe(`No object found for reference 'TABLE1'`);
   });

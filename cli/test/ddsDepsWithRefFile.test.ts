@@ -52,7 +52,7 @@ describe(`dds_refs tests with reference file`, () => {
     expect(deps.length).toBe(1);
     expect(deps[0].systemName).toBe(`PROVIDER`);
 
-    const logs = targets.logger.getLogsFor(pro250d.relativePath);
+    const logs = targets.logger.getLogsFor(pro250d.source?.relativePath);
     expect(logs.length).toBe(1);
     expect(logs[0]).toMatchObject({
       message: `no object found for reference 'COUNTRY'`,
@@ -68,7 +68,7 @@ describe(`dds_refs tests with reference file`, () => {
     const deps = provider.deps;
     expect(deps.length).toBe(1);
 
-    const logs = targets.logger.getLogsFor(provider.relativePath);
+    const logs = targets.logger.getLogsFor(provider.source?.relativePath);
     expect(logs).toBeUndefined();
   });
 
@@ -79,7 +79,7 @@ describe(`dds_refs tests with reference file`, () => {
     const deps = providerLf.deps;
     expect(deps.length).toBe(1);
 
-    const logs = targets.logger.getLogsFor(providerLf.relativePath);
+    const logs = targets.logger.getLogsFor(providerLf.source?.relativePath);
     expect(logs).toBeUndefined();
   });
 

@@ -38,6 +38,6 @@ describe(`pr with mixed case exports exports `, () => {
     expect(srvPgmTarget.exports.length).toBe(3);
     expect(srvPgmTarget.exports).toStrictEqual(srvPgmTarget.deps[0].exports);
 
-    expect(allLogs[srvPgmObj.relativePath].length).toBe(0);
+    expect(allLogs[srvPgmObj.source.relativePath].length).toBe(0);
   });
 });

@@ -9,12 +9,14 @@ import Document from "vscode-db2i/src/language/sql/document";
 import { ObjectRef, StatementType } from 'vscode-db2i/src/language/sql/types';
 import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensions, cmdExtensions } from './extensions';
 import Parser from "vscode-rpgle/language/parser";
-import { setupParser } from './languages/rpgle';
+import { getExtPrRef, rpgleDocToSymbolList, setupParser } from './languages/rpgle';
 import { Logger } from './logger';
-import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
+import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath, trimQuotes } from './utils';
 import { extCanBeProgram, getObjectType } from './builders/environment';
-import { isSqlFunction } from './languages/sql';
+import { getSymbolFromCreate, isSqlFunction } from './languages/sql';
 import { ReadFileSystem } from './readFileSystem';
+import { collectClReferences } from './languages/clle';
+import Declaration from 'vscode-rpgle/language/models/declaration';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -32,15 +34,31 @@ const sqlTypeExtension = {
 
 const DEFAULT_BINDER_TARGET: ILEObject = { systemName: `$(APP_BNDDIR)`, type: `BNDDIR` };
 
-const TextRegex = /\%TEXT.*(?=\n|\*)/gm
+const TextRegex = /\%TEXT.*(?=\n|\*)/gm;
+
+export type SymbolReferences = {
+	[relativePath: string]: {start: number, end: number}[]
+};
+
+export interface SourceSymbol {
+	name: string;
+	type: string;
+	relativePath: string;
+	children?: SourceSymbol[],
+	references: SymbolReferences;
+	external?: string;
+}
 
 export interface ILEObject {
 	systemName: string;
 	longName?: string;
-	type: ObjectType;
+	type: ObjectType; // RTODO: standardise on types
 	text?: string,
-	relativePath?: string;
-	extension?: string;
+	source?: {
+		relativePath: string;
+		extension: string;
+		symbols: SourceSymbol[];
+	}
 
 	reference?: boolean;
 
@@ -68,6 +86,7 @@ export interface ImpactedObject {
 }
 
 interface RpgLookup {
+	def: Declaration,
 	lookup: string,
 	line?: number
 }
@@ -110,7 +129,7 @@ export class Targets {
 
 	public logger: Logger;
 
-	constructor(private cwd: string, private fs: ReadFileSystem) {
+	constructor(private cwd: string, private fs: ReadFileSystem, private withReferences = false) {
 		this.rpgParser = setupParser(this);
 		this.logger = new Logger();
 	}
@@ -168,8 +187,11 @@ export class Targets {
 			systemName: name,
 			type: type,
 			text: newText,
-			relativePath,
-			extension
+			source: {
+				relativePath,
+				extension,
+				symbols: [],
+			}
 		};
 
 		// If this file is an SQL file, we need to look to see if it has a long name as we need to resolve all names here
@@ -250,14 +272,14 @@ export class Targets {
 			const target = this.targets[targetId];
 
 			if (target) {
-				const depIndex = target.deps.findIndex(d => (d.systemName === resolvedObject.systemName && d.type === resolvedObject.type) || d.relativePath === resolvedObject.relativePath);
+				const depIndex = target.deps.findIndex(d => (d.systemName === resolvedObject.systemName && d.type === resolvedObject.type) || d.source.relativePath === resolvedObject.source.relativePath);
 
 				if (depIndex >= 0) {
 					impactedTargets.push(target);
 					target.deps.splice(depIndex, 1);
 
-					if (target.relativePath) {
-						this.logger.fileLog(target.relativePath, {
+					if (target.source) {
+						this.logger.fileLog(target.source.relativePath, {
 							type: `info`,
 							message: `This object depended on ${resolvedObject.systemName}.${resolvedObject.type} before it was deleted.`
 						})
@@ -271,8 +293,8 @@ export class Targets {
 		this.resolvedSearches[`${resolvedObject.systemName}.${resolvedObject.type}`] = undefined;
 
 		// Remove possible logs
-		if (resolvedObject.relativePath) {
-			this.logger.flush(resolvedObject.relativePath)
+		if (resolvedObject.source.relativePath) {
+			this.logger.flush(resolvedObject.source.relativePath)
 		}
 
 		return impactedTargets;
@@ -390,12 +412,17 @@ export class Targets {
 						content,
 						{
 							ignoreCache: true,
-							withIncludes: true
+							withIncludes: true,
+							collectReferences: this.withReferences,
 						}
 					);
 
 					if (rpgDocs) {
 						const ileObject = await this.resolvePathToObject(filePath, options.text);
+						if (this.withReferences && ileObject.source) {
+							ileObject.source.symbols = rpgleDocToSymbolList(this.cwd, rpgDocs);
+						}
+
 						this.createRpgTarget(ileObject, filePath, rpgDocs, options);
 					}
 
@@ -408,6 +435,11 @@ export class Targets {
 					module.parseStatements(tokens);
 
 					const ileObject = await this.resolvePathToObject(filePath);
+
+					if (this.withReferences && ileObject.source) {
+						ileObject.source.symbols = collectClReferences(relative, module);
+					}
+
 					this.createClTarget(ileObject, filePath, module, options);
 				}
 				else if (ddsExtension.includes(ext)) {
@@ -468,11 +500,11 @@ export class Targets {
 			exports: []
 		};
 
-		if (ileObject.extension === `binder`) {
+		if (ileObject.source && target.source.extension === `binder`) {
 			const pathDetail = path.parse(localPath);
 
 			if (this.suggestions.renames) {
-				this.logger.fileLog(ileObject.relativePath, {
+				this.logger.fileLog(ileObject.source.relativePath, {
 					message: `Rename suggestion`,
 					type: `rename`,
 					change: {
@@ -483,8 +515,8 @@ export class Targets {
 					}
 				});
 			} else {
-				this.logger.fileLog(ileObject.relativePath, {
-					message: `Extension is '${ileObject.extension}'. Consolidate by using 'bnd'?`,
+				this.logger.fileLog(ileObject.source.relativePath, {
+					message: `Extension is '${target.source.extension}'. Consolidate by using 'bnd'?`,
 					type: `warning`,
 				});
 			}
@@ -507,7 +539,7 @@ export class Targets {
 					if (symbolTokens.block && symbolTokens.block.length === 1 && symbolTokens.block[0].type === `word` && symbolTokens.block[0].value) {
 						target.exports.push(trimQuotes(symbolTokens.block[0].value, `"`));
 					} else {
-						this.logger.fileLog(ileObject.relativePath, {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `Invalid EXPORT found. Single quote string expected.`,
 							type: `warning`,
 							range: {
@@ -539,7 +571,7 @@ export class Targets {
 			deps: []
 		};
 
-		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
+		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.source.relativePath}`);
 
 		// We have a local cache of refs found so we don't keep doing global lookups
 		// on objects we already know to depend on in this object.
@@ -566,14 +598,14 @@ export class Targets {
 					alreadyFoundRefs.push(upperName);
 				}
 				else {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `no object found for reference '${objectName}'`,
 						type: `warning`,
 						line: recordFormat.range.start
 					});
 				}
 			} else {
-				this.logger.fileLog(ileObject.relativePath, {
+				this.logger.fileLog(ileObject.source.relativePath, {
 					message: `${currentKeyword} reference not included as possible reference to library found.`,
 					type: `info`,
 					line: recordFormat.range.start
@@ -586,7 +618,17 @@ export class Targets {
 
 		const ddsRefKeywords = [`PFILE`, `REF`, `JFILE`];
 
+		let symbols: SourceSymbol[] = [];
+
 		for (const recordFormat of dds.formats) {
+
+			let recordFormatSymbol: SourceSymbol = {
+				name: recordFormat.name,
+				type: `recordFormat`,
+				relativePath: localPath,
+				references: {},
+				children: []
+			};
 
 			// Look through this record format keywords for the keyword we're looking for
 			for (const keyword of ddsRefKeywords) {
@@ -609,6 +651,13 @@ export class Targets {
 
 			// Then, let's loop through the fields in this format and see if we can find REFFLD
 			for (const field of recordFormat.fields) {
+				let currentFieldSymbol: SourceSymbol = {
+					name: field.name,
+					type: `field`,
+					references: {},
+					relativePath: localPath,
+				}
+
 				const refFld = field.keywords.find(k => k.name === `REFFLD`);
 
 				if (refFld) {
@@ -616,10 +665,19 @@ export class Targets {
 
 					if (fileRef) {
 						handleObjectPath(`REFFLD`, recordFormat, fileRef);
+
+						// RTODO: how does handleObjectPath also add an external symbol?
+						currentFieldSymbol.external = fileRef;
 					}
 				}
+
+				recordFormatSymbol.children.push(currentFieldSymbol);
 			}
+
+			symbols.push(recordFormatSymbol);
 		}
+
+		ileObject.source.symbols = symbols;
 
 		if (target.deps.length > 0)
 			infoOut(`Depends on: ${target.deps.map(d => `${d.systemName}.${d.type}`).join(` `)}`);
@@ -634,11 +692,11 @@ export class Targets {
 			deps: []
 		};
 
-		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
+		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.source.relativePath}`);
 
-		if (ileObject.extension?.toLowerCase() === `clp`) {
+		if (ileObject.source && ileObject.source.extension.toLowerCase() === `clp`) {
 			if (this.suggestions.renames) {
-				this.logger.fileLog(ileObject.relativePath, {
+				this.logger.fileLog(ileObject.source.relativePath, {
 					message: `Rename suggestion`,
 					type: `rename`,
 					change: {
@@ -649,8 +707,8 @@ export class Targets {
 					}
 				});
 			} else {
-				this.logger.fileLog(ileObject.relativePath, {
-					message: `Extension is '${ileObject.extension}', but Source Orbit doesn't support CLP. Is it possible the extension should use '.pgm.clle'?`,
+				this.logger.fileLog(ileObject.source.relativePath, {
+					message: `Extension is '${ileObject.source.extension}', but Source Orbit doesn't support CLP. Is it possible the extension should use '.pgm.clle'?`,
 					type: `warning`,
 				});
 			}
@@ -658,7 +716,7 @@ export class Targets {
 		} else {
 			if (ileObject.type === `MODULE`) {
 				if (this.suggestions.renames) {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `Rename suggestion`,
 						type: `rename`,
 						change: {
@@ -669,7 +727,7 @@ export class Targets {
 						}
 					});
 				} else {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `Type detected as ${ileObject.type} but Source Orbit doesn't support CL modules. Is it possible the extension should include '.pgm'?`,
 						type: `warning`,
 					});
@@ -684,7 +742,7 @@ export class Targets {
 			const possibleObject = def.file;
 			if (possibleObject) {
 				if (possibleObject.library) {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `Definition to ${possibleObject.library}/${possibleObject.name} ignored due to qualified path.`,
 						range: {
 							start: def.range.start,
@@ -699,7 +757,7 @@ export class Targets {
 					const resolvedPath = this.searchForObject({ systemName: possibleObject.name.toUpperCase(), type: `FILE` });
 					if (resolvedPath) target.deps.push(resolvedPath);
 					else {
-						this.logger.fileLog(ileObject.relativePath, {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `no object found for reference '${possibleObject.name}'`,
 							range: {
 								start: def.range.start,
@@ -730,7 +788,7 @@ export class Targets {
 					const resolvedPath = this.searchForObject({ systemName: name.toUpperCase(), type: `PGM` });
 					if (resolvedPath) target.deps.push(resolvedPath);
 					else {
-						this.logger.fileLog(ileObject.relativePath, {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `no object found for reference '${name}'`,
 							range: {
 								start: pgmParm.range.start,
@@ -740,7 +798,7 @@ export class Targets {
 						});
 					}
 				} else {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `PGM call not included as possible reference to library.`,
 						range: {
 							start: pgmParm.range.start,
@@ -830,7 +888,7 @@ export class Targets {
 
 							// if (currentTarget) {
 							// 	info(`${currentTarget.name}.${currentTarget.type}`);
-							// 	info(`\tSource: ${currentTarget.relativePath}`);
+							// 	info(`\tSource: ${currentTarget.source.relativePath}`);
 
 							// 	if (defs.length > 1) {
 							// 		for (const def of defs.slice(1)) {
@@ -855,13 +913,20 @@ export class Targets {
 
 							const extension = pathDetail.ext.substring(1);
 
+							const symbol = this.withReferences ? getSymbolFromCreate(relativePath, statement, mainDef) : undefined;
+
+							// RTODO: consider procedure/function bodies for children symbols?
+
 							let ileObject: ILEObject = {
 								systemName: objectName.toUpperCase(),
 								longName: hasLongName,
 								type: this.getObjectType(relativePath, mainDef.createType),
 								text: options.text,
-								relativePath,
-								extension
+								source: {
+									relativePath,
+									extension,
+									symbols: symbol ? [symbol] : [],
+								}
 							}
 
 							let suggestRename = false;
@@ -881,7 +946,7 @@ export class Targets {
 
 							// Let them know to use a system name in the create statement if one is not present
 							if (ileObject.systemName.length > 10 && mainDef.object.system === undefined) {
-								this.logger.fileLog(ileObject.relativePath, {
+								this.logger.fileLog(ileObject.source.relativePath, {
 									message: `${ileObject.systemName} (${ileObject.type}) name is longer than 10 characters. Consider using 'FOR SYSTEM NAME' in the CREATE statement.`,
 									type: `warning`,
 									range: {
@@ -898,7 +963,7 @@ export class Targets {
 								deps: []
 							};
 
-							infoOut(`${newTarget.systemName}.${newTarget.type}: ${newTarget.relativePath}`);
+							infoOut(`${newTarget.systemName}.${newTarget.type}: ${newTarget.source.relativePath}`);
 
 							// Now, let's go through all the other statements in this group (BEGIN/END)
 							// and grab any references to other objects :eyes:
@@ -918,7 +983,7 @@ export class Targets {
 								const resolvedObject = this.searchForAnyObject({ name: simpleName, types: [`FILE`, `SRVPGM`, `PGM`] });
 								if (resolvedObject) newTarget.deps.push(resolvedObject);
 								else if (!isSqlFunction(def.object.name)) {
-									this.logger.fileLog(newTarget.relativePath, {
+									this.logger.fileLog(newTarget.source.relativePath, {
 										message: `No object found for reference '${def.object.name}'`,
 										type: `warning`,
 										range: {
@@ -983,30 +1048,22 @@ export class Targets {
 
 	private createRpgTarget(ileObject: ILEObject, localPath: string, cache: Cache, options: FileOptions = {}) {
 		const pathDetail = path.parse(localPath);
+
+		const setExternal = (symbolName: string, external: string) => {
+			if (this.withReferences && ileObject.source && ileObject.source.symbols) {
+				const symbol = ileObject.source.symbols.find(s => s.name === symbolName);
+				if (symbol) symbol.external = external;
+			}
+		}
+
 		// define internal imports
-		ileObject.imports = cache.procedures
+		ileObject.imports = [];
+		cache.procedures
 			.filter((proc: any) => proc.keyword[`EXTPROC`] && !proc.keyword[`EXPORT`])
-			.map(ref => {
-				const keyword = ref.keyword;
-				let importName: string = ref.name;
-				const extproc: string | boolean = keyword[`EXTPROC`];
-				if (extproc) {
-					if (extproc === true) importName = ref.name;
-					else importName = extproc;
-				}
-
-				if (importName.includes(`:`)) {
-					const parmParms = importName.split(`:`);
-					importName = parmParms.filter(p => !p.startsWith(`*`)).join(``);
-				}
-
-				if (importName.startsWith(`*`)) {
-					importName = ref.name;
-				} else {
-					importName = trimQuotes(importName);
-				}
-
-				return importName;
+			.forEach((r) => {
+				const ref = getExtPrRef(r, `EXTPROC`);
+				ileObject.imports.push(ref);
+				setExternal(ref, r.name);
 			});
 
 		// define exported functions
@@ -1019,7 +1076,7 @@ export class Targets {
 				.map(ref => ref.name.toUpperCase());
 		}
 
-		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
+		infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.source.relativePath}`);
 
 		if (cache.includes && cache.includes.length > 0) {
 			ileObject.headers = [];
@@ -1065,7 +1122,7 @@ export class Targets {
 				ileObject.headers.push(theIncludePath);
 
 				if (this.suggestions.includes) {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `Will update to use unix style path.`,
 						type: `includeFix`,
 						line: include.line,
@@ -1074,7 +1131,7 @@ export class Targets {
 						}
 					});
 				} else {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `Include at line ${include.line} found, to path '${theIncludePath}'`,
 						type: `info`,
 						line: include.line,
@@ -1093,7 +1150,7 @@ export class Targets {
 			const possibleName = pathDetail.name.toLowerCase().endsWith(`.pgm`) ? pathDetail.name.substring(0, pathDetail.name.length - 4) : pathDetail.name;
 
 			if (this.suggestions.renames) {
-				this.logger.fileLog(ileObject.relativePath, {
+				this.logger.fileLog(ileObject.source.relativePath, {
 					message: `Rename suggestion`,
 					type: `rename`,
 					change: {
@@ -1104,7 +1161,7 @@ export class Targets {
 					}
 				})
 			} else {
-				this.logger.fileLog(ileObject.relativePath, {
+				this.logger.fileLog(ileObject.source.relativePath, {
 					message: `type detected as ${ileObject.type} but NOMAIN keyword found.`,
 					type: `warning`,
 				});
@@ -1115,7 +1172,7 @@ export class Targets {
 		// We need to do this for other language too down the line
 		if (ileObject.type === `MODULE` && !cache.keyword[`NOMAIN`]) {
 			if (this.suggestions.renames) {
-				this.logger.fileLog(ileObject.relativePath, {
+				this.logger.fileLog(ileObject.source.relativePath, {
 					message: `Rename suggestion`,
 					type: `rename`,
 					change: {
@@ -1126,7 +1183,7 @@ export class Targets {
 					}
 				});
 			} else {
-				this.logger.fileLog(ileObject.relativePath, {
+				this.logger.fileLog(ileObject.source.relativePath, {
 					message: `type detected as ${ileObject.type} but NOMAIN keyword was not found. Is it possible the extension should include '.pgm'?`,
 					type: `warning`,
 				});
@@ -1134,7 +1191,7 @@ export class Targets {
 		}
 
 		if (cache.keyword[`BNDDIR`]) {
-			this.logger.fileLog(ileObject.relativePath, {
+			this.logger.fileLog(ileObject.source.relativePath, {
 				message: `has the BNDDIR keyword. 'binders' property in iproj.json should be used instead.`,
 				type: `info`,
 			});
@@ -1145,14 +1202,10 @@ export class Targets {
 			.filter((proc: any) => proc.keyword[`EXTPGM`])
 			.map((ref): RpgLookup => {
 				const keyword = ref.keyword;
-				let fileName = ref.name;
-				const extpgm = keyword[`EXTPGM`];
-				if (extpgm) {
-					if (extpgm === true) fileName = ref.name;
-					else fileName = trimQuotes(extpgm);
-				}
+				const fileName = getExtPrRef(ref, `EXTPGM`);
 
 				return {
+					def: ref,
 					lookup: fileName.toUpperCase(),
 					line: ref.position ? ref.position.range.line : undefined
 				};
@@ -1167,12 +1220,13 @@ export class Targets {
 				if (resolvedObject) {
 					// because of legacy fixed CALL, there can be dupliicate EXTPGMs with the same name :(
 					if (!target.deps.some(d => d.systemName === resolvedObject.systemName && d.type && resolvedObject.type)) {
-						target.deps.push(resolvedObject)
+						target.deps.push(resolvedObject);
+						setExternal(ref.def.name, resolvedObject.systemName);
 					}
 				}
 
 				else {
-					this.logger.fileLog(ileObject.relativePath, {
+					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `No object found for reference '${ref.lookup}'`,
 						type: `warning`,
 						line: ref.line
@@ -1187,21 +1241,24 @@ export class Targets {
 
 			// Find external data structure sources
 			scope.structs
-				.filter((struct: any) => struct.keyword[`EXTNAME`])
+				.filter((struct) => struct.keyword[`EXTNAME`])
 				.map((struct): RpgLookup => {
 					const keyword = struct.keyword;
 					const value = trimQuotes(keyword[`EXTNAME`]);
 
 					return {
+						def: struct,
 						lookup: value.split(`:`)[0].toUpperCase(),
 						line: struct.position ? struct.position.range.line : undefined
 					};
 				})
 				.forEach((ref: RpgLookup) => {
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
-					if (resolvedObject) target.deps.push(resolvedObject)
-					else {
-						this.logger.fileLog(ileObject.relativePath, {
+					if (resolvedObject) {
+						target.deps.push(resolvedObject);
+						setExternal(ref.def.name, resolvedObject.systemName);
+					} else {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
 							line: ref.line
@@ -1225,7 +1282,7 @@ export class Targets {
 						if (extDescValue) {
 							possibleName = trimQuotes(extDescValue);
 						} else {
-							this.logger.fileLog(ileObject.relativePath, {
+							this.logger.fileLog(ileObject.source.relativePath, {
 								message: `*EXTDESC is used for '${file.name}' but EXTDESC keyword not found`,
 								type: `warning`,
 							});
@@ -1233,6 +1290,7 @@ export class Targets {
 					}
 
 					return {
+						def: file,
 						lookup: possibleName.toUpperCase(),
 						line: file.position ? file.position.range.line : undefined
 					};
@@ -1244,9 +1302,11 @@ export class Targets {
 					if (previouslyScanned) return;
 
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
-					if (resolvedObject) target.deps.push(resolvedObject)
-					else {
-						this.logger.fileLog(ileObject.relativePath, {
+					if (resolvedObject) {
+						target.deps.push(resolvedObject);
+						setExternal(ref.def.name, resolvedObject.systemName);
+					} else {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
 							line: ref.line
@@ -1258,6 +1318,7 @@ export class Targets {
 			scope.sqlReferences
 				.filter(ref => !ref.description)
 				.map((ref): RpgLookup => ({
+					def: ref,
 					lookup: trimQuotes(ref.name, `"`).toUpperCase(),
 					line: ref.position ? ref.position.range.line : undefined
 				}))
@@ -1265,9 +1326,13 @@ export class Targets {
 					const previouslyScanned = target.deps.some((r => (ref.lookup === r.systemName || ref.lookup === r.longName?.toUpperCase()) && r.type === `FILE`));
 					if (previouslyScanned) return;
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `FILE` });
-					if (resolvedObject) target.deps.push(resolvedObject)
-					else if (!isSqlFunction(ref.lookup)) {
-						this.logger.fileLog(ileObject.relativePath, {
+
+					if (resolvedObject) {
+						target.deps.push(resolvedObject);
+						setExternal(ref.def.name, resolvedObject.systemName);
+
+					} else if (!isSqlFunction(ref.lookup)) {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
 							line: ref.line
@@ -1288,6 +1353,7 @@ export class Targets {
 					}
 
 					return {
+						def: ref,
 						lookup: fileName.toUpperCase(),
 						line: ref.position ? ref.position.range.line : undefined
 					};
@@ -1296,9 +1362,12 @@ export class Targets {
 					if (ignoredObjects.includes(ref.lookup.toUpperCase())) return;
 
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` });
-					if (resolvedObject) target.deps.push(resolvedObject)
+					if (resolvedObject) {
+						target.deps.push(resolvedObject);
+						setExternal(ref.def.name, resolvedObject.systemName);
+					}
 					else {
-						this.logger.fileLog(ileObject.relativePath, {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
 							line: ref.line
@@ -1318,15 +1387,19 @@ export class Targets {
 					}
 
 					return {
+						def: ref,
 						lookup: fileName.toUpperCase(),
 						line: ref.position ? ref.position.range.line : undefined
 					};
 				})
 				.forEach((ref: RpgLookup) => {
 					const resolvedObject = this.searchForObject({ systemName: ref.lookup, type: `DTAARA` });
-					if (resolvedObject) target.deps.push(resolvedObject)
+					if (resolvedObject) {
+						target.deps.push(resolvedObject);
+						setExternal(ref.def.name, resolvedObject.systemName);
+					}
 					else {
-						this.logger.fileLog(ileObject.relativePath, {
+						this.logger.fileLog(ileObject.source.relativePath, {
 							message: `No object found for reference '${ref.lookup}'`,
 							type: `warning`,
 							line: ref.line
@@ -1400,8 +1473,8 @@ export class Targets {
 					// This service program target doesn't have any deps... so, it's not used?
 					this.removeObject(target);
 
-					if (target.relativePath) {
-						this.logger.fileLog(target.relativePath, {
+					if (target.source.relativePath) {
+						this.logger.fileLog(target.source.relativePath, {
 							message: `Removed as target because no modules were found with matching exports.`,
 							type: `info`
 						});
@@ -1489,7 +1562,7 @@ export class Targets {
 			} else {
 
 				this.removeObject(cmdObject);
-				this.logger.fileLog(cmdObject.relativePath, {
+				this.logger.fileLog(cmdObject.source.relativePath, {
 					message: `Removed as target because no program was found with a matching name.`,
 					type: `info`
 				});
@@ -1498,12 +1571,15 @@ export class Targets {
 	}
 
 	private convertBoundProgramToMultiModuleProgram(currentTarget: ILEObjectTarget) {
-		const basePath = currentTarget.relativePath;
+		const basePath = currentTarget.source.relativePath;
 
 		// First, let's change this current target to be solely a program
 		// Change the extension so it's picked up correctly during the build process.
-		currentTarget.extension = `pgm`;
-		currentTarget.relativePath = undefined;
+		currentTarget.source = {
+			extension: `pgm`,
+			relativePath: undefined,
+			symbols: []
+		}
 
 		// Store a fake path for this program object
 		this.storeResolved(path.join(this.cwd, `${currentTarget.systemName}.PGM`), currentTarget);
@@ -1515,8 +1591,11 @@ export class Targets {
 			exports: [],
 			headers: currentTarget.headers,
 			type: `MODULE`,
-			relativePath: basePath,
-			extension: path.extname(basePath).substring(1)
+			source: {
+				relativePath: basePath,
+				extension: path.extname(basePath).substring(1),
+				symbols: []
+			}
 		};
 
 		// Replace the old resolved object with the module
@@ -1591,8 +1670,8 @@ export class Targets {
 		}
 
 		return Object.values(this.resolvedObjects).filter(obj =>
-			(obj.extension?.toUpperCase() === extension && (obj.type === `PGM`) === shouldBeProgram) ||
-			(anyPrograms === true && obj.type === `PGM` && obj.extension.toUpperCase() === extension)
+			(obj.source?.extension.toUpperCase() === extension && (obj.type === `PGM`) === shouldBeProgram) ||
+			(anyPrograms === true && obj.type === `PGM` && obj.source?.extension.toUpperCase() === extension)
 		);
 	}
 
@@ -1674,12 +1753,3 @@ export class Targets {
 	}
 }
 
-function trimQuotes(input: string|boolean, value = `'`) {
-	if (typeof input === `string`) {
-		if (input[0] === value) input = input.substring(1);
-		if (input[input.length - 1] === value) input = input.substring(0, input.length - 1);
-		return input;
-	} else {
-		return '';
-	}
-}

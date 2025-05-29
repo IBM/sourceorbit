@@ -146,7 +146,7 @@ test(`Auto rename RPGLE program and include and fix-include infos`, async () => 
   // Small test to check we can resolve the files
   const ddsTarget = targets.getTarget({systemName: `MSTDSP`, type: `FILE`});
   expect(ddsTarget).toBeDefined();
-  expect(ddsTarget?.relativePath).toBe(path.join(`qddssrc`, `mstdsp.dspf`));
+  expect(ddsTarget?.source?.relativePath).toBe(path.join(`qddssrc`, `mstdsp.dspf`));
   expect(ddsTarget.deps.length).toBe(3);
 });
 
