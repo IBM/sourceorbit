@@ -16,12 +16,12 @@ export class BobProject {
 
 		for (let target of targets.getTargets()) {
 			let dirname: string|undefined;
-			if (target.source) {
-				const dirname = path.dirname(target.source.relativePath);
+			if (target.source?.relativePath) {
+				dirname = path.dirname(target.source.relativePath);
 			} else if (target.type === `PGM`) {
 				// If there is no relative path, this might mean it's a multimodule program
 				const possibleModule = targets.getTarget({systemName: target.systemName, type: `MODULE`});
-				if (possibleModule) {
+				if (possibleModule && possibleModule.source) {
 					dirname = path.dirname(possibleModule.source.relativePath);
 				}
 			}
