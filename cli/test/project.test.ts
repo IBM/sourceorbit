@@ -272,8 +272,9 @@ describe(`company_system tests`, () => {
     ].join());
   });
 
-  test(`Checking makefile rule generation`, () => {
-    const makeProject = new MakeProject(project.cwd, targets);
+  test(`Checking makefile rule generation`, async () => {
+    const makeProject = new MakeProject(project.cwd, targets, fs);
+    await makeProject.setupSettings();
 
     const headerContent = makeProject.generateGenericRules();
 
@@ -283,8 +284,9 @@ describe(`company_system tests`, () => {
     expect(headerContent.find(l => l === `$(PREPATH)/DEPARTMENT.FILE: qddssrc/department.table`)).toBeDefined();
   });
 
-  test(`Makefile targets for all`, () => {
-    const makeProject = new MakeProject(project.cwd, targets);
+  test(`Makefile targets for all`, async () => {
+    const makeProject = new MakeProject(project.cwd, targets, fs);
+    await makeProject.setupSettings();
 
     const header = makeProject.generateHeader();
     expect(header).toContain(`APP_BNDDIR=$(APP_BNDDIR)`);
@@ -303,8 +305,9 @@ describe(`company_system tests`, () => {
     expect(allTarget).toContain(`$(PREPATH)/EMPLOYEES.PGM`);
   });
 
-  test(`Makefile targets for partial build (DEPTS display file)`, () => {
-    const makeProject = new MakeProject(project.cwd, targets);
+  test(`Makefile targets for partial build (DEPTS display file)`, async () => {
+    const makeProject = new MakeProject(project.cwd, targets, fs);
+    await makeProject.setupSettings();
 
     const deptsFile = targets.getTarget({systemName: `DEPTS`, type: `FILE`});
 
@@ -317,8 +320,9 @@ describe(`company_system tests`, () => {
     expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/DEPTS.FILE $(PREPATH)/DEPTS.PGM`);
   });
 
-  test(`Makefile targets for partial build (EMPLOYEE table)`, () => {
-    const makeProject = new MakeProject(project.cwd, targets);
+  test(`Makefile targets for partial build (EMPLOYEE table)`, async () => {
+    const makeProject = new MakeProject(project.cwd, targets, fs);
+    await makeProject.setupSettings();
 
     const deptsFile = targets.getTarget({systemName: `EMPLOYEE`, type: `FILE`});
 
@@ -345,8 +349,10 @@ describe(`company_system tests`, () => {
     expect(deptsTargetDeps).toContain(`$(PREPATH)/DEPARTMENT.FILE`);
   });
 
-  test(`Makefile targets for partial build (EMPLOYEE table) without children`, () => {
-    const makeProject = new MakeProject(project.cwd, targets);
+  test(`Makefile targets for partial build (EMPLOYEE table) without children`, async () => {
+    const makeProject = new MakeProject(project.cwd, targets, fs);
+    await makeProject.setupSettings();
+
     makeProject.setNoChildrenInBuild(true);
 
     const deptsFile = targets.getTarget({systemName: `EMPLOYEE`, type: `FILE`});
@@ -447,8 +453,9 @@ describe(`company_system tests`, () => {
     expect(functionMake[3]).toBe(`\tsystem "RUNSQLSTM SRCSTMF('qsqlsrc/getTotalSalary.sqludf') COMMIT(*NONE)" > .logs/gettotsal.splf`);
   })
 
-  test(`Generate makefile`, () => {
-    const makeProj = new MakeProject(project.cwd, targets);
+  test(`Generate makefile`, async () => {
+    const makeProj = new MakeProject(project.cwd, targets, fs);
+    await makeProj.setupSettings();
 
     writeFileSync(path.join(project.cwd, `makefile`), makeProj.getMakefile().join(`\n`));
   });

@@ -223,7 +223,9 @@ async function main() {
 
 			break;
 		case `make`:
-			const makeProj = new MakeProject(cwd, targets);
+			const makeProj = new MakeProject(cwd, targets, fs);
+			await makeProj.setupSettings();
+			
 			makeProj.setNoChildrenInBuild(cliSettings.makeFileNoChildren);
 
 			let specificObjects: ILEObject[] | undefined = cliSettings.fileList ? cliSettings.lookupFiles.map(f => targets.getResolvedObject(path.join(cwd, f))).filter(o => o) : undefined;

@@ -23,7 +23,8 @@ describe(`pseudo tests`, () => {
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();
 
-    make = new MakeProject(project.cwd, targets);
+    make = new MakeProject(project.cwd, targets, fs);
+    await make.setupSettings();
 
     actions = new ProjectActions(targets, fs);
     await actions.loadAllActions();
@@ -75,8 +76,9 @@ describe(`pseudo tests`, () => {
     expect(files[path.join(`qrpglesrc`, `Rules.mk`)]).not.toContain(`EMPDET.SRVPGM`); // Ensure no service program is created
   });
 
-  test('makefile', () => {
-    const makefile = new MakeProject(targets.getCwd(), targets);
+  test('makefile', async () => {
+    const makefile = new MakeProject(targets.getCwd(), targets, fs);
+    await make.setupSettings();
 
     const contents = makefile.getMakefile().join(`\n`);
 

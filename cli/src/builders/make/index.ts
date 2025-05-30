@@ -1,31 +1,35 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { ILEObject, ILEObjectTarget, ImpactedObject, ObjectType, Targets } from '../../targets';
-import { asPosix, getFiles, toCl } from '../../utils';
+import { asPosix, fromCl, getFiles, toCl } from '../../utils';
 import { warningOut } from '../../cli';
 import { name } from '../../../webpack.config';
 import { FolderOptions, getFolderOptions } from './folderSettings';
 import { readAllRules } from './customRules';
 import { CompileData, CommandParameters } from '../environment';
 import { iProject } from '../iProject';
+import { ReadFileSystem } from '../../readFileSystem';
+import { ProjectActions } from '../actions';
 
 export class MakeProject {
 	private noChildren: boolean = false;
 	private settings: iProject = new iProject();
+	private actions: ProjectActions;
+
 	private folderSettings: {[folder: string]: FolderOptions} = {};
 
-	constructor(private cwd: string, private targets: Targets) {
-		this.setupSettings();
+	constructor(private cwd: string, private targets: Targets, private rfs: ReadFileSystem) {
+		this.actions = new ProjectActions(this.targets, this.rfs);
 	}
 
 	public setNoChildrenInBuild(noChildren: boolean) {
 		this.noChildren = noChildren;
 	}
 
-	private setupSettings() {
+	async setupSettings() {
 		// First, let's setup the project settings
 		try {
-			const content = readFileSync(path.join(this.cwd, `iproj.json`), { encoding: `utf-8` });
+			const content = await this.rfs.readFile(path.join(this.cwd, `iproj.json`));
 			const asJson: iProject = JSON.parse(content);
 
 			this.settings.applySettings(asJson);
@@ -37,6 +41,8 @@ export class MakeProject {
 		this.folderSettings = getFolderOptions(this.cwd);
 
 		readAllRules(this.targets, this);
+
+		await this.actions.loadAllActions();
 	}
 
 	public getSettings() {
@@ -168,7 +174,7 @@ export class MakeProject {
 		let lines = [];
 
 		for (const entry of Object.entries(this.settings.compiles)) {
-			const [type, data] = entry;
+			let [type, data] = entry;
 
 			// commandSource means 'is this object built from CL commands in a file'
 			if (data.commandSource) {
@@ -213,7 +219,24 @@ export class MakeProject {
 						// This is used when your object really has source
 
 						const possibleTarget: ILEObjectTarget = this.targets.getTarget(ileObject) || (ileObject as ILEObjectTarget);
-						const customAttributes = this.getObjectAttributes(data, possibleTarget);
+						let customAttributes = this.getObjectAttributes(data, possibleTarget);
+
+						if (ileObject.relativePath) {
+							const possibleAction = this.actions.getActionForPath(ileObject.relativePath);
+							if (possibleAction) {
+								const clData = fromCl(possibleAction.command);
+								// If there is an action for this object, we want to apply the action's parameters
+								// to the custom attributes.
+
+								data = {
+									...data,
+									command: clData.command,
+									parameters: {
+										...data.parameters,
+									}
+								}
+							}
+						}
 						
 						lines.push(...MakeProject.generateSpecificTarget(data, possibleTarget, customAttributes));
 					}
