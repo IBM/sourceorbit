@@ -34,12 +34,13 @@ Source Orbit makes use of a few properties that you can put inside your `iproj.j
 
 | Property       | Type                                                                                                                             |
 | -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `binders`      | Array of strings. Use this if you want to use export functions/procedures from other service programs outside of your repository |
 | `includePaths` | Array of strings. Use this if you want to include headers that can be found in the IFS at compile time. **You do not need to list directories that are part of the repository.** |
 
 ## Binding handled automatically
 
 If you are making use of service programs, Source Orbit will automatically maintain this for you. Your service programs will be added to the binding directory automatically and programs automatically include them. **No need to use the `BNDDIR` header** in your source code. Be careful, because changing the custom compile commands from the default may break this functionality. **You should still create binder source for all your service programs** in order for Source Orbit to create them automatically.
+
+If your project contains a `.bnddir` file, then the basename of that file will be used as the binding directory name. If you do not have a `.bnddir` file, then the binding directory will be named `APP` automatically.
 
 ## Changing compile options
 
