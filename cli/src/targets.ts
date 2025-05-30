@@ -119,6 +119,10 @@ export class Targets {
 		return this.cwd;
 	}
 
+	get rfs() {
+		return this.fs;
+	}
+
 	public setAssumePrograms(assumePrograms: boolean) {
 		this.assumePrograms = assumePrograms;
 	}
