@@ -97,7 +97,7 @@ describe(`pseudo tests`, () => {
   test('there are actions', async () => {
     expect(actions.getActionPaths.length).toBe(2);
     expect(actions.getActionPaths).toContain(`actions.json`);
-    expect(actions.getActionPaths).toContain(`qddssrc/actions.json`);
+    expect(actions.getActionPaths).toContain(path.join(`qddssrc`, `actions.json`));
   });
 
   test('correct actions get detected', async () => {
