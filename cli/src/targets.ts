@@ -312,6 +312,7 @@ export class Targets {
 
 		let globString = `**/${name}*`;
 
+		// TODO: replace with rfs.getFiles
 		const results = glob.sync(globString, {
 			cwd: this.cwd,
 			absolute: true,

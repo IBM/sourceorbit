@@ -6,6 +6,7 @@ import { setupFixture } from './fixtures/projects';
 import { ReadFileSystem } from '../src/readFileSystem';
 import { BobProject } from '../src/builders/bob';
 import path from 'path';
+import { ProjectActions } from '../src/builders/actions';
 
 describe(`pseudo tests`, () => {
   const project = setupFixture(`cs_srvpgm`);
@@ -13,6 +14,7 @@ describe(`pseudo tests`, () => {
   const fs = new ReadFileSystem();
   const targets = new Targets(project.cwd, fs);
   let make: MakeProject;
+  let actions: ProjectActions
 
   beforeAll(async () => {
     project.setup();
@@ -22,6 +24,9 @@ describe(`pseudo tests`, () => {
     targets.resolveBinder();
 
     make = new MakeProject(project.cwd, targets);
+
+    actions = new ProjectActions(targets, fs);
+    await actions.loadAllActions();
   });
 
   test(`That test files are understood`, () => {
@@ -80,5 +85,33 @@ describe(`pseudo tests`, () => {
 
     expect(contents).not.toContain(`EMPDET.SRVPGM`); // Ensure no service program is created
     expect(contents).toContain(`EMPDET.MODULE`);
+  });
+
+  test('there are actions', async () => {
+    expect(actions.getActionPaths.length).toBe(2);
+    expect(actions.getActionPaths).toContain(`actions.json`);
+    expect(actions.getActionPaths).toContain(`qddssrc/actions.json`);
+  });
+
+  test('correct actions get detected', async () => {
+    const ddsSrcA = path.join(`qddssrc`, `popemp.sql`);
+    const ddsSrcB = path.join(`qsqlsrc`, `popemp.sql`);
+
+    // Finds the actions file `qddssrc`
+    const actionA = actions.getActionForPath(ddsSrcA);
+    
+    // Finds the project actions file
+    const actionB = actions.getActionForPath(ddsSrcB);
+
+    expect(actionA).toBeDefined();
+    expect(actionA?.command).toBe(`RUNSQLSTM`);
+
+    expect(actionB).toBeDefined();
+    expect(actionB?.command).toBe(`RUNSQL`);
+
+    const rpgleSrc = path.join(`qrpglesrc`, `mypgm.pgm.rpgle`);
+    const actionC = actions.getActionForPath(rpgleSrc);
+    expect(actionC).toBeDefined();
+    expect(actionC?.command).toBe(`CRTBNDRPG`);
   });
 });

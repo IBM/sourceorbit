@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Run SQL stuff",
+    "environment": "ile",
+    "extensions": [
+      "sql", "table"
+    ],
+    "command": "RUNSQLSTM"
+  }
+]
