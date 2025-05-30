@@ -88,8 +88,10 @@ describe(`pseudo tests`, () => {
     expect(contents).not.toContain(`EMPDET.SRVPGM`); // Ensure no service program is created
     expect(contents).toContain(`EMPDET.MODULE`);
 
+    console.log(contents);
+
     // As picked up from the actions.json
-    expect(contents).toContain(`system "CRTBNDRPG THEPARM('''cooldude''')" > .logs/mypgm.splf`);
+    expect(contents).toContain(`system "CRTBNDRPG NAME(mypgm) THEPARM('qrpglesrc/mypgm.pgm.rpgle')" > .logs/mypgm.splf`);
   });
 
   test('there are actions', async () => {
@@ -117,6 +119,6 @@ describe(`pseudo tests`, () => {
     const rpgleSrc = path.join(`qrpglesrc`, `mypgm.pgm.rpgle`);
     const actionC = actions.getActionForPath(rpgleSrc);
     expect(actionC).toBeDefined();
-    expect(actionC?.command).toBe(`CRTBNDRPG THEPARM('cooldude')`);
+    expect(actionC?.command).toBe(`CRTBNDRPG NAME(&NAME) THEPARM('&RELATIVEPATH')`);
   });
 });

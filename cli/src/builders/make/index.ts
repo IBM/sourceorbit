@@ -6,7 +6,7 @@ import { warningOut } from '../../cli';
 import { name } from '../../../webpack.config';
 import { FolderOptions, getFolderOptions } from './folderSettings';
 import { readAllRules } from './customRules';
-import { CompileData, CommandParameters } from '../environment';
+import { CompileData, CommandParameters, getTrueBasename } from '../environment';
 import { iProject } from '../iProject';
 import { ReadFileSystem } from '../../readFileSystem';
 import { ProjectActions } from '../actions';
@@ -271,11 +271,29 @@ export class MakeProject {
 		const parentName = ileObject.relativePath ? path.dirname(ileObject.relativePath) : undefined;
 		const qsysTempName: string | undefined = (parentName && parentName.length > 10 ? parentName.substring(0, 10) : parentName);
 
+		const simpleReplace = (str: string, search: string, replace: string) => {
+			return str.replace(new RegExp(search, `gi`), replace);
+		}
+
 		const resolve = (command: string) => {
 			command = command.replace(new RegExp(`\\*CURLIB`, `g`), `$(BIN_LIB)`);
 			command = command.replace(new RegExp(`\\$\\*`, `g`), ileObject.systemName);
 			command = command.replace(new RegExp(`\\$<`, `g`), asPosix(ileObject.relativePath));
 			command = command.replace(new RegExp(`\\$\\(SRCPF\\)`, `g`), qsysTempName);
+
+			// Additionally, we have to support Actions variables
+			command = simpleReplace(command, `&BUILDLIB`, `$(BIN_LIB)`);
+			command = simpleReplace(command, `&CURLIB`, `$(BIN_LIB)`);
+			command = simpleReplace(command, `&LIBLS`, ``);
+			command = simpleReplace(command, `&BRANCHLIB`, `$(BIN_LIB)`);
+
+			const pathDetail = path.parse(ileObject.relativePath || ``);
+
+			command = simpleReplace(command, `&RELATIVEPATH`, asPosix(ileObject.relativePath));
+			command = simpleReplace(command, `&BASENAME`, pathDetail.base);
+			command = simpleReplace(command, `{filename}`, pathDetail.base);
+			command = simpleReplace(command, `&NAME`, getTrueBasename(pathDetail.name));
+			command = simpleReplace(command, `&EXTENSION`, pathDetail.ext.startsWith(`.`) ? pathDetail.ext.substring(1) : pathDetail.ext);
 
 			if (ileObject.deps && ileObject.deps.length > 0) {
 				// This piece of code adds special variables that can be used for building dependencies

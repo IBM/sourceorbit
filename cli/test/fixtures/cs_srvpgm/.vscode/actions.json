@@ -5,7 +5,7 @@
     "extensions": [
       "rpgle"
     ],
-    "command": "CRTBNDRPG THEPARM('cooldude')"
+    "command": "CRTBNDRPG NAME(&NAME) THEPARM('&RELATIVEPATH')"
   },
   {
     "name": "Global run SQL",
