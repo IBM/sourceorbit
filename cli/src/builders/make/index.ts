@@ -14,12 +14,12 @@ import { ProjectActions } from '../actions';
 export class MakeProject {
 	private noChildren: boolean = false;
 	private settings: iProject = new iProject();
-	private actions: ProjectActions;
+	private projectActions: ProjectActions;
 
 	private folderSettings: {[folder: string]: FolderOptions} = {};
 
 	constructor(private cwd: string, private targets: Targets, private rfs: ReadFileSystem) {
-		this.actions = new ProjectActions(this.targets, this.rfs);
+		this.projectActions = new ProjectActions(this.targets, this.rfs);
 	}
 
 	public setNoChildrenInBuild(noChildren: boolean) {
@@ -27,6 +27,8 @@ export class MakeProject {
 	}
 
 	async setupSettings() {
+		await this.projectActions.loadAllActions();
+
 		// First, let's setup the project settings
 		try {
 			const content = await this.rfs.readFile(path.join(this.cwd, `iproj.json`));
@@ -41,8 +43,6 @@ export class MakeProject {
 		this.folderSettings = getFolderOptions(this.cwd);
 
 		readAllRules(this.targets, this);
-
-		await this.actions.loadAllActions();
 	}
 
 	public getSettings() {
@@ -222,7 +222,7 @@ export class MakeProject {
 						let customAttributes = this.getObjectAttributes(data, possibleTarget);
 
 						if (ileObject.relativePath) {
-							const possibleAction = this.actions.getActionForPath(ileObject.relativePath);
+							const possibleAction = this.projectActions.getActionForPath(ileObject.relativePath);
 							if (possibleAction) {
 								const clData = fromCl(possibleAction.command);
 								// If there is an action for this object, we want to apply the action's parameters
@@ -231,9 +231,7 @@ export class MakeProject {
 								data = {
 									...data,
 									command: clData.command,
-									parameters: {
-										...data.parameters,
-									}
+									parameters: clData.parameters
 								}
 							}
 						}

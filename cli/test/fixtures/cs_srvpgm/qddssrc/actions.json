@@ -5,6 +5,6 @@
     "extensions": [
       "sql", "table"
     ],
-    "command": "RUNSQLSTM"
+    "command": "RUNSQLSTM SRCSTMF('&RELATIVEPATH')"
   }
 ]

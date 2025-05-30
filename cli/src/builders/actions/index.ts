@@ -61,7 +61,7 @@ export class ProjectActions {
       const actionFile = path.join(parent, `actions.json`);
 
       if (this.actions[actionFile]) {
-        allPossibleActions = allPossibleActions.concat(this.actions[actionFile]);
+        allPossibleActions.push(...this.actions[actionFile]);
       }
 
       if (parent === `.`) {

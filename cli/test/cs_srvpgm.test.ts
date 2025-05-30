@@ -78,7 +78,7 @@ describe(`pseudo tests`, () => {
 
   test('makefile', async () => {
     const makefile = new MakeProject(targets.getCwd(), targets, fs);
-    await make.setupSettings();
+    await makefile.setupSettings();
 
     const contents = makefile.getMakefile().join(`\n`);
 
@@ -87,6 +87,9 @@ describe(`pseudo tests`, () => {
 
     expect(contents).not.toContain(`EMPDET.SRVPGM`); // Ensure no service program is created
     expect(contents).toContain(`EMPDET.MODULE`);
+
+    // As picked up from the actions.json
+    expect(contents).toContain(`system "CRTBNDRPG THEPARM('''cooldude''')" > .logs/mypgm.splf`);
   });
 
   test('there are actions', async () => {
@@ -106,14 +109,14 @@ describe(`pseudo tests`, () => {
     const actionB = actions.getActionForPath(ddsSrcB);
 
     expect(actionA).toBeDefined();
-    expect(actionA?.command).toBe(`RUNSQLSTM`);
+    expect(actionA?.command).toBe(`RUNSQLSTM SRCSTMF('&RELATIVEPATH')`);
 
     expect(actionB).toBeDefined();
-    expect(actionB?.command).toBe(`RUNSQL`);
+    expect(actionB?.command).toBe(`RUNSQL SRCSTMF('&RELATIVEPATH')`);
 
     const rpgleSrc = path.join(`qrpglesrc`, `mypgm.pgm.rpgle`);
     const actionC = actions.getActionForPath(rpgleSrc);
     expect(actionC).toBeDefined();
-    expect(actionC?.command).toBe(`CRTBNDRPG`);
+    expect(actionC?.command).toBe(`CRTBNDRPG THEPARM('cooldude')`);
   });
 });
