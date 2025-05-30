@@ -51,7 +51,9 @@ export async function generateBuildFile(workspaceUri: string, type: string) {
 				break;
 
 			case `make`:
-				const makeProj = new MakeProject(cwd, targets);
+				const makeProj = new MakeProject(cwd, targets, targets.rfs);
+				await makeProj.setupSettings();
+				
 				fs.writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile().join(`\n`));
 				break;
 

@@ -119,6 +119,10 @@ export class Targets {
 		return this.cwd;
 	}
 
+	get rfs() {
+		return this.fs;
+	}
+
 	public setAssumePrograms(assumePrograms: boolean) {
 		this.assumePrograms = assumePrograms;
 	}
@@ -312,6 +316,7 @@ export class Targets {
 
 		let globString = `**/${name}*`;
 
+		// TODO: replace with rfs.getFiles
 		const results = glob.sync(globString, {
 			cwd: this.cwd,
 			absolute: true,

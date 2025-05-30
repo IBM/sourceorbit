@@ -1,5 +1,6 @@
 import { str } from "crc-32/crc32c";
 import { ObjectType } from "../targets";
+import path from "path";
 
 // Always try and store parmId as lowercase
 export type CommandParameters = { [parmId: string]: string };
@@ -41,6 +42,22 @@ export function getBranchLibraryName(currentBranch: string) {
 
 export function extCanBeProgram(ext: string): boolean {
   return ([`MODULE`, `PGM`].includes(getObjectType(ext)));
+}
+
+export function getTrueBasename(name: string) {
+  // Logic to handle second extension, caused by bob.
+  const sourceObjectTypes = [`.PGM`, `.SRVPGM`, `.TEST`];
+  const secondName = path.parse(name);
+  if (secondName.ext && sourceObjectTypes.includes(secondName.ext.toUpperCase())) {
+    name = secondName.name;
+  }
+
+  // Remove bob text convention
+  if (name.includes(`-`)) {
+    name = name.substring(0, name.indexOf(`-`));
+  }
+
+  return name;
 }
 
 export function getObjectType(ext: string): ObjectType {

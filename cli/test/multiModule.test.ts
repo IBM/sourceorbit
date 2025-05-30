@@ -48,8 +48,9 @@ describe(`multi_module tests`, () => {
     expect(objectsMod.deps.length).toBe(0);
   });
 
-  test(`Generate makefile`, () => {
-    const makeProj = new MakeProject(project.cwd, targets);
+  test(`Generate makefile`, async () => {
+    const makeProj = new MakeProject(project.cwd, targets, fs);
+    await makeProj.setupSettings();
 
     writeFileSync(path.join(project.cwd, `makefile`), makeProj.getMakefile().join(`\n`));
   });

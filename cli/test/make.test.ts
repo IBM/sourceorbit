@@ -1,10 +1,12 @@
 import { assert, expect, test } from 'vitest'
 import { baseTargets, cwd, multiModuleObjects } from './fixtures/targets';
 import { MakeProject } from '../src/builders/make';
+import { ReadFileSystem } from '../src/readFileSystem';
 
 test('generateTargets (pre-resolve)', async () => {
   const targets = await baseTargets(true);
-  const project = new MakeProject(cwd, targets);
+  const project = new MakeProject(cwd, targets, new ReadFileSystem());
+  await project.setupSettings();
 
   const targetContent = project.generateTargets();
 
@@ -32,7 +34,7 @@ test('generateTargets (post-resolve)', async () => {
 
   targets.resolveBinder();
 
-  const project = new MakeProject(cwd, targets);
+  const project = new MakeProject(cwd, targets, new ReadFileSystem());
 
   const targetContent = project.generateTargets();
 
@@ -62,7 +64,8 @@ test('generateTargets (post-resolve)', async () => {
 test('generateHeader (binder changes)', async () => {
   const targets = await baseTargets(true);
 
-  const project = new MakeProject(cwd, targets);
+  const project = new MakeProject(cwd, targets, new ReadFileSystem());
+  await project.setupSettings();
 
   const headerContentA = project.generateHeader();
   let bndDirIndex = headerContentA.findIndex(h => h.startsWith(`BNDDIR=`));
@@ -80,7 +83,8 @@ test('generateHeader (binder changes)', async () => {
 test('applySettings (binder)', async () => {
   const targets = await baseTargets(true);
 
-  const project = new MakeProject(cwd, targets);
+  const project = new MakeProject(cwd, targets, new ReadFileSystem());
+  await project.setupSettings();
 
   project.getSettings().applySettings({
     binders: [`TESTING`]
@@ -102,7 +106,9 @@ test('applySettings (binder)', async () => {
 test(`Multi-module program and service program`, async () => {
   const targets = await multiModuleObjects();
 
-  const project = new MakeProject(cwd, targets);
+  const project = new MakeProject(cwd, targets, new ReadFileSystem());
+  await project.setupSettings();
+  
   const settings = project.getSettings();
 
   settings.applySettings({

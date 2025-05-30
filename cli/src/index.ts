@@ -11,7 +11,6 @@ import { ImpactMarkdown } from "./builders/imd";
 import { allExtensions, referencesFileName } from "./extensions";
 import { getBranchLibraryName, getDefaultCompiles } from "./builders/environment";
 import { renameFiles, replaceIncludes } from './utils';
-import { iProject } from './builders/iProject';
 import { ReadFileSystem } from './readFileSystem';
 
 const isCli = process.argv.length >= 2 && (process.argv[1].endsWith(`so`) || process.argv[1].endsWith(`index.js`));
@@ -39,11 +38,6 @@ async function main() {
 				cwd = parms[i + 1];
 				i++;
 				break;
-
-			case `-i`:
-			case `--init`:
-				initProject(cwd);
-				process.exit(0);
 
 			case `-ar`:
 				warningOut(`Auto rename enabled. No makefile will be generated.`)
@@ -125,11 +119,6 @@ async function main() {
 				console.log(`\t--verbose\tPrint all the detail.`);
 				console.log(``);
 				console.log(`Options specific to '-bf make':`);
-				console.log(``);
-				console.log(`\t-i`);
-				console.log(`\t--init\t\tAdd default compile options to 'iproj.json' file`);
-				console.log(`\t\t\tShould be used for project initialisation or to customize compile commands.`);
-				console.log(`\t\t\tThis is specific to using '-bf' with the 'make' option.`);
 				console.log(``);
 				console.log(`\t-nc`);
 				console.log(`\t--no-children\tUsed with '-bf make' and won't include children of`);
@@ -223,7 +212,9 @@ async function main() {
 
 			break;
 		case `make`:
-			const makeProj = new MakeProject(cwd, targets);
+			const makeProj = new MakeProject(cwd, targets, fs);
+			await makeProj.setupSettings();
+			
 			makeProj.setNoChildrenInBuild(cliSettings.makeFileNoChildren);
 
 			let specificObjects: ILEObject[] | undefined = cliSettings.fileList ? cliSettings.lookupFiles.map(f => targets.getResolvedObject(path.join(cwd, f))).filter(o => o) : undefined;
@@ -246,34 +237,6 @@ async function main() {
 			writeFileSync(path.join(cwd, `sourceorbit.json`), JSON.stringify(outJson, null, 2));
 			break;
 	}
-}
-
-function initProject(cwd) {
-	console.log(`Initialising in ${cwd}`);
-
-	const iprojPath = path.join(cwd, `iproj.json`);
-
-	let base: Partial<iProject> = {};
-	const iprojExists = existsSync(iprojPath);
-
-	if (iprojExists) {
-		try {
-			console.log(`iproj.json already exists. Will append new properties.`);
-			base = JSON.parse(readFileSync(iprojPath, { encoding: `utf-8` }));
-		} catch (e) {
-			error(`Failed to parse iproj.json. Aborting`);
-			process.exit(1);
-		}
-	}
-
-	base = {
-		...base,
-		compiles: getDefaultCompiles()
-	};
-
-	writeFileSync(iprojPath, JSON.stringify(base, null, 2));
-
-	console.log(`Written to ${iprojPath}`);
 }
 
 /**

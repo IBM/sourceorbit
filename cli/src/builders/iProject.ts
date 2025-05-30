@@ -1,5 +1,4 @@
-import { fromCl } from "../utils";
-import { CompileData, CommandParameters, CompileAttribute, getDefaultCompiles, Action, getObjectType } from "./environment";
+import { CommandParameters, CompileAttribute, getDefaultCompiles } from "./environment";
 
 export class iProject {
   includePaths?: string[] = [];
@@ -29,20 +28,6 @@ export class iProject {
         this.compiles[ext] = {
           ...(this.compiles[ext] || {}),
           ...data
-        };
-      }
-    }
-  }
-
-  applyAction(newAction: Action) {
-    if (newAction.environment && newAction.environment === `ile` && newAction.extensions && newAction.extensions.length > 0) {
-      if (!newAction.extensions.includes(`GLOBAL`)) {
-        const firstExt = newAction.extensions[0].toLowerCase();
-        const becomesObject = getObjectType(firstExt);
-        const commandData = fromCl(newAction.command);
-        this.compiles[firstExt] = {
-          becomes: becomesObject,
-          ...commandData
         };
       }
     }

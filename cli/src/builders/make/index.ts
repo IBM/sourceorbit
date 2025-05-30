@@ -1,31 +1,37 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { ILEObject, ILEObjectTarget, ImpactedObject, ObjectType, Targets } from '../../targets';
-import { asPosix, getFiles, toCl } from '../../utils';
+import { asPosix, fromCl, getFiles, toCl } from '../../utils';
 import { warningOut } from '../../cli';
 import { name } from '../../../webpack.config';
 import { FolderOptions, getFolderOptions } from './folderSettings';
 import { readAllRules } from './customRules';
-import { CompileData, CommandParameters } from '../environment';
+import { CompileData, CommandParameters, getTrueBasename } from '../environment';
 import { iProject } from '../iProject';
+import { ReadFileSystem } from '../../readFileSystem';
+import { ProjectActions } from '../actions';
 
 export class MakeProject {
 	private noChildren: boolean = false;
 	private settings: iProject = new iProject();
+	private projectActions: ProjectActions;
+
 	private folderSettings: {[folder: string]: FolderOptions} = {};
 
-	constructor(private cwd: string, private targets: Targets) {
-		this.setupSettings();
+	constructor(private cwd: string, private targets: Targets, private rfs: ReadFileSystem) {
+		this.projectActions = new ProjectActions(this.targets, this.rfs);
 	}
 
 	public setNoChildrenInBuild(noChildren: boolean) {
 		this.noChildren = noChildren;
 	}
 
-	private setupSettings() {
+	async setupSettings() {
+		await this.projectActions.loadAllActions();
+
 		// First, let's setup the project settings
 		try {
-			const content = readFileSync(path.join(this.cwd, `iproj.json`), { encoding: `utf-8` });
+			const content = await this.rfs.readFile(path.join(this.cwd, `iproj.json`));
 			const asJson: iProject = JSON.parse(content);
 
 			this.settings.applySettings(asJson);
@@ -168,7 +174,7 @@ export class MakeProject {
 		let lines = [];
 
 		for (const entry of Object.entries(this.settings.compiles)) {
-			const [type, data] = entry;
+			let [type, data] = entry;
 
 			// commandSource means 'is this object built from CL commands in a file'
 			if (data.commandSource) {
@@ -213,7 +219,22 @@ export class MakeProject {
 						// This is used when your object really has source
 
 						const possibleTarget: ILEObjectTarget = this.targets.getTarget(ileObject) || (ileObject as ILEObjectTarget);
-						const customAttributes = this.getObjectAttributes(data, possibleTarget);
+						let customAttributes = this.getObjectAttributes(data, possibleTarget);
+
+						if (ileObject.relativePath) {
+							const possibleAction = this.projectActions.getActionForPath(ileObject.relativePath);
+							if (possibleAction) {
+								const clData = fromCl(possibleAction.command);
+								// If there is an action for this object, we want to apply the action's parameters
+								// to the custom attributes.
+
+								data = {
+									...data,
+									command: clData.command,
+									parameters: clData.parameters
+								}
+							}
+						}
 						
 						lines.push(...MakeProject.generateSpecificTarget(data, possibleTarget, customAttributes));
 					}
@@ -250,11 +271,29 @@ export class MakeProject {
 		const parentName = ileObject.relativePath ? path.dirname(ileObject.relativePath) : undefined;
 		const qsysTempName: string | undefined = (parentName && parentName.length > 10 ? parentName.substring(0, 10) : parentName);
 
+		const simpleReplace = (str: string, search: string, replace: string) => {
+			return str.replace(new RegExp(search, `gi`), replace);
+		}
+
 		const resolve = (command: string) => {
 			command = command.replace(new RegExp(`\\*CURLIB`, `g`), `$(BIN_LIB)`);
 			command = command.replace(new RegExp(`\\$\\*`, `g`), ileObject.systemName);
 			command = command.replace(new RegExp(`\\$<`, `g`), asPosix(ileObject.relativePath));
 			command = command.replace(new RegExp(`\\$\\(SRCPF\\)`, `g`), qsysTempName);
+
+			// Additionally, we have to support Actions variables
+			command = simpleReplace(command, `&BUILDLIB`, `$(BIN_LIB)`);
+			command = simpleReplace(command, `&CURLIB`, `$(BIN_LIB)`);
+			command = simpleReplace(command, `&LIBLS`, ``);
+			command = simpleReplace(command, `&BRANCHLIB`, `$(BIN_LIB)`);
+
+			const pathDetail = path.parse(ileObject.relativePath || ``);
+
+			command = simpleReplace(command, `&RELATIVEPATH`, asPosix(ileObject.relativePath));
+			command = simpleReplace(command, `&BASENAME`, pathDetail.base);
+			command = simpleReplace(command, `{filename}`, pathDetail.base);
+			command = simpleReplace(command, `&NAME`, getTrueBasename(pathDetail.name));
+			command = simpleReplace(command, `&EXTENSION`, pathDetail.ext.startsWith(`.`) ? pathDetail.ext.substring(1) : pathDetail.ext);
 
 			if (ileObject.deps && ileObject.deps.length > 0) {
 				// This piece of code adds special variables that can be used for building dependencies

@@ -80,8 +80,9 @@ describe(`dds_refs tests`, () => {
     expect(logs).toBeUndefined();
   });
 
-  test(`make doesn't include refs that do not exist`, () => {
-    const makeProject = new MakeProject(project.cwd, targets);
+  test(`make doesn't include refs that do not exist`, async () => {
+    const makeProject = new MakeProject(project.cwd, targets, fs);
+    await makeProject.setupSettings();
 
     const targetContent = makeProject.generateTargets();
 

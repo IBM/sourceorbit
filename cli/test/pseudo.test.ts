@@ -19,7 +19,8 @@ describe(`pseudo tests`, () => {
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();
 
-    make = new MakeProject(project.cwd, targets);
+    make = new MakeProject(project.cwd, targets, fs);
+    await make.setupSettings();
   });
 
   test(`Test objects exists`, () => {

@@ -53,7 +53,8 @@ describe(`multi_module_two tests`, () => {
   });
 
   test(`Check makefile result`, async () => {
-    const makeProject = new MakeProject(project.cwd, targets);
+    const makeProject = new MakeProject(project.cwd, targets, fs);
+    await makeProject.setupSettings();
 
     const targetContent = makeProject.getMakefile();
 

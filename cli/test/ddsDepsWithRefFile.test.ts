@@ -84,8 +84,9 @@ describe(`dds_refs tests with reference file`, () => {
   });
 
 
-  test(`make doesn't include refs that do not exist or are referenced objects`, () => {
-    const makeProject = new MakeProject(project.cwd, targets);
+  test(`make doesn't include refs that do not exist or are referenced objects`, async () => {
+    const makeProject = new MakeProject(project.cwd, targets, fs);
+    await makeProject.setupSettings();
 
     const targetContent = makeProject.generateTargets();
 
