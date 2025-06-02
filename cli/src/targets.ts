@@ -688,6 +688,10 @@ export class Targets {
 		files.forEach(def => {
 			const possibleObject = def.file;
 			if (possibleObject) {
+				if (possibleObject.library?.toUpperCase() === `*LIBL`) {
+					possibleObject.library = undefined; // This means lookup as normal
+				}
+
 				if (possibleObject.library) {
 					this.logger.fileLog(ileObject.relativePath, {
 						message: `Definition to ${possibleObject.library}/${possibleObject.name} ignored due to qualified path.`,
