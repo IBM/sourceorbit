@@ -57,13 +57,14 @@ export function getSystemNameFromPath(inputName: string) {
 }
 
 /**
- * @deprecated Use {@link ReadFileSystem.getFiles} instead
+ * @deprecated Use {@link ReadFileSystem} instead
  */
-export function getFiles(cwd: string, globPath: string): string[] {
+export function getFiles(cwd: string, globPath: string, additionalOpts: any = {}): string[] {
 	let paths: string[] = glob.sync(globPath, {
 		cwd,
 		absolute: true,
 		nocase: true,
+		...additionalOpts
 	});
 
 	if (os.platform() === `win32`) {

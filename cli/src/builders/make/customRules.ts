@@ -6,7 +6,7 @@ import * as path from "path";
 import { MakeProject } from ".";
 
 /**
- * Scan for all rules.mk files and read attributes and custom
+ * Scan for all ibmi-bob rules.mk files and read attributes and custom
  * dependencies into the targets.
  */
 export function readAllRules(targets: Targets, project: MakeProject) {

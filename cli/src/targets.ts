@@ -119,6 +119,10 @@ export class Targets {
 		return this.cwd;
 	}
 
+	get rfs() {
+		return this.fs;
+	}
+
 	public setAssumePrograms(assumePrograms: boolean) {
 		this.assumePrograms = assumePrograms;
 	}
@@ -312,6 +316,7 @@ export class Targets {
 
 		let globString = `**/${name}*`;
 
+		// TODO: replace with rfs.getFiles
 		const results = glob.sync(globString, {
 			cwd: this.cwd,
 			absolute: true,
@@ -683,6 +688,10 @@ export class Targets {
 		files.forEach(def => {
 			const possibleObject = def.file;
 			if (possibleObject) {
+				if (possibleObject.library?.toUpperCase() === `*LIBL`) {
+					possibleObject.library = undefined; // This means lookup as normal
+				}
+
 				if (possibleObject.library) {
 					this.logger.fileLog(ileObject.relativePath, {
 						message: `Definition to ${possibleObject.library}/${possibleObject.name} ignored due to qualified path.`,
