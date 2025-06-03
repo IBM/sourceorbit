@@ -289,9 +289,9 @@ export class Targets {
 		return this.getResolvedObjects().find(o => (lookFor.systemName === o.systemName || (o.longName && lookFor.systemName === o.longName)) && o.type === lookFor.type);
 	}
 
-	public searchForAnyObject(lookFor: { name: string, types: ObjectType[] }) {
+	public searchForAnyObject(lookFor: { name: string, types?: ObjectType[] }) {
 		lookFor.name = lookFor.name.toUpperCase();
-		return this.getResolvedObjects().find(o => (o.systemName === lookFor.name || o.longName?.toUpperCase() === lookFor.name) && lookFor.types.includes(o.type));
+		return this.getResolvedObjects().find(o => (o.systemName === lookFor.name || o.longName?.toUpperCase() === lookFor.name) && (lookFor.types === undefined || lookFor.types.includes(o.type)));
 	}
 
 	public resolveLocalFile(name: string, baseFile?: string): string | undefined {

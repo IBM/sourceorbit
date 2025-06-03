@@ -66,7 +66,7 @@ export function createMcpServer(targets: Targets): express.Express {
 
   // Reusable handler for GET and DELETE requests
   const handleSessionRequest = async (req: express.Request, res: express.Response) => {
-    const sessionId = req.headers['mcp-session-id'] as string | undefined;
+    const sessionId = req.seheaders['mcp-session-id'] as string | undefined;
     if (!sessionId || !transports[sessionId]) {
       res.status(400).send('Invalid or missing session ID');
       return;
