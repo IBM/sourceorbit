@@ -1,6 +1,6 @@
 
 
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { writeFileSync } from 'fs';
 
 import { ILEObject, Targets } from './targets';
 import { MakeProject } from './builders/make';
@@ -9,9 +9,10 @@ import { BuildFiles, cliSettings, error, infoOut, warningOut } from './cli';
 import { BobProject } from "./builders/bob";
 import { ImpactMarkdown } from "./builders/imd";
 import { allExtensions, referencesFileName } from "./extensions";
-import { getBranchLibraryName, getDefaultCompiles } from "./builders/environment";
+import { getBranchLibraryName } from "./builders/environment";
 import { renameFiles, replaceIncludes } from './utils';
 import { ReadFileSystem } from './readFileSystem';
+import { createMcpServer } from './mcp/web';
 
 const isCli = process.argv.length >= 2 && (process.argv[1].endsWith(`so`) || process.argv[1].endsWith(`index.js`));
 
@@ -76,6 +77,15 @@ async function main() {
 			case `--files`:
 			case `-l`:
 				cliSettings.fileList = true;
+				break;
+
+			case '--mcp':
+				cliSettings.mcp = Number(parms[i + 1]);
+				if (isNaN(cliSettings.mcp) || cliSettings.mcp < 0) {
+					error(`Invalid MCP port number: ${parms[i + 1]}`);
+					process.exit(1);
+				}
+				i++;
 				break;
 
 			case `-h`:
@@ -236,6 +246,13 @@ async function main() {
 
 			writeFileSync(path.join(cwd, `sourceorbit.json`), JSON.stringify(outJson, null, 2));
 			break;
+	}
+
+	if (cliSettings.mcp > 0) {
+		const server = createMcpServer(targets);
+		server.listen(cliSettings.mcp);
+
+		infoOut(`MCP SSE server started on port ${cliSettings.mcp}.`);
 	}
 }
 

@@ -17,5 +17,18 @@
 				"script": "webpack:dev"
 			},
 		},
+				{
+			"name": "Debug MCP",
+			"type": "node",
+			"request": "launch",
+			"cwd": "${workspaceFolder:cli}",
+			"program": "${workspaceFolder:cli}/dist/index.js",
+			"sourceMaps": true,
+			"args": ["-d", "/Users/barry/Repos/ibmi-company_system", "--verbose", "--mcp", "5500"],
+			"preLaunchTask": {
+				"type": "npm",
+				"script": "webpack:dev"
+			},
+		},
   ]
 }
