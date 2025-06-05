@@ -61,11 +61,38 @@ export class MakeProject {
 	getSteps(target: ILEObject|ILEObjectTarget): Step[] {
 		const steps: Step[] = [];
 
-		function addStep(ileObject: ILEObject) {
+		const addStep = (ileObject: ILEObject) => {
+			let data = this.settings.getCompileDataForType(ileObject.type);
+			const customAttributes = this.getObjectAttributes(data, ileObject);
+
+			if (ileObject.relativePath) {
+				const possibleAction = this.projectActions.getActionForPath(ileObject.relativePath);
+				if (possibleAction) {
+					const clData = fromCl(possibleAction.command);
+					// If there is an action for this object, we want to apply the action's parameters
+					// to the custom attributes.
+
+					data = {
+						...data,
+						command: clData.command,
+						parameters: clData.parameters
+					}
+				}
+			}
+
+			if (customAttributes) {
+				data.parameters = {
+					...data.parameters,
+					...customAttributes
+				};
+			}
+
+			const command = MakeProject.resolveCommand(data.command, ileObject);
+
 			steps.push({
 				object: {name: ileObject.systemName, type: ileObject.type},
 				relativePath: ileObject.relativePath,
-				command: `$(PREPATH)/${ileObject.systemName}.${ileObject.type}`
+				command
 			})
 		}
 
@@ -260,7 +287,7 @@ export class MakeProject {
 						// This is used when your object really has source
 
 						const possibleTarget: ILEObjectTarget = this.targets.getTarget(ileObject) || (ileObject as ILEObjectTarget);
-						let customAttributes = this.getObjectAttributes(data, possibleTarget);
+						const customAttributes = this.getObjectAttributes(data, possibleTarget);
 
 						if (ileObject.relativePath) {
 							const possibleAction = this.projectActions.getActionForPath(ileObject.relativePath);
@@ -307,7 +334,6 @@ export class MakeProject {
 	}
 
 	static generateCommand(data: CompileData, ileObject: ILEObjectTarget): string|undefined {
-
 		return MakeProject.resolveCommand(toCl(data.command, data.parameters), ileObject);
 	}
 
@@ -364,7 +390,7 @@ export class MakeProject {
 		return lines;
 	}
 
-	private static resolveCommand(command: string, ileObject: ILEObjectTarget) {
+	private static resolveCommand(command: string, ileObject: ILEObjectTarget|ILEObject) {
 		const simpleReplace = (str: string, search: string, replace: string) => {
 			return str.replace(new RegExp(search, `gi`), replace);
 		}
@@ -391,15 +417,18 @@ export class MakeProject {
 		command = simpleReplace(command, `&NAME`, getTrueBasename(pathDetail.name));
 		command = simpleReplace(command, `&EXTENSION`, pathDetail.ext.startsWith(`.`) ? pathDetail.ext.substring(1) : pathDetail.ext);
 
-		if (ileObject.deps && ileObject.deps.length > 0) {
-			// This piece of code adds special variables that can be used for building dependencies
-			const uniqueObjectTypes = ileObject.deps.map(d => d.type).filter((value, index, array) => array.indexOf(value) === index);
+		if (`deps` in ileObject) {
+			if (ileObject.deps && ileObject.deps.length > 0) {
+				// This piece of code adds special variables that can be used for building dependencies
+				const uniqueObjectTypes = ileObject.deps.map(d => d.type).filter((value, index, array) => array.indexOf(value) === index);
 
-			for (const objType of uniqueObjectTypes) {
-				const specificDeps = ileObject.deps.filter(d => d.type === objType);
-				command = command.replace(new RegExp(`\\*${objType}S`, `g`), specificDeps.map(d => d.systemName).join(` `));
+				for (const objType of uniqueObjectTypes) {
+					const specificDeps = ileObject.deps.filter(d => d.type === objType);
+					command = command.replace(new RegExp(`\\*${objType}S`, `g`), specificDeps.map(d => d.systemName).join(` `));
+				}
 			}
 		}
+		
 		return command;
 	}
 }

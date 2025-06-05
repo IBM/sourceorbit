@@ -1,3 +1,4 @@
+import { ObjectType } from "../targets";
 import { CommandParameters, CompileAttribute, getDefaultCompiles } from "./environment";
 
 export class iProject {
@@ -10,6 +11,10 @@ export class iProject {
 
   constructor() {
 
+  }
+
+  getCompileDataForType(type: ObjectType) {
+    return Object.values(this.compiles).find(data => data.becomes === type);
   }
 
   applySettings(input: Partial<iProject>) {
