@@ -60,6 +60,11 @@ export class MakeProject {
 
 	getSteps(target: ILEObject|ILEObjectTarget): Step[] {
 		const steps: Step[] = [];
+		
+		const commandOptions = {
+			forAction: true,
+			bindingDirectory: this.targets.getBinderTarget()
+		};
 
 		const addStep = (ileObject: ILEObject) => {
 			let data = ileObject.relativePath ? this.settings.getCompileDataForSource(ileObject.relativePath) : this.settings.getCompileDataForType(ileObject.type);
@@ -87,16 +92,23 @@ export class MakeProject {
 				};
 			}
 
-			const command = MakeProject.resolveCommand(toCl(data.command, data.parameters), ileObject, {
-				forAction: true,
-				bindingDirectory: this.targets.getBinderTarget()
-			});
+			const command = MakeProject.resolveCommand(toCl(data.command, data.parameters), ileObject, commandOptions);
 
 			steps.push({
 				object: {name: ileObject.systemName, type: ileObject.type},
 				relativePath: ileObject.relativePath,
 				command
-			})
+			});
+
+			if (data.postCommands?.length > 0) {
+				for (const postCommand of data.postCommands) {
+					steps.push({
+						object: {name: ileObject.systemName, type: ileObject.type},
+						relativePath: ileObject.relativePath,
+						command: MakeProject.resolveCommand(MakeProject.stripSystem(postCommand), ileObject, commandOptions)
+					});
+				}
+			}
 		}
 
 		const addDepSteps = (dep: ILEObject|ILEObjectTarget) => {
@@ -391,6 +403,19 @@ export class MakeProject {
 		);
 
 		return lines;
+	}
+
+	private static stripSystem(command: string) {
+		const firstIndex = command.indexOf(`"`);
+		
+		if (firstIndex >= 0) {
+			if (command.substring(0, firstIndex).indexOf(`system`)) {
+				const lastIndex = command.lastIndexOf(`"`);
+				command = command.substring(firstIndex + 1, lastIndex);
+			}
+		}
+
+		return command;
 	}
 
 	private static resolveCommand(command: string, ileObject: ILEObjectTarget|ILEObject, opts: {forAction?: boolean, bindingDirectory?: ILEObject} = {}) {
