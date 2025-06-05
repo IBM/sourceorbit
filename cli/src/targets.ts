@@ -1609,6 +1609,9 @@ export class Targets {
 		return this.resolvedExports;
 	}
 
+	/**
+	 * Returns a list of objects that will be impacted if the given object is changed.
+	 */
 	public getImpactFor(theObject: ILEObject) {
 		const allDeps = this.getTargets();
 		let currentTree: ILEObject[] = [];
