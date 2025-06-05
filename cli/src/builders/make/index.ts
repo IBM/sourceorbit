@@ -11,6 +11,15 @@ import { iProject } from '../iProject';
 import { ReadFileSystem } from '../../readFileSystem';
 import { ProjectActions } from '../actions';
 
+interface Step {
+	object: {
+		name: string;
+		type: ObjectType;
+	}
+	relativePath?: string
+	command: string;
+}
+
 export class MakeProject {
 	private noChildren: boolean = false;
 	private settings: iProject = new iProject();
@@ -47,6 +56,38 @@ export class MakeProject {
 
 	public getSettings() {
 		return this.settings;
+	}
+
+	getSteps(target: ILEObject|ILEObjectTarget): Step[] {
+		const steps: Step[] = [];
+
+		function addStep(ileObject: ILEObject) {
+			steps.push({
+				object: {name: ileObject.systemName, type: ileObject.type},
+				relativePath: ileObject.relativePath,
+				command: `$(PREPATH)/${ileObject.systemName}.${ileObject.type}`
+			})
+		}
+
+		function addDepSteps(dep: ILEObject|ILEObjectTarget) {
+			if (steps.some(s => s.object.name === dep.systemName && s.object.type === dep.type)) return; // Already added
+			if (dep.reference) return; // Skip references
+
+			if (`deps` in dep) {
+				if (dep.deps && dep.deps.length > 0) {
+					for (const cDep of dep.deps) {
+						const d = this.targets.getTarget(cDep) || cDep;
+						addDepSteps(d);
+					}
+				}
+			}
+
+			addStep(dep);
+		}
+
+		addDepSteps(target);
+
+		return steps;
 	}
 
 	public getObjectAttributes(compileData: CompileData, ileObject: ILEObject): CommandParameters {
@@ -265,52 +306,18 @@ export class MakeProject {
 		return lines;
 	}
 
+	static generateCommand(data: CompileData, ileObject: ILEObjectTarget): string|undefined {
+
+		return MakeProject.resolveCommand(toCl(data.command, data.parameters), ileObject);
+	}
+
 	static generateSpecificTarget(data: CompileData, ileObject: ILEObjectTarget, customAttributes?: CommandParameters): string[] {
 		let lines: string[] = [];
 
-		const parentName = ileObject.relativePath ? path.dirname(ileObject.relativePath) : undefined;
-		const qsysTempName: string | undefined = (parentName && parentName.length > 10 ? parentName.substring(0, 10) : parentName);
-
-		const simpleReplace = (str: string, search: string, replace: string) => {
-			return str.replace(new RegExp(search, `gi`), replace);
+		if (!data.command) {
+			return [];
 		}
 
-		const resolve = (command: string) => {
-			command = command.replace(new RegExp(`\\*CURLIB`, `g`), `$(BIN_LIB)`);
-			command = command.replace(new RegExp(`\\$\\*`, `g`), ileObject.systemName);
-			command = command.replace(new RegExp(`\\$<`, `g`), asPosix(ileObject.relativePath));
-			command = command.replace(new RegExp(`\\$\\(SRCPF\\)`, `g`), qsysTempName);
-
-			// Additionally, we have to support Actions variables
-			command = simpleReplace(command, `&BUILDLIB`, `$(BIN_LIB)`);
-			command = simpleReplace(command, `&CURLIB`, `$(BIN_LIB)`);
-			command = simpleReplace(command, `&LIBLS`, ``);
-			command = simpleReplace(command, `&BRANCHLIB`, `$(BIN_LIB)`);
-
-			const pathDetail = path.parse(ileObject.relativePath || ``);
-
-			command = simpleReplace(command, `&RELATIVEPATH`, asPosix(ileObject.relativePath));
-			command = simpleReplace(command, `&BASENAME`, pathDetail.base);
-			command = simpleReplace(command, `{filename}`, pathDetail.base);
-			command = simpleReplace(command, `&NAME`, getTrueBasename(pathDetail.name));
-			command = simpleReplace(command, `&EXTENSION`, pathDetail.ext.startsWith(`.`) ? pathDetail.ext.substring(1) : pathDetail.ext);
-
-			if (ileObject.deps && ileObject.deps.length > 0) {
-				// This piece of code adds special variables that can be used for building dependencies
-				const uniqueObjectTypes = ileObject.deps.map(d => d.type).filter((value, index, array) => array.indexOf(value) === index);
-
-				for (const objType of uniqueObjectTypes) {
-					const specificDeps = ileObject.deps.filter(d => d.type === objType);
-					command = command.replace(new RegExp(`\\*${objType}S`, `g`), specificDeps.map(d => d.systemName).join(` `));
-				}
-			}
-
-			return command;
-		}
-
-		// TODO: resolve the parameters from the Rules.mk
-		const objectKey = `${ileObject.systemName}.${ileObject.type}`;
-		
 		if (customAttributes) {
 			data.parameters = {
 				...data.parameters,
@@ -326,10 +333,13 @@ export class MakeProject {
 		}
 
 		if (!data.command) {
-			return [];
+			return undefined;
 		}
 
-		const resolvedCommand = resolve(toCl(data.command, data.parameters));
+		const resolvedCommand = MakeProject.generateCommand(data, ileObject);
+		const objectKey = `${ileObject.systemName}.${ileObject.type}`;
+		const parentName = ileObject.relativePath ? path.dirname(ileObject.relativePath) : undefined;
+		const qsysTempName: string | undefined = (parentName && parentName.length > 10 ? parentName.substring(0, 10) : parentName);
 
 		lines.push(
 			`$(PREPATH)/${objectKey}: ${asPosix(ileObject.relativePath)}`,
@@ -339,7 +349,7 @@ export class MakeProject {
 					`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/${qsysTempName}) RCDLEN(112) CCSID(${sourceFileCcsid})"`,
 					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${ileObject.systemName}.MBR') MBROPT(*REPLACE)"`
 				] : []),
-			...(data.preCommands ? data.preCommands.map(cmd => `\t${resolve(cmd)}`) : []),
+			...(data.preCommands ? data.preCommands.map(cmd => `\t${MakeProject.resolveCommand(cmd, ileObject)}`) : []),
 			...(data.command ?
 				[
 					`\tliblist -c $(BIN_LIB);\\`,
@@ -348,9 +358,48 @@ export class MakeProject {
 				]
 				: []
 			),
-			...(data.postCommands ? data.postCommands.map(cmd => `\t${resolve(cmd)}`) : []),
+			...(data.postCommands ? data.postCommands.map(cmd => `\t${MakeProject.resolveCommand(cmd, ileObject)}`) : []),
 		);
 
 		return lines;
+	}
+
+	private static resolveCommand(command: string, ileObject: ILEObjectTarget) {
+		const simpleReplace = (str: string, search: string, replace: string) => {
+			return str.replace(new RegExp(search, `gi`), replace);
+		}
+
+		const parentName = ileObject.relativePath ? path.dirname(ileObject.relativePath) : undefined;
+		const qsysTempName: string | undefined = (parentName && parentName.length > 10 ? parentName.substring(0, 10) : parentName);
+
+		command = command.replace(new RegExp(`\\*CURLIB`, `g`), `$(BIN_LIB)`);
+		command = command.replace(new RegExp(`\\$\\*`, `g`), ileObject.systemName);
+		command = command.replace(new RegExp(`\\$<`, `g`), asPosix(ileObject.relativePath));
+		command = command.replace(new RegExp(`\\$\\(SRCPF\\)`, `g`), qsysTempName);
+
+		// Additionally, we have to support Actions variables
+		command = simpleReplace(command, `&BUILDLIB`, `$(BIN_LIB)`);
+		command = simpleReplace(command, `&CURLIB`, `$(BIN_LIB)`);
+		command = simpleReplace(command, `&LIBLS`, ``);
+		command = simpleReplace(command, `&BRANCHLIB`, `$(BIN_LIB)`);
+
+		const pathDetail = path.parse(ileObject.relativePath || ``);
+
+		command = simpleReplace(command, `&RELATIVEPATH`, asPosix(ileObject.relativePath));
+		command = simpleReplace(command, `&BASENAME`, pathDetail.base);
+		command = simpleReplace(command, `{filename}`, pathDetail.base);
+		command = simpleReplace(command, `&NAME`, getTrueBasename(pathDetail.name));
+		command = simpleReplace(command, `&EXTENSION`, pathDetail.ext.startsWith(`.`) ? pathDetail.ext.substring(1) : pathDetail.ext);
+
+		if (ileObject.deps && ileObject.deps.length > 0) {
+			// This piece of code adds special variables that can be used for building dependencies
+			const uniqueObjectTypes = ileObject.deps.map(d => d.type).filter((value, index, array) => array.indexOf(value) === index);
+
+			for (const objType of uniqueObjectTypes) {
+				const specificDeps = ileObject.deps.filter(d => d.type === objType);
+				command = command.replace(new RegExp(`\\*${objType}S`, `g`), specificDeps.map(d => d.systemName).join(` `));
+			}
+		}
+		return command;
 	}
 }
