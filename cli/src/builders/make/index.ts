@@ -62,7 +62,7 @@ export class MakeProject {
 		const steps: Step[] = [];
 
 		const addStep = (ileObject: ILEObject) => {
-			let data = this.settings.getCompileDataForType(ileObject.type);
+			let data = ileObject.relativePath ? this.settings.getCompileDataForSource(ileObject.relativePath) : this.settings.getCompileDataForType(ileObject.type);
 			const customAttributes = this.getObjectAttributes(data, ileObject);
 
 			if (ileObject.relativePath) {
@@ -87,7 +87,10 @@ export class MakeProject {
 				};
 			}
 
-			const command = MakeProject.resolveCommand(data.command, ileObject);
+			const command = MakeProject.resolveCommand(toCl(data.command, data.parameters), ileObject, {
+				forAction: true,
+				bindingDirectory: this.targets.getBinderTarget()
+			});
 
 			steps.push({
 				object: {name: ileObject.systemName, type: ileObject.type},
@@ -96,7 +99,7 @@ export class MakeProject {
 			})
 		}
 
-		function addDepSteps(dep: ILEObject|ILEObjectTarget) {
+		const addDepSteps = (dep: ILEObject|ILEObjectTarget) => {
 			if (steps.some(s => s.object.name === dep.systemName && s.object.type === dep.type)) return; // Already added
 			if (dep.reference) return; // Skip references
 
@@ -390,7 +393,7 @@ export class MakeProject {
 		return lines;
 	}
 
-	private static resolveCommand(command: string, ileObject: ILEObjectTarget|ILEObject) {
+	private static resolveCommand(command: string, ileObject: ILEObjectTarget|ILEObject, opts: {forAction?: boolean, bindingDirectory?: ILEObject} = {}) {
 		const simpleReplace = (str: string, search: string, replace: string) => {
 			return str.replace(new RegExp(search, `gi`), replace);
 		}
@@ -398,24 +401,29 @@ export class MakeProject {
 		const parentName = ileObject.relativePath ? path.dirname(ileObject.relativePath) : undefined;
 		const qsysTempName: string | undefined = (parentName && parentName.length > 10 ? parentName.substring(0, 10) : parentName);
 
-		command = command.replace(new RegExp(`\\*CURLIB`, `g`), `$(BIN_LIB)`);
+		const isForAction = opts.forAction === true;
+		const libraryValue = isForAction ? `*CURLIB` : `$(BIN_LIB)`;
+
+		command = command.replace(new RegExp(`\\*CURLIB`, `g`), libraryValue);
 		command = command.replace(new RegExp(`\\$\\*`, `g`), ileObject.systemName);
 		command = command.replace(new RegExp(`\\$<`, `g`), asPosix(ileObject.relativePath));
 		command = command.replace(new RegExp(`\\$\\(SRCPF\\)`, `g`), qsysTempName);
 
 		// Additionally, we have to support Actions variables
-		command = simpleReplace(command, `&BUILDLIB`, `$(BIN_LIB)`);
-		command = simpleReplace(command, `&CURLIB`, `$(BIN_LIB)`);
-		command = simpleReplace(command, `&LIBLS`, ``);
-		command = simpleReplace(command, `&BRANCHLIB`, `$(BIN_LIB)`);
+		if (!isForAction) {
+			command = simpleReplace(command, `&BUILDLIB`, libraryValue);
+			command = simpleReplace(command, `&CURLIB`, libraryValue);
+			command = simpleReplace(command, `&LIBLS`, ``);
+			command = simpleReplace(command, `&BRANCHLIB`, libraryValue);
 
-		const pathDetail = path.parse(ileObject.relativePath || ``);
+			const pathDetail = path.parse(ileObject.relativePath || ``);
 
-		command = simpleReplace(command, `&RELATIVEPATH`, asPosix(ileObject.relativePath));
-		command = simpleReplace(command, `&BASENAME`, pathDetail.base);
-		command = simpleReplace(command, `{filename}`, pathDetail.base);
-		command = simpleReplace(command, `&NAME`, getTrueBasename(pathDetail.name));
-		command = simpleReplace(command, `&EXTENSION`, pathDetail.ext.startsWith(`.`) ? pathDetail.ext.substring(1) : pathDetail.ext);
+			command = simpleReplace(command, `&RELATIVEPATH`, asPosix(ileObject.relativePath));
+			command = simpleReplace(command, `&BASENAME`, pathDetail.base);
+			command = simpleReplace(command, `{filename}`, pathDetail.base);
+			command = simpleReplace(command, `&NAME`, getTrueBasename(pathDetail.name));
+			command = simpleReplace(command, `&EXTENSION`, pathDetail.ext.startsWith(`.`) ? pathDetail.ext.substring(1) : pathDetail.ext);
+		}
 
 		if (`deps` in ileObject) {
 			if (ileObject.deps && ileObject.deps.length > 0) {
@@ -427,6 +435,12 @@ export class MakeProject {
 					command = command.replace(new RegExp(`\\*${objType}S`, `g`), specificDeps.map(d => d.systemName).join(` `));
 				}
 			}
+		}
+
+		if (isForAction) {
+			command = simpleReplace(command, `\\$\\(BIN_LIB\\)`, libraryValue);
+			command = simpleReplace(command, `\\$\\(BNDDIR\\)`, opts.bindingDirectory ? opts.bindingDirectory.systemName : `*NONE`);
+			command = simpleReplace(command, `\\$\\(APP_BNDDIR\\)`, `APP`); // Default name
 		}
 		
 		return command;

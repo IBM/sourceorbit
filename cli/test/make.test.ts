@@ -59,6 +59,20 @@ test('generateTargets (post-resolve)', async () => {
 			`\t-system -q "CRTLIB LIB($(BIN_LIB))"`,
     ]
   );
+
+  // The steps API provides a way to get the steps to build a specific target.
+
+  const programB = targets.getTarget({systemName: `PROGRAMB`, type: `PGM`});
+  const steps = project.getSteps(programB);
+
+  expect(steps.length).toBe(4);
+  console.log(steps);
+
+  expect(steps[0].command).toBe(`CRTPF FILE(*CURLIB/FILEB) SRCFILE(*CURLIB/qddssrc) OPTION(*EVENTF)`);
+  expect(steps[1].command).toBe(`CRTSQLRPGI OBJ(*CURLIB/MODULEB) SRCSTMF('qrpglesrc/moduleB.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) COMPILEOPT('TGTCCSID(*JOB)') RPGPPOPT(*LVL2) OPTION(*EVENTF) OBJTYPE(*MODULE)`);
+  expect(steps[2].command).toBe(`CRTSRVPGM SRVPGM(*CURLIB/SRVPGMA) MODULE(MODULEB) SRCSTMF('qsrvsrc/srvpgmA.bnd') BNDDIR(APP) REPLACE(*YES)`);
+  // TODO: WHAT ABOUT BINDING DIRECTORY ENTRIES?
+  expect(steps[3].command).toBe(`CRTSQLRPGI OBJ(*CURLIB/PROGRAMB) SRCSTMF('qrpglesrc/programB.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(*JOB) BNDDIR(APP) DFTACTGRP(*no)')`);
 });
 
 test('generateHeader (binder changes)', async () => {
