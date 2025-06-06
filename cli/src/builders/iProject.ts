@@ -1,3 +1,5 @@
+import path from "path";
+import { ObjectType } from "../targets";
 import { CommandParameters, CompileAttribute, getDefaultCompiles } from "./environment";
 
 export class iProject {
@@ -10,6 +12,27 @@ export class iProject {
 
   constructor() {
 
+  }
+
+  getCompileDataForType(type: ObjectType) {
+    return Object.values(this.compiles).find(data => data.becomes === type);
+  }
+
+  getCompileDataForSource(relativePath: string) {
+    const parseA = path.parse(relativePath);
+    let ext = parseA.ext.toLowerCase();
+    
+
+    if (parseA.name.includes(`.`)) {
+      const parseB = path.parse(parseA.name);
+      ext = parseB.ext.toLowerCase() + ext;
+    }
+
+    if (ext.startsWith(`.`)) {
+      ext = ext.substring(1);
+    }
+
+    return this.compiles[ext];
   }
 
   applySettings(input: Partial<iProject>) {

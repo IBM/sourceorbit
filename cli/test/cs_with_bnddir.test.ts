@@ -57,7 +57,7 @@ describe(`pseudo tests`, () => {
 
     test('makefile', async () => {
     const makefile = new MakeProject(targets.getCwd(), targets, fs);
-    await make.setupSettings();
+    await makefile.setupSettings();
 
     const contents = makefile.getMakefile().join(`\n`);
 
@@ -69,6 +69,11 @@ describe(`pseudo tests`, () => {
 
     expect(contents).toContain(`$(PREPATH)/APP.BNDDIR: $(PREPATH)/EMPDET.SRVPGM`);
     expect(contents).toContain(`$(PREPATH)/EMPDET.SRVPGM: $(PREPATH)/EMPDET.MODULE`);
+
+    const empsSteps = targets.getTarget({systemName: `EMPLOYEES`, type: `PGM`});
+    const steps = makefile.getSteps(empsSteps);
+
+    expect(steps.length).toBe(7);
   });
 
   test('ibmi-bob rules', () => {
