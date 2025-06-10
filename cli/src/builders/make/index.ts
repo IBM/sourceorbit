@@ -92,6 +92,21 @@ export class MakeProject {
 				};
 			}
 
+			const qsysTempName = `QTMPSRC`;
+
+			if (data.member || data.parameters?.srcfile) {
+				data.member = true;
+				data.parameters[`srcfile`] = `$(BIN_LIB)/${qsysTempName}`;
+				data.parameters[`srcmbr`] = ileObject.systemName;
+
+				steps.push(
+					{
+						object: {name: ileObject.systemName, type: ileObject.type},
+						command: MakeProject.resolveCommand(`CPYFRMSTMF FROMSTMF('${asPosix(ileObject.relativePath)}') TOMBR('/QSYS.LIB/&CURLIB.LIB/${qsysTempName}.FILE/${data.parameters[`srcmbr`]}.MBR') MBROPT(*REPLACE)`, ileObject, commandOptions)
+					}
+				);
+			}
+
 			const command = MakeProject.resolveCommand(toCl(data.command, data.parameters), ileObject, commandOptions);
 
 			steps.push({
@@ -348,10 +363,6 @@ export class MakeProject {
 		return lines;
 	}
 
-	static generateCommand(data: CompileData, ileObject: ILEObjectTarget): string|undefined {
-		return MakeProject.resolveCommand(toCl(data.command, data.parameters), ileObject);
-	}
-
 	static generateSpecificTarget(data: CompileData, ileObject: ILEObjectTarget, customAttributes?: CommandParameters): string[] {
 		let lines: string[] = [];
 
@@ -377,18 +388,23 @@ export class MakeProject {
 			return undefined;
 		}
 
-		const resolvedCommand = MakeProject.generateCommand(data, ileObject);
+		const qsysTempName = `QTMPSRC`;
+
+		if (data.member) {
+			data.parameters[`srcfile`] = `$(BIN_LIB)/${qsysTempName}`;
+			data.parameters[`srcmbr`] = ileObject.systemName;
+		}
+
+		const resolvedCommand = MakeProject.resolveCommand(toCl(data.command, data.parameters), ileObject);
 		const objectKey = `${ileObject.systemName}.${ileObject.type}`;
-		const parentName = ileObject.relativePath ? path.dirname(ileObject.relativePath) : undefined;
-		const qsysTempName: string | undefined = (parentName && parentName.length > 10 ? parentName.substring(0, 10) : parentName);
 
 		lines.push(
 			`$(PREPATH)/${objectKey}: ${asPosix(ileObject.relativePath)}`,
 			...(qsysTempName && data.member ?
 				[
 					// TODO: consider CCSID when creating the source file
-					`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/${qsysTempName}) RCDLEN(112) CCSID(${sourceFileCcsid})"`,
-					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${ileObject.systemName}.MBR') MBROPT(*REPLACE)"`
+					`\t-system -qi "CRTSRCPF FILE(${data.parameters[`srcfile`]}) RCDLEN(112) CCSID(${sourceFileCcsid})"`,
+					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${data.parameters[`srcmbr`]}.MBR') MBROPT(*REPLACE)"`
 				] : []),
 			...(data.preCommands ? data.preCommands.map(cmd => `\t${MakeProject.resolveCommand(cmd, ileObject)}`) : []),
 			...(data.command ?
@@ -423,8 +439,7 @@ export class MakeProject {
 			return str.replace(new RegExp(search, `gi`), replace);
 		}
 
-		const parentName = ileObject.relativePath ? path.dirname(ileObject.relativePath) : undefined;
-		const qsysTempName: string | undefined = (parentName && parentName.length > 10 ? parentName.substring(0, 10) : parentName);
+		const qsysTempName = `QTMPSRC`;
 
 		const isForAction = opts.forAction === true;
 		const libraryValue = isForAction ? `*CURLIB` : `$(BIN_LIB)`;
@@ -466,6 +481,9 @@ export class MakeProject {
 			command = simpleReplace(command, `\\$\\(BIN_LIB\\)`, libraryValue);
 			command = simpleReplace(command, `\\$\\(BNDDIR\\)`, opts.bindingDirectory ? opts.bindingDirectory.systemName : `*NONE`);
 			command = simpleReplace(command, `\\$\\(APP_BNDDIR\\)`, `APP`); // Default name
+			command = simpleReplace(command, `&SRCFILE`, `${libraryValue}/${qsysTempName}`);
+			command = simpleReplace(command, `&SRCPF`, qsysTempName);
+			command = simpleReplace(command, `&SRCLIB`, libraryValue);
 		}
 		
 		return command;

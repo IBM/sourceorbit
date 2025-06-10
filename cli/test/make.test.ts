@@ -65,14 +65,14 @@ test('generateTargets (post-resolve)', async () => {
   const programB = targets.getTarget({systemName: `PROGRAMB`, type: `PGM`});
   const steps = project.getSteps(programB);
 
-  console.log(steps);
-  expect(steps.length).toBe(5);
+  expect(steps.length).toBe(6);
 
-  expect(steps[0].command).toBe(`CRTPF FILE(*CURLIB/FILEB) SRCFILE(*CURLIB/qddssrc) OPTION(*EVENTF)`);
-  expect(steps[1].command).toBe(`CRTSQLRPGI OBJ(*CURLIB/MODULEB) SRCSTMF('qrpglesrc/moduleB.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) COMPILEOPT('TGTCCSID(*JOB)') RPGPPOPT(*LVL2) OPTION(*EVENTF) OBJTYPE(*MODULE)`);
-  expect(steps[2].command).toBe(`CRTSRVPGM SRVPGM(*CURLIB/SRVPGMA) MODULE(MODULEB) SRCSTMF('qsrvsrc/srvpgmA.bnd') BNDDIR(APP) REPLACE(*YES)`);
-  expect(steps[3].command).toBe(`ADDBNDDIRE BNDDIR(*CURLIB/APP) OBJ((*LIBL/SRVPGMA *SRVPGM *IMMED))`);
-  expect(steps[4].command).toBe(`CRTSQLRPGI OBJ(*CURLIB/PROGRAMB) SRCSTMF('qrpglesrc/programB.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(*JOB) BNDDIR(APP) DFTACTGRP(*no)')`);
+  expect(steps[0].command).toBe(`CPYFRMSTMF FROMSTMF('qddssrc/fileB.pf') TOMBR('/QSYS.LIB/&CURLIB.LIB/QTMPSRC.FILE/FILEB.MBR') MBROPT(*REPLACE)`);
+  expect(steps[1].command).toBe(`CRTPF FILE(*CURLIB/FILEB) SRCFILE(*CURLIB/QTMPSRC) OPTION(*EVENTF) SRCMBR(FILEB)`);
+  expect(steps[2].command).toBe(`CRTSQLRPGI OBJ(*CURLIB/MODULEB) SRCSTMF('qrpglesrc/moduleB.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) COMPILEOPT('TGTCCSID(*JOB)') RPGPPOPT(*LVL2) OPTION(*EVENTF) OBJTYPE(*MODULE)`);
+  expect(steps[3].command).toBe(`CRTSRVPGM SRVPGM(*CURLIB/SRVPGMA) MODULE(MODULEB) SRCSTMF('qsrvsrc/srvpgmA.bnd') BNDDIR(APP) REPLACE(*YES)`);
+  expect(steps[4].command).toBe(`ADDBNDDIRE BNDDIR(*CURLIB/APP) OBJ((*LIBL/SRVPGMA *SRVPGM *IMMED))`);
+  expect(steps[5].command).toBe(`CRTSQLRPGI OBJ(*CURLIB/PROGRAMB) SRCSTMF('qrpglesrc/programB.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(*JOB) BNDDIR(APP) DFTACTGRP(*no)')`);
 });
 
 test('generateHeader (binder changes)', async () => {

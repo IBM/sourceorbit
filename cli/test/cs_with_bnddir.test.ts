@@ -73,7 +73,7 @@ describe(`pseudo tests`, () => {
     const empsSteps = targets.getTarget({systemName: `EMPLOYEES`, type: `PGM`});
     const steps = makefile.getSteps(empsSteps);
 
-    expect(steps.length).toBe(7);
+    expect(steps.length).toBe(8);
   });
 
   test('ibmi-bob rules', () => {

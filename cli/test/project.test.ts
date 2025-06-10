@@ -231,12 +231,12 @@ describe(`company_system tests`, () => {
 
     expect(lines.join()).toBe([
       '$(PREPATH)/DEPTS.FILE: qddssrc/depts.dspf',
-      '\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/qddssrc) RCDLEN(112) CCSID(*JOB)"',
-      `\tsystem "CPYFRMSTMF FROMSTMF('qddssrc/depts.dspf') TOMBR('$(PREPATH)/qddssrc.FILE/DEPTS.MBR') MBROPT(*REPLACE)"`,
+      '\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/QTMPSRC) RCDLEN(112) CCSID(*JOB)"',
+      `\tsystem "CPYFRMSTMF FROMSTMF('qddssrc/depts.dspf') TOMBR('$(PREPATH)/QTMPSRC.FILE/DEPTS.MBR') MBROPT(*REPLACE)"`,
       '\tliblist -c $(BIN_LIB);\\',
       '\tliblist -a $(LIBL);\\',
       [
-        `\tsystem "CRTDSPF FILE($(BIN_LIB)/DEPTS) SRCFILE($(BIN_LIB)/qddssrc) SRCMBR(DEPTS) OPTION(*EVENTF)" > .logs/depts.splf || \\`,
+        `\tsystem "CRTDSPF FILE($(BIN_LIB)/DEPTS) SRCFILE($(BIN_LIB)/QTMPSRC) SRCMBR(DEPTS) OPTION(*EVENTF)" > .logs/depts.splf || \\`,
         `\t(system "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/DEPTS.MBR\') TOSTMF(\'.evfevent/depts.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"; $(SHELL) -c 'exit 1')`,
       ].join('\n')
     ].join());
