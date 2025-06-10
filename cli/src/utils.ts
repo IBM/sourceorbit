@@ -184,13 +184,18 @@ export function fromCl(cl: string): {command: string, parameters: CommandParamet
 	for (const c of cl.split(``)) {
 		if (c === `(`) {
 			parmDepth++;
-			if (parmDepth === 1) {
+			if (parmDepth > 1) {
+				// If we are already in a parameter, we just add the character to the value
+				currentParmValue += c;
 			}
 		} else if (c === `)`) {
 			if (parmDepth === 1) {
 				parameters[currentParmName.toLowerCase()] = currentParmValue;
 				currentParmValue = ``;
 				currentParmName = ``;
+			} else {
+				// If we are deeper than 1, we just add the character to the value
+				currentParmValue += c;
 			}
 			parmDepth--;
 		} else if (c === ` ` && !gotCommandnName) {
@@ -226,12 +231,17 @@ export function toCl(command: string, parameters?: CommandParameters) {
 		for (const [key, value] of Object.entries(parameters)) {
 			let parmValue;
 
-			if (value && value.trim() !== ``) {
-				if (value === value.toLocaleUpperCase()) {
+			if (value) {
+				if (value.startsWith(`'`) && value.endsWith(`'`)) {
 					parmValue = value;
-				} else {
-					parmValue = value.replace(/'/g, `''`);
-					parmValue = `'${parmValue}'`;
+				}
+				else if (value.trim() !== ``) {
+					if (value === value.toLocaleUpperCase()) {
+						parmValue = value;
+					} else {
+						parmValue = value.replace(/'/g, `''`);
+						parmValue = `'${parmValue}'`;
+					}
 				}
 
 				cl += ` ${key.toUpperCase()}(${parmValue})`;

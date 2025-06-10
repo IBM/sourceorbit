@@ -12,5 +12,12 @@
 	],
 	"extensions": {
 		"recommendations": ["amodio.tsl-problem-matcher"]
+	},
+	"mcp": {
+		"servers": {
+			"SO Local": {
+				"url": "http://localhost:5500"
+			}
+		}
 	}
 }
