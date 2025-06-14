@@ -11,15 +11,20 @@ import { ReadFileSystem } from "./readFileSystem";
 
 export function getSystemNameFromPath(inputName: string) {
 	const isTest = inputName.toUpperCase().endsWith(`.TEST`);
-	let baseName = inputName.includes(`-`) ? inputName.split(`-`)[0] : inputName;
-
 	if (isTest) {
 		// Remove the .TEST part
-		baseName = baseName.substring(0, baseName.length - 5);
+		inputName = inputName.substring(0, inputName.length - 5);
 	}
 
-	// If the name is of valid length, return it
-	if (baseName.length <= 10 && !isTest) {
+	const baseName = inputName.includes(`-`) ? inputName.split(`-`)[0] : inputName;
+
+	// Test -> If the name with test prefix T is of valid length, return it
+	if (isTest && `T${baseName}`.length <= 10) {
+		return `T${baseName}`.toUpperCase();
+	}
+
+	// Non-test -> If the name is of valid length, return it
+	if (!isTest && baseName.length <= 10) {
 		return baseName.toUpperCase();
 	}
 
@@ -33,15 +38,10 @@ export function getSystemNameFromPath(inputName: string) {
 		name = parts[1];
 	}
 
-	if (isTest) {
-		prefix = `T`;
-		name = name.toUpperCase();
-	}
-
 	// We start the system name with the suppliedPrefix
 	let systemName = prefix;
 
-	for (let i = 0; i < name.length && systemName.length <= 10; i++) {
+	for (let i = 0; i < name.length && systemName.length < 10; i++) {
 		const char = name[i];
 		if (char === char.toUpperCase() || i === 0) {
 			systemName += char;
@@ -53,7 +53,13 @@ export function getSystemNameFromPath(inputName: string) {
 		systemName = name.substring(0, 10);
 	}
 
-	return systemName.toUpperCase();
+	// If it is a test, we prefix it with T
+	if (isTest) {
+		systemName = `T${systemName}`;
+	}
+
+	// System name could exceed 10 characters (ie. if prefix is long or because of T prefix) so substring one last time
+	return systemName.substring(0, 10).toUpperCase();
 }
 
 /**
@@ -172,7 +178,7 @@ export function getReferenceObjectsFrom(content: string) {
 	return pseudoObjects;
 }
 
-export function fromCl(cl: string): {command: string, parameters: CommandParameters} {
+export function fromCl(cl: string): { command: string, parameters: CommandParameters } {
 	let gotCommandnName = false;
 	let parmDepth = 0;
 
@@ -253,7 +259,7 @@ export function toCl(command: string, parameters?: CommandParameters) {
 }
 
 export function checkFileExists(file) {
-  return fs.promises.access(file, fs.constants.F_OK)
+	return fs.promises.access(file, fs.constants.F_OK)
 		.then(() => true)
 		.catch(() => false)
 }
