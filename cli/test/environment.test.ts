@@ -47,7 +47,13 @@ describe(`Deterministic system name`, () => {
   test('Basic name with underscore', () => {
     expect(getSystemNameFromPath(`ab_cd`)).toBe(`AB_CD`);
   })
-  test('Long form name', () => {
+  test('Long form lowercase', () => {
+    expect(getSystemNameFromPath(`thisisasuperlongname`)).toBe(`THISISASUP`);
+  })
+  test('Long form uppercase', () => {
+    expect(getSystemNameFromPath(`THISISASUPERLONGNAME`)).toBe(`THISISASUP`);
+  })
+  test('Long form camel case', () => {
     expect(getSystemNameFromPath(`thisIsASuperLongName`)).toBe(`TIASLN`);
   })
   test('With capitals', () => {
@@ -56,11 +62,47 @@ describe(`Deterministic system name`, () => {
   test('With underscore', () => {
     expect(getSystemNameFromPath(`ua_fetchUserData`)).toBe(`UAFUD`);
   })
+  test('With long underscore', () => {
+    expect(getSystemNameFromPath(`abcdefhijkl_fetchUserData`)).toBe(`ABCDEFHIJK`);
+  })
   test('Bob prefix name A', () => {
     expect(getSystemNameFromPath(`ART200-Work_with_article`)).toBe(`ART200`);
   })
   test('Bob prefix name B', () => {
     expect(getSystemNameFromPath(`ART200D-Work_with_Article`)).toBe(`ART200D`);
+  })
+});
+
+describe(`Deterministic test system name`, () => {
+  test('Basic name', () => {
+    expect(getSystemNameFromPath(`abcd.test`)).toBe(`TABCD`);
+  })
+  test('Basic name with underscore', () => {
+    expect(getSystemNameFromPath(`ab_cd.test`)).toBe(`TAB_CD`);
+  })
+  test('Long form lowercase', () => {
+    expect(getSystemNameFromPath(`thisisasuperlongname.test`)).toBe(`TTHISISASU`);
+  })
+  test('Long form uppercase', () => {
+    expect(getSystemNameFromPath(`THISISASUPERLONGNAME.test`)).toBe(`TTHISISASU`);
+  })
+  test('Long form camel case', () => {
+    expect(getSystemNameFromPath(`thisIsASuperLongName.test`)).toBe(`TTIASLN`);
+  })
+  test('With capitals', () => {
+    expect(getSystemNameFromPath(`FetchUserData.test`)).toBe(`TFUD`);
+  })
+  test('With underscore', () => {
+    expect(getSystemNameFromPath(`ua_fetchUserData.test`)).toBe(`TUAFUD`);
+  })
+  test('With long underscore', () => {
+    expect(getSystemNameFromPath(`abcdefhijkl_fetchUserData.test`)).toBe(`TABCDEFHIJ`);
+  })
+  test('Bob prefix name A', () => {
+    expect(getSystemNameFromPath(`ART200-Work_with_article.test`)).toBe(`TART200`);
+  })
+  test('Bob prefix name B', () => {
+    expect(getSystemNameFromPath(`ART200D-Work_with_Article.test`)).toBe(`TART200D`);
   })
 });
 
