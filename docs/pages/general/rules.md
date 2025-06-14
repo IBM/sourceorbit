@@ -67,6 +67,7 @@ Typically, the basename of the file is also the object name. But, Source Orbit w
 | `FetchUserData.cmd`              | `FUD.CMD`        | All capitals from file name                                             |
 | `ua_fetchUserData.sqlrpgle`      | `UAFUD.MODULE`   | Prefix, followed by first post-prefix character plus following capitals |
 | `ART200D-Work_with_Article.DSPF` | `ART200D.FILE`   | Support for ibmi-bob file name                                          |
+| `empdet.test.rpgle`              | `TEMPDET.MODULE` | Prefix object with `T` for names including `.test` in the extension     |
 
 Even if you use long file names, your source code still needs to reference the object name for object resolves (not including *include directives* of course.)
 
