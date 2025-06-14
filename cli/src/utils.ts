@@ -58,7 +58,7 @@ export function getSystemNameFromPath(inputName: string) {
 		systemName = `T${systemName}`;
 	}
 
-	// System name could exceed 10 characters (ie. if prefix is long or because of T prefix) so substring one last time
+	// System name could exceed 10 characters (ie. if prefix is long, name is all uppercase, or because of T prefix) so substring one last time
 	return systemName.substring(0, 10).toUpperCase();
 }
 
