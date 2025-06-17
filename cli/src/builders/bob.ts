@@ -123,7 +123,7 @@ class RulesFile {
 
 		const existingLine = this.parsed.find(r => r.target === objName && r.isUserWritten !== true);
 
-		const lineContent = `${path.relative(this.subdir, target.source.relativePath)} ${target.headers ? target.headers.join(` `) + ` ` : ``}${target.deps.filter(d => d.reference !== true).map(d => `${d.systemName}.${d.type}`).join(` `)}`.trimEnd();
+		const lineContent = `${target.source?.relativePath ? path.relative(this.subdir, target.source.relativePath) : ``} ${target.headers ? target.headers.join(` `) + ` ` : ``}${target.deps.filter(d => d.reference !== true).map(d => `${d.systemName}.${d.type}`).join(` `)}`.trim();
 
 		if (existingLine) {
 			existingLine.ogLine = `${objName}: ${lineContent}`;

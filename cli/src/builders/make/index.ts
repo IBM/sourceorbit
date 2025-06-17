@@ -70,7 +70,7 @@ export class MakeProject {
 			let data = ileObject.source?.relativePath ? this.settings.getCompileDataForSource(ileObject.source.relativePath) : this.settings.getCompileDataForType(ileObject.type);
 			const customAttributes = this.getObjectAttributes(data, ileObject);
 
-			if (ileObject.source) {
+			if (ileObject.source?.relativePath) {
 				const possibleAction = this.projectActions.getActionForPath(ileObject.source.relativePath);
 				if (possibleAction) {
 					const clData = fromCl(possibleAction.command);
@@ -319,7 +319,7 @@ export class MakeProject {
 						const possibleTarget: ILEObjectTarget = this.targets.getTarget(ileObject) || (ileObject as ILEObjectTarget);
 						const customAttributes = this.getObjectAttributes(data, possibleTarget);
 
-						if (ileObject.source) {
+						if (ileObject.source?.relativePath) {
 							const possibleAction = this.projectActions.getActionForPath(ileObject.source.relativePath);
 							if (possibleAction) {
 								const clData = fromCl(possibleAction.command);
