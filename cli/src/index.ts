@@ -175,10 +175,10 @@ async function main() {
 	const referenceFile = path.join(cwd, referencesFileName);
 	if (await fs.exists(referenceFile)) {
 		infoOut(`Found reference file: ${referenceFile}`);
-		targets.handleRefsFile(referenceFile);
+		await targets.handleRefsFile(referenceFile);
 	}
 
-	targets.loadObjectsFromPaths(files);
+	await targets.loadObjectsFromPaths(files);
 
 	for (const filePath of files) {
 		const result = await targets.parseFile(filePath);
