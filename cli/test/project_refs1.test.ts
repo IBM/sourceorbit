@@ -57,4 +57,41 @@ describe(`company_system tests`, () => {
     expect(f1.references[f1.relativePath].length).toBe(1);
     expect(f1.references[myPgm.source.relativePath].length).toBe(1);
   });
+
+  test('Export lookup', async () => {
+    const depts = targets.getTarget({systemName: `DEPTS`, type: `PGM`});
+    expect(depts).toBeDefined();
+    expect(depts.source).toBeDefined();
+    expect(depts.source.symbols.length).toBeGreaterThan(0);
+
+    const ClearSubfileProc = depts.source.symbols.find(s => s.name === `ClearSubfile`);
+    expect(ClearSubfileProc).toBeDefined();
+    expect(ClearSubfileProc.external).toBeUndefined();
+    expect(ClearSubfileProc.children.length).toBe(0)
+
+    const ToLowerProc = depts.source.symbols.find(s => s.name === `ToLower`);
+    expect(ToLowerProc).toBeDefined();
+    expect(ToLowerProc.external).toBe(`ToLower`);
+    expect(ToLowerProc.children.length).toBe(1);
+
+    const exportLookup = targets.resolveExport(ToLowerProc.external);
+    expect(exportLookup).toBeDefined();
+
+    expect(exportLookup.systemName).toBe(`UTILS`);
+    expect(exportLookup.source.extension).toBe(`bnd`);
+
+    const ut = targets.getTarget(exportLookup);
+    expect(ut).toBeDefined();
+    expect(ut.deps.length).toBe(1);
+
+    const utilsMod = ut.deps[0];
+    expect(utilsMod.source).toBeDefined();
+    expect(utilsMod.source.extension).toBe(`sqlrpgle`);
+    expect(utilsMod.source.symbols.length).toBe(1);
+
+    const ToLower = utilsMod.source.symbols[0];
+    expect(ToLower.name).toBe(`ToLower`);
+    expect(Object.keys(ToLower.references).length).toBe(1);
+    expect(ToLower.references[ToLower.relativePath].length).toBe(2);
+  });
 });

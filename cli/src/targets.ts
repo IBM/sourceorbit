@@ -1684,6 +1684,14 @@ export class Targets {
 		);
 	}
 
+	public resolveExport(name: string) {
+		const allExports = Object.keys(this.resolvedExports);
+		const exportName = name.toUpperCase();
+
+		const validName = allExports.find(e => e.toUpperCase() === exportName);
+		return this.resolvedExports[validName];
+	}
+
 	public getExports() {
 		return this.resolvedExports;
 	}
