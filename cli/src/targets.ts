@@ -4,7 +4,6 @@ import Cache from "vscode-rpgle/language/models/cache";
 import { IncludeStatement } from "vscode-rpgle/language/parserTypes";
 import { infoOut, warningOut } from './cli';
 import { DefinitionType, File, Module, CLParser } from 'vscode-clle/language';
-import { DisplayFile as dds } from "vscode-displayfile/src/dspf";
 import Document from "vscode-db2i/src/language/sql/document";
 import { ObjectRef, StatementType } from 'vscode-db2i/src/language/sql/types';
 import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensions, cmdExtensions } from './extensions';
@@ -17,6 +16,7 @@ import { getSymbolFromCreate, isSqlFunction } from './languages/sql';
 import { ReadFileSystem } from './readFileSystem';
 import { collectClReferences } from './languages/clle';
 import Declaration from 'vscode-rpgle/language/models/declaration';
+import { DdsFile } from './languages/dds';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -448,7 +448,7 @@ export class Targets {
 					this.createClTarget(ileObject, filePath, module, options);
 				}
 				else if (ddsExtension.includes(ext)) {
-					const ddsFile = new dds();
+					const ddsFile = new DdsFile();
 					ddsFile.parse(content.split(eol));
 
 					const ileObject = await this.resolvePathToObject(filePath, options.text);
@@ -570,7 +570,7 @@ export class Targets {
 	/**
 	 * Handles all DDS types: pf, lf, dspf
 	 */
-	private createDdsFileTarget(ileObject: ILEObject, localPath: string, dds: dds, options: FileOptions = {}) {
+	private createDdsFileTarget(ileObject: ILEObject, localPath: string, dds: DdsFile, options: FileOptions = {}) {
 		const target: ILEObjectTarget = {
 			...ileObject,
 			deps: []
@@ -625,7 +625,7 @@ export class Targets {
 
 		let symbols: SourceSymbol[] = [];
 
-		for (const recordFormat of dds.formats) {
+		for (const recordFormat of dds.getFormats()) {
 
 			let recordFormatSymbol: SourceSymbol = {
 				name: recordFormat.name,
