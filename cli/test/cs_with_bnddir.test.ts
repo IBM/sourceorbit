@@ -21,7 +21,8 @@ describe(`pseudo tests`, () => {
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();
 
-    make = new MakeProject(project.cwd, targets);
+    make = new MakeProject(project.cwd, targets, fs);
+    await make.setupSettings();
   });
 
   test(`That test files are understood`, () => {
@@ -54,8 +55,9 @@ describe(`pseudo tests`, () => {
     expect(employees.deps.find(f => f.systemName === `EMPLOYEE` && f.type === `FILE`)).toBeDefined();
   });
 
-    test('makefile', () => {
-    const makefile = new MakeProject(targets.getCwd(), targets);
+    test('makefile', async () => {
+    const makefile = new MakeProject(targets.getCwd(), targets, fs);
+    await makefile.setupSettings();
 
     const contents = makefile.getMakefile().join(`\n`);
 
@@ -67,6 +69,11 @@ describe(`pseudo tests`, () => {
 
     expect(contents).toContain(`$(PREPATH)/APP.BNDDIR: $(PREPATH)/EMPDET.SRVPGM`);
     expect(contents).toContain(`$(PREPATH)/EMPDET.SRVPGM: $(PREPATH)/EMPDET.MODULE`);
+
+    const empsSteps = targets.getTarget({systemName: `EMPLOYEES`, type: `PGM`});
+    const steps = makefile.getSteps(empsSteps);
+
+    expect(steps.length).toBe(8);
   });
 
   test('ibmi-bob rules', () => {

@@ -1,31 +1,46 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { ILEObject, ILEObjectTarget, ImpactedObject, ObjectType, Targets } from '../../targets';
-import { asPosix, getFiles, toCl } from '../../utils';
+import { asPosix, fromCl, getFiles, toCl } from '../../utils';
 import { warningOut } from '../../cli';
 import { name } from '../../../webpack.config';
 import { FolderOptions, getFolderOptions } from './folderSettings';
 import { readAllRules } from './customRules';
-import { CompileData, CommandParameters } from '../environment';
+import { CompileData, CommandParameters, getTrueBasename } from '../environment';
 import { iProject } from '../iProject';
+import { ReadFileSystem } from '../../readFileSystem';
+import { ProjectActions } from '../actions';
+
+interface Step {
+	object: {
+		name: string;
+		type: ObjectType;
+	}
+	relativePath?: string
+	command: string;
+}
 
 export class MakeProject {
 	private noChildren: boolean = false;
 	private settings: iProject = new iProject();
+	private projectActions: ProjectActions;
+
 	private folderSettings: {[folder: string]: FolderOptions} = {};
 
-	constructor(private cwd: string, private targets: Targets) {
-		this.setupSettings();
+	constructor(private cwd: string, private targets: Targets, private rfs: ReadFileSystem) {
+		this.projectActions = new ProjectActions(this.targets, this.rfs);
 	}
 
 	public setNoChildrenInBuild(noChildren: boolean) {
 		this.noChildren = noChildren;
 	}
 
-	private setupSettings() {
+	async setupSettings() {
+		await this.projectActions.loadAllActions();
+
 		// First, let's setup the project settings
 		try {
-			const content = readFileSync(path.join(this.cwd, `iproj.json`), { encoding: `utf-8` });
+			const content = await this.rfs.readFile(path.join(this.cwd, `iproj.json`));
 			const asJson: iProject = JSON.parse(content);
 
 			this.settings.applySettings(asJson);
@@ -41,6 +56,95 @@ export class MakeProject {
 
 	public getSettings() {
 		return this.settings;
+	}
+
+	getSteps(target: ILEObject|ILEObjectTarget): Step[] {
+		const steps: Step[] = [];
+		
+		const commandOptions = {
+			forAction: true,
+			bindingDirectory: this.targets.getBinderTarget()
+		};
+
+		const addStep = (ileObject: ILEObject) => {
+			let data = ileObject.source?.relativePath ? this.settings.getCompileDataForSource(ileObject.source.relativePath) : this.settings.getCompileDataForType(ileObject.type);
+			const customAttributes = this.getObjectAttributes(data, ileObject);
+
+			if (ileObject.source) {
+				const possibleAction = this.projectActions.getActionForPath(ileObject.source.relativePath);
+				if (possibleAction) {
+					const clData = fromCl(possibleAction.command);
+					// If there is an action for this object, we want to apply the action's parameters
+					// to the custom attributes.
+
+					data = {
+						...data,
+						command: clData.command,
+						parameters: clData.parameters
+					}
+				}
+			}
+
+			if (customAttributes) {
+				data.parameters = {
+					...data.parameters,
+					...customAttributes
+				};
+			}
+
+			const qsysTempName = `QTMPSRC`;
+
+			if (data.member || data.parameters?.srcfile) {
+				data.member = true;
+				data.parameters[`srcfile`] = `$(BIN_LIB)/${qsysTempName}`;
+				data.parameters[`srcmbr`] = ileObject.systemName;
+
+				steps.push(
+					{
+						object: {name: ileObject.systemName, type: ileObject.type},
+						command: MakeProject.resolveCommand(`CPYFRMSTMF FROMSTMF('${asPosix(ileObject.source.relativePath)}') TOMBR('/QSYS.LIB/&CURLIB.LIB/${qsysTempName}.FILE/${data.parameters[`srcmbr`]}.MBR') MBROPT(*REPLACE)`, ileObject, commandOptions)
+					}
+				);
+			}
+
+			const command = MakeProject.resolveCommand(toCl(data.command, data.parameters), ileObject, commandOptions);
+
+			steps.push({
+				object: {name: ileObject.systemName, type: ileObject.type},
+				relativePath: ileObject.source?.relativePath,
+				command
+			});
+
+			if (data.postCommands?.length > 0) {
+				for (const postCommand of data.postCommands) {
+					steps.push({
+						object: {name: ileObject.systemName, type: ileObject.type},
+						relativePath: ileObject.source?.relativePath,
+						command: MakeProject.resolveCommand(MakeProject.stripSystem(postCommand), ileObject, commandOptions)
+					});
+				}
+			}
+		}
+
+		const addDepSteps = (dep: ILEObject|ILEObjectTarget) => {
+			if (steps.some(s => s.object.name === dep.systemName && s.object.type === dep.type)) return; // Already added
+			if (dep.reference) return; // Skip references
+
+			if (`deps` in dep) {
+				if (dep.deps && dep.deps.length > 0) {
+					for (const cDep of dep.deps) {
+						const d = this.targets.getTarget(cDep) || cDep;
+						addDepSteps(d);
+					}
+				}
+			}
+
+			addStep(dep);
+		}
+
+		addDepSteps(target);
+
+		return steps;
 	}
 
 	public getObjectAttributes(compileData: CompileData, ileObject: ILEObject): CommandParameters {
@@ -168,7 +272,7 @@ export class MakeProject {
 		let lines = [];
 
 		for (const entry of Object.entries(this.settings.compiles)) {
-			const [type, data] = entry;
+			let [type, data] = entry;
 
 			// commandSource means 'is this object built from CL commands in a file'
 			if (data.commandSource) {
@@ -214,6 +318,21 @@ export class MakeProject {
 
 						const possibleTarget: ILEObjectTarget = this.targets.getTarget(ileObject) || (ileObject as ILEObjectTarget);
 						const customAttributes = this.getObjectAttributes(data, possibleTarget);
+
+						if (ileObject.source) {
+							const possibleAction = this.projectActions.getActionForPath(ileObject.source.relativePath);
+							if (possibleAction) {
+								const clData = fromCl(possibleAction.command);
+								// If there is an action for this object, we want to apply the action's parameters
+								// to the custom attributes.
+
+								data = {
+									...data,
+									command: clData.command,
+									parameters: clData.parameters
+								}
+							}
+						}
 						
 						lines.push(...MakeProject.generateSpecificTarget(data, possibleTarget, customAttributes));
 					}
@@ -247,31 +366,10 @@ export class MakeProject {
 	static generateSpecificTarget(data: CompileData, ileObject: ILEObjectTarget, customAttributes?: CommandParameters): string[] {
 		let lines: string[] = [];
 
-		const parentName = ileObject.source?.relativePath ? path.dirname(ileObject.source.relativePath) : undefined;
-		const qsysTempName: string | undefined = (parentName && parentName.length > 10 ? parentName.substring(0, 10) : parentName);
-
-		const resolve = (command: string) => {
-			command = command.replace(new RegExp(`\\*CURLIB`, `g`), `$(BIN_LIB)`);
-			command = command.replace(new RegExp(`\\$\\*`, `g`), ileObject.systemName);
-			command = command.replace(new RegExp(`\\$<`, `g`), asPosix(ileObject.source.relativePath));
-			command = command.replace(new RegExp(`\\$\\(SRCPF\\)`, `g`), qsysTempName);
-
-			if (ileObject.deps && ileObject.deps.length > 0) {
-				// This piece of code adds special variables that can be used for building dependencies
-				const uniqueObjectTypes = ileObject.deps.map(d => d.type).filter((value, index, array) => array.indexOf(value) === index);
-
-				for (const objType of uniqueObjectTypes) {
-					const specificDeps = ileObject.deps.filter(d => d.type === objType);
-					command = command.replace(new RegExp(`\\*${objType}S`, `g`), specificDeps.map(d => d.systemName).join(` `));
-				}
-			}
-
-			return command;
+		if (!data.command) {
+			return [];
 		}
 
-		// TODO: resolve the parameters from the Rules.mk
-		const objectKey = `${ileObject.systemName}.${ileObject.type}`;
-		
 		if (customAttributes) {
 			data.parameters = {
 				...data.parameters,
@@ -287,20 +385,28 @@ export class MakeProject {
 		}
 
 		if (!data.command) {
-			return [];
+			return undefined;
 		}
 
-		const resolvedCommand = resolve(toCl(data.command, data.parameters));
+		const qsysTempName = `QTMPSRC`;
+
+		if (data.member) {
+			data.parameters[`srcfile`] = `$(BIN_LIB)/${qsysTempName}`;
+			data.parameters[`srcmbr`] = ileObject.systemName;
+		}
+
+		const resolvedCommand = MakeProject.resolveCommand(toCl(data.command, data.parameters), ileObject);
+		const objectKey = `${ileObject.systemName}.${ileObject.type}`;
 
 		lines.push(
 			`$(PREPATH)/${objectKey}: ${asPosix(ileObject.source.relativePath)}`,
 			...(qsysTempName && data.member ?
 				[
 					// TODO: consider CCSID when creating the source file
-					`\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/${qsysTempName}) RCDLEN(112) CCSID(${sourceFileCcsid})"`,
-					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.source.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${ileObject.systemName}.MBR') MBROPT(*REPLACE)"`
+					`\t-system -qi "CRTSRCPF FILE(${data.parameters[`srcfile`]}) RCDLEN(112) CCSID(${sourceFileCcsid})"`,
+					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.source.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${data.parameters[`srcmbr`]}.MBR') MBROPT(*REPLACE)"`
 				] : []),
-			...(data.preCommands ? data.preCommands.map(cmd => `\t${resolve(cmd)}`) : []),
+			...(data.preCommands ? data.preCommands.map(cmd => `\t${MakeProject.resolveCommand(cmd, ileObject)}`) : []),
 			...(data.command ?
 				[
 					`\tliblist -c $(BIN_LIB);\\`,
@@ -309,9 +415,77 @@ export class MakeProject {
 				]
 				: []
 			),
-			...(data.postCommands ? data.postCommands.map(cmd => `\t${resolve(cmd)}`) : []),
+			...(data.postCommands ? data.postCommands.map(cmd => `\t${MakeProject.resolveCommand(cmd, ileObject)}`) : []),
 		);
 
 		return lines;
+	}
+
+	private static stripSystem(command: string) {
+		const firstIndex = command.indexOf(`"`);
+		
+		if (firstIndex >= 0) {
+			if (command.substring(0, firstIndex).indexOf(`system`)) {
+				const lastIndex = command.lastIndexOf(`"`);
+				command = command.substring(firstIndex + 1, lastIndex);
+			}
+		}
+
+		return command;
+	}
+
+	private static resolveCommand(command: string, ileObject: ILEObjectTarget|ILEObject, opts: {forAction?: boolean, bindingDirectory?: ILEObject} = {}) {
+		const simpleReplace = (str: string, search: string, replace: string) => {
+			return str.replace(new RegExp(search, `gi`), replace);
+		}
+
+		const qsysTempName = `QTMPSRC`;
+
+		const isForAction = opts.forAction === true;
+		const libraryValue = isForAction ? `*CURLIB` : `$(BIN_LIB)`;
+
+		command = command.replace(new RegExp(`\\*CURLIB`, `g`), libraryValue);
+		command = command.replace(new RegExp(`\\$\\*`, `g`), ileObject.systemName);
+		command = command.replace(new RegExp(`\\$<`, `g`), asPosix(ileObject.source.relativePath));
+		command = command.replace(new RegExp(`\\$\\(SRCPF\\)`, `g`), qsysTempName);
+
+		// Additionally, we have to support Actions variables
+		if (!isForAction) {
+			command = simpleReplace(command, `&BUILDLIB`, libraryValue);
+			command = simpleReplace(command, `&CURLIB`, libraryValue);
+			command = simpleReplace(command, `&LIBLS`, ``);
+			command = simpleReplace(command, `&BRANCHLIB`, libraryValue);
+
+			const pathDetail = path.parse(ileObject.source?.relativePath || ``);
+
+			command = simpleReplace(command, `&RELATIVEPATH`, asPosix(ileObject.source?.relativePath));
+			command = simpleReplace(command, `&BASENAME`, pathDetail.base);
+			command = simpleReplace(command, `{filename}`, pathDetail.base);
+			command = simpleReplace(command, `&NAME`, getTrueBasename(pathDetail.name));
+			command = simpleReplace(command, `&EXTENSION`, pathDetail.ext.startsWith(`.`) ? pathDetail.ext.substring(1) : pathDetail.ext);
+		}
+
+		if (`deps` in ileObject) {
+			if (ileObject.deps && ileObject.deps.length > 0) {
+				// This piece of code adds special variables that can be used for building dependencies
+				const uniqueObjectTypes = ileObject.deps.map(d => d.type).filter((value, index, array) => array.indexOf(value) === index);
+
+				for (const objType of uniqueObjectTypes) {
+					const specificDeps = ileObject.deps.filter(d => d.type === objType);
+					command = command.replace(new RegExp(`\\*${objType}S`, `g`), specificDeps.map(d => d.systemName).join(` `));
+				}
+			}
+		}
+
+		if (isForAction) {
+			command = simpleReplace(command, `\\$\\(BIN_LIB\\)`, libraryValue);
+			command = simpleReplace(command, `\\$\\(BNDDIR\\)`, opts.bindingDirectory ? opts.bindingDirectory.systemName : `*NONE`);
+			command = simpleReplace(command, `\\$\\(APP_BNDDIR\\)`, `APP`); // Default name
+			command = simpleReplace(command, `&SRCFILE`, `${libraryValue}/${qsysTempName}`);
+			command = simpleReplace(command, `&SRCPF`, qsysTempName);
+			command = simpleReplace(command, `&SRCLIB`, libraryValue);
+		}
+		
+		return command;
 	}
 }

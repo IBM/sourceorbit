@@ -138,6 +138,10 @@ export class Targets {
 		return this.cwd;
 	}
 
+	get rfs() {
+		return this.fs;
+	}
+
 	public setAssumePrograms(assumePrograms: boolean) {
 		this.assumePrograms = assumePrograms;
 	}
@@ -307,9 +311,9 @@ export class Targets {
 		return this.getResolvedObjects().find(o => (lookFor.systemName === o.systemName || (o.longName && lookFor.systemName === o.longName)) && o.type === lookFor.type);
 	}
 
-	public searchForAnyObject(lookFor: { name: string, types: ObjectType[] }) {
+	public searchForAnyObject(lookFor: { name: string, types?: ObjectType[] }) {
 		lookFor.name = lookFor.name.toUpperCase();
-		return this.getResolvedObjects().find(o => (o.systemName === lookFor.name || o.longName?.toUpperCase() === lookFor.name) && lookFor.types.includes(o.type));
+		return this.getResolvedObjects().find(o => (o.systemName === lookFor.name || o.longName?.toUpperCase() === lookFor.name) && (lookFor.types === undefined || lookFor.types.includes(o.type)));
 	}
 
 	public resolveLocalFile(name: string, baseFile?: string): string | undefined {
@@ -334,6 +338,7 @@ export class Targets {
 
 		let globString = `**/${name}*`;
 
+		// TODO: replace with rfs.getFiles
 		const results = glob.sync(globString, {
 			cwd: this.cwd,
 			absolute: true,
@@ -741,6 +746,10 @@ export class Targets {
 		files.forEach(def => {
 			const possibleObject = def.file;
 			if (possibleObject) {
+				if (possibleObject.library?.toUpperCase() === `*LIBL`) {
+					possibleObject.library = undefined; // This means lookup as normal
+				}
+
 				if (possibleObject.library) {
 					this.logger.fileLog(ileObject.source.relativePath, {
 						message: `Definition to ${possibleObject.library}/${possibleObject.name} ignored due to qualified path.`,
@@ -1679,6 +1688,9 @@ export class Targets {
 		return this.resolvedExports;
 	}
 
+	/**
+	 * Returns a list of objects that will be impacted if the given object is changed.
+	 */
 	public getImpactFor(theObject: ILEObject) {
 		const allDeps = this.getTargets();
 		let currentTree: ILEObject[] = [];

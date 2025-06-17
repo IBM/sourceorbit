@@ -1,10 +1,12 @@
 import { assert, expect, test } from 'vitest'
 import { baseTargets, cwd, multiModuleObjects } from './fixtures/targets';
 import { MakeProject } from '../src/builders/make';
+import { ReadFileSystem } from '../src/readFileSystem';
 
 test('generateTargets (pre-resolve)', async () => {
   const targets = await baseTargets(true);
-  const project = new MakeProject(cwd, targets);
+  const project = new MakeProject(cwd, targets, new ReadFileSystem());
+  await project.setupSettings();
 
   const targetContent = project.generateTargets();
 
@@ -32,7 +34,7 @@ test('generateTargets (post-resolve)', async () => {
 
   targets.resolveBinder();
 
-  const project = new MakeProject(cwd, targets);
+  const project = new MakeProject(cwd, targets, new ReadFileSystem());
 
   const targetContent = project.generateTargets();
 
@@ -57,12 +59,27 @@ test('generateTargets (post-resolve)', async () => {
 			`\t-system -q "CRTLIB LIB($(BIN_LIB))"`,
     ]
   );
+
+  // The steps API provides a way to get the steps to build a specific target.
+
+  const programB = targets.getTarget({systemName: `PROGRAMB`, type: `PGM`});
+  const steps = project.getSteps(programB);
+
+  expect(steps.length).toBe(6);
+
+  expect(steps[0].command).toBe(`CPYFRMSTMF FROMSTMF('qddssrc/fileB.pf') TOMBR('/QSYS.LIB/&CURLIB.LIB/QTMPSRC.FILE/FILEB.MBR') MBROPT(*REPLACE)`);
+  expect(steps[1].command).toBe(`CRTPF FILE(*CURLIB/FILEB) SRCFILE(*CURLIB/QTMPSRC) OPTION(*EVENTF) SRCMBR(FILEB)`);
+  expect(steps[2].command).toBe(`CRTSQLRPGI OBJ(*CURLIB/MODULEB) SRCSTMF('qrpglesrc/moduleB.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) COMPILEOPT('TGTCCSID(*JOB)') RPGPPOPT(*LVL2) OPTION(*EVENTF) OBJTYPE(*MODULE)`);
+  expect(steps[3].command).toBe(`CRTSRVPGM SRVPGM(*CURLIB/SRVPGMA) MODULE(MODULEB) SRCSTMF('qsrvsrc/srvpgmA.bnd') BNDDIR(APP) REPLACE(*YES)`);
+  expect(steps[4].command).toBe(`ADDBNDDIRE BNDDIR(*CURLIB/APP) OBJ((*LIBL/SRVPGMA *SRVPGM *IMMED))`);
+  expect(steps[5].command).toBe(`CRTSQLRPGI OBJ(*CURLIB/PROGRAMB) SRCSTMF('qrpglesrc/programB.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(*JOB) BNDDIR(APP) DFTACTGRP(*no)')`);
 });
 
 test('generateHeader (binder changes)', async () => {
   const targets = await baseTargets(true);
 
-  const project = new MakeProject(cwd, targets);
+  const project = new MakeProject(cwd, targets, new ReadFileSystem());
+  await project.setupSettings();
 
   const headerContentA = project.generateHeader();
   let bndDirIndex = headerContentA.findIndex(h => h.startsWith(`BNDDIR=`));
@@ -80,7 +97,8 @@ test('generateHeader (binder changes)', async () => {
 test('applySettings (binder)', async () => {
   const targets = await baseTargets(true);
 
-  const project = new MakeProject(cwd, targets);
+  const project = new MakeProject(cwd, targets, new ReadFileSystem());
+  await project.setupSettings();
 
   project.getSettings().applySettings({
     binders: [`TESTING`]
@@ -102,7 +120,9 @@ test('applySettings (binder)', async () => {
 test(`Multi-module program and service program`, async () => {
   const targets = await multiModuleObjects();
 
-  const project = new MakeProject(cwd, targets);
+  const project = new MakeProject(cwd, targets, new ReadFileSystem());
+  await project.setupSettings();
+  
   const settings = project.getSettings();
 
   settings.applySettings({

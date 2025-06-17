@@ -1,5 +1,6 @@
-import { fromCl } from "../utils";
-import { CompileData, CommandParameters, CompileAttribute, getDefaultCompiles, Action, getObjectType } from "./environment";
+import path from "path";
+import { ObjectType } from "../targets";
+import { CommandParameters, CompileAttribute, getDefaultCompiles } from "./environment";
 
 export class iProject {
   includePaths?: string[] = [];
@@ -11,6 +12,27 @@ export class iProject {
 
   constructor() {
 
+  }
+
+  getCompileDataForType(type: ObjectType) {
+    return Object.values(this.compiles).find(data => data.becomes === type);
+  }
+
+  getCompileDataForSource(relativePath: string) {
+    const parseA = path.parse(relativePath);
+    let ext = parseA.ext.toLowerCase();
+    
+
+    if (parseA.name.includes(`.`)) {
+      const parseB = path.parse(parseA.name);
+      ext = parseB.ext.toLowerCase() + ext;
+    }
+
+    if (ext.startsWith(`.`)) {
+      ext = ext.substring(1);
+    }
+
+    return this.compiles[ext];
   }
 
   applySettings(input: Partial<iProject>) {
@@ -29,20 +51,6 @@ export class iProject {
         this.compiles[ext] = {
           ...(this.compiles[ext] || {}),
           ...data
-        };
-      }
-    }
-  }
-
-  applyAction(newAction: Action) {
-    if (newAction.environment && newAction.environment === `ile` && newAction.extensions && newAction.extensions.length > 0) {
-      if (!newAction.extensions.includes(`GLOBAL`)) {
-        const firstExt = newAction.extensions[0].toLowerCase();
-        const becomesObject = getObjectType(firstExt);
-        const commandData = fromCl(newAction.command);
-        this.compiles[firstExt] = {
-          becomes: becomesObject,
-          ...commandData
         };
       }
     }

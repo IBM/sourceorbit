@@ -231,12 +231,12 @@ describe(`company_system tests`, () => {
 
     expect(lines.join()).toBe([
       '$(PREPATH)/DEPTS.FILE: qddssrc/depts.dspf',
-      '\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/qddssrc) RCDLEN(112) CCSID(*JOB)"',
-      `\tsystem "CPYFRMSTMF FROMSTMF('qddssrc/depts.dspf') TOMBR('$(PREPATH)/qddssrc.FILE/DEPTS.MBR') MBROPT(*REPLACE)"`,
+      '\t-system -qi "CRTSRCPF FILE($(BIN_LIB)/QTMPSRC) RCDLEN(112) CCSID(*JOB)"',
+      `\tsystem "CPYFRMSTMF FROMSTMF('qddssrc/depts.dspf') TOMBR('$(PREPATH)/QTMPSRC.FILE/DEPTS.MBR') MBROPT(*REPLACE)"`,
       '\tliblist -c $(BIN_LIB);\\',
       '\tliblist -a $(LIBL);\\',
       [
-        `\tsystem "CRTDSPF FILE($(BIN_LIB)/DEPTS) SRCFILE($(BIN_LIB)/qddssrc) SRCMBR(DEPTS) OPTION(*EVENTF)" > .logs/depts.splf || \\`,
+        `\tsystem "CRTDSPF FILE($(BIN_LIB)/DEPTS) SRCFILE($(BIN_LIB)/QTMPSRC) SRCMBR(DEPTS) OPTION(*EVENTF)" > .logs/depts.splf || \\`,
         `\t(system "CPYTOSTMF FROMMBR(\'$(PREPATH)/EVFEVENT.FILE/DEPTS.MBR\') TOSTMF(\'.evfevent/depts.evfevent\') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"; $(SHELL) -c 'exit 1')`,
       ].join('\n')
     ].join());
@@ -272,8 +272,9 @@ describe(`company_system tests`, () => {
     ].join());
   });
 
-  test(`Checking makefile rule generation`, () => {
-    const makeProject = new MakeProject(project.cwd, targets);
+  test(`Checking makefile rule generation`, async () => {
+    const makeProject = new MakeProject(project.cwd, targets, fs);
+    await makeProject.setupSettings();
 
     const headerContent = makeProject.generateGenericRules();
 
@@ -283,8 +284,9 @@ describe(`company_system tests`, () => {
     expect(headerContent.find(l => l === `$(PREPATH)/DEPARTMENT.FILE: qddssrc/department.table`)).toBeDefined();
   });
 
-  test(`Makefile targets for all`, () => {
-    const makeProject = new MakeProject(project.cwd, targets);
+  test(`Makefile targets for all`, async () => {
+    const makeProject = new MakeProject(project.cwd, targets, fs);
+    await makeProject.setupSettings();
 
     const header = makeProject.generateHeader();
     expect(header).toContain(`APP_BNDDIR=$(APP_BNDDIR)`);
@@ -303,8 +305,9 @@ describe(`company_system tests`, () => {
     expect(allTarget).toContain(`$(PREPATH)/EMPLOYEES.PGM`);
   });
 
-  test(`Makefile targets for partial build (DEPTS display file)`, () => {
-    const makeProject = new MakeProject(project.cwd, targets);
+  test(`Makefile targets for partial build (DEPTS display file)`, async () => {
+    const makeProject = new MakeProject(project.cwd, targets, fs);
+    await makeProject.setupSettings();
 
     const deptsFile = targets.getTarget({systemName: `DEPTS`, type: `FILE`});
 
@@ -317,8 +320,9 @@ describe(`company_system tests`, () => {
     expect(allTarget).toBe(`all: .logs .evfevent library $(PREPATH)/DEPTS.FILE $(PREPATH)/DEPTS.PGM`);
   });
 
-  test(`Makefile targets for partial build (EMPLOYEE table)`, () => {
-    const makeProject = new MakeProject(project.cwd, targets);
+  test(`Makefile targets for partial build (EMPLOYEE table)`, async () => {
+    const makeProject = new MakeProject(project.cwd, targets, fs);
+    await makeProject.setupSettings();
 
     const deptsFile = targets.getTarget({systemName: `EMPLOYEE`, type: `FILE`});
 
@@ -345,8 +349,10 @@ describe(`company_system tests`, () => {
     expect(deptsTargetDeps).toContain(`$(PREPATH)/DEPARTMENT.FILE`);
   });
 
-  test(`Makefile targets for partial build (EMPLOYEE table) without children`, () => {
-    const makeProject = new MakeProject(project.cwd, targets);
+  test(`Makefile targets for partial build (EMPLOYEE table) without children`, async () => {
+    const makeProject = new MakeProject(project.cwd, targets, fs);
+    await makeProject.setupSettings();
+
     makeProject.setNoChildrenInBuild(true);
 
     const deptsFile = targets.getTarget({systemName: `EMPLOYEE`, type: `FILE`});
@@ -447,8 +453,9 @@ describe(`company_system tests`, () => {
     expect(functionMake[3]).toBe(`\tsystem "RUNSQLSTM SRCSTMF('qsqlsrc/getTotalSalary.sqludf') COMMIT(*NONE)" > .logs/gettotsal.splf`);
   })
 
-  test(`Generate makefile`, () => {
-    const makeProj = new MakeProject(project.cwd, targets);
+  test(`Generate makefile`, async () => {
+    const makeProj = new MakeProject(project.cwd, targets, fs);
+    await makeProj.setupSettings();
 
     writeFileSync(path.join(project.cwd, `makefile`), makeProj.getMakefile().join(`\n`));
   });

@@ -9,8 +9,8 @@ import { scanGlob } from './extensions';
 export class ReadFileSystem {
   constructor() {}
 
-  async getFiles(cwd: string, globPath = scanGlob): Promise<string[]> {
-    return getFiles(cwd, globPath);
+  async getFiles(cwd: string, globPath = scanGlob, additionalOpts: any = {}): Promise<string[]> {
+    return getFiles(cwd, globPath, additionalOpts);
   }
 
   readFile(filePath: string): Promise<string> {
