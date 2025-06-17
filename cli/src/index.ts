@@ -277,7 +277,7 @@ async function listDeps(cwd: string, targets: Targets, query: string) {
 	let currentTree: ILEObject[] = [];
 
 	function lookupObject(ileObject: ILEObject) {
-		console.log(`${''.padEnd(currentTree.length, `\t`)}${ileObject.systemName}.${ileObject.type} (${ileObject.relativePath || `no source`})`);
+		console.log(`${''.padEnd(currentTree.length, `\t`)}${ileObject.systemName}.${ileObject.type} (${ileObject.source ? ileObject.source.relativePath : `no source`})`);
 
 		currentTree.push(ileObject);
 

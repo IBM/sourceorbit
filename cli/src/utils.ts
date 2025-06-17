@@ -263,3 +263,13 @@ export function checkFileExists(file) {
 		.then(() => true)
 		.catch(() => false)
 }
+
+export function trimQuotes(input: string|boolean, value = `'`) {
+	if (typeof input === `string`) {
+		if (input[0] === value) input = input.substring(1);
+		if (input[input.length - 1] === value) input = input.substring(0, input.length - 1);
+		return input;
+	} else {
+		return '';
+	}
+}

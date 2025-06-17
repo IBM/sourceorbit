@@ -67,11 +67,11 @@ export class MakeProject {
 		};
 
 		const addStep = (ileObject: ILEObject) => {
-			let data = ileObject.relativePath ? this.settings.getCompileDataForSource(ileObject.relativePath) : this.settings.getCompileDataForType(ileObject.type);
+			let data = ileObject.source?.relativePath ? this.settings.getCompileDataForSource(ileObject.source.relativePath) : this.settings.getCompileDataForType(ileObject.type);
 			const customAttributes = this.getObjectAttributes(data, ileObject);
 
-			if (ileObject.relativePath) {
-				const possibleAction = this.projectActions.getActionForPath(ileObject.relativePath);
+			if (ileObject.source?.relativePath) {
+				const possibleAction = this.projectActions.getActionForPath(ileObject.source.relativePath);
 				if (possibleAction) {
 					const clData = fromCl(possibleAction.command);
 					// If there is an action for this object, we want to apply the action's parameters
@@ -102,7 +102,7 @@ export class MakeProject {
 				steps.push(
 					{
 						object: {name: ileObject.systemName, type: ileObject.type},
-						command: MakeProject.resolveCommand(`CPYFRMSTMF FROMSTMF('${asPosix(ileObject.relativePath)}') TOMBR('/QSYS.LIB/&CURLIB.LIB/${qsysTempName}.FILE/${data.parameters[`srcmbr`]}.MBR') MBROPT(*REPLACE)`, ileObject, commandOptions)
+						command: MakeProject.resolveCommand(`CPYFRMSTMF FROMSTMF('${asPosix(ileObject.source.relativePath)}') TOMBR('/QSYS.LIB/&CURLIB.LIB/${qsysTempName}.FILE/${data.parameters[`srcmbr`]}.MBR') MBROPT(*REPLACE)`, ileObject, commandOptions)
 					}
 				);
 			}
@@ -111,7 +111,7 @@ export class MakeProject {
 
 			steps.push({
 				object: {name: ileObject.systemName, type: ileObject.type},
-				relativePath: ileObject.relativePath,
+				relativePath: ileObject.source?.relativePath,
 				command
 			});
 
@@ -119,7 +119,7 @@ export class MakeProject {
 				for (const postCommand of data.postCommands) {
 					steps.push({
 						object: {name: ileObject.systemName, type: ileObject.type},
-						relativePath: ileObject.relativePath,
+						relativePath: ileObject.source?.relativePath,
 						command: MakeProject.resolveCommand(MakeProject.stripSystem(postCommand), ileObject, commandOptions)
 					});
 				}
@@ -150,9 +150,9 @@ export class MakeProject {
 	public getObjectAttributes(compileData: CompileData, ileObject: ILEObject): CommandParameters {
 		let customAttributes = this.settings.objectAttributes[`${ileObject.systemName}.${ileObject.type}`] || {};
 
-		if (ileObject.relativePath) {
+		if (ileObject.source) {
 			// We need to take in the current folders .ibmi.json file for any specific values
-			const folder = path.dirname(ileObject.relativePath);
+			const folder = ileObject.source && ileObject.source.relativePath ? path.dirname(ileObject.source.relativePath) : undefined;
 			const folderSettings = this.folderSettings[folder];
 			if (folderSettings) {
 				// If there is a tgtccsid, we only want to apply it to commands
@@ -280,8 +280,8 @@ export class MakeProject {
 
 				for (const ileObject of objects) {
 					if (ileObject.reference) continue;
-					if (ileObject.relativePath) {
-						const sourcePath = path.join(this.cwd, ileObject.relativePath);
+					if (ileObject.source) {
+						const sourcePath = path.join(this.cwd, ileObject.source.relativePath);
 						const exists = existsSync(sourcePath); // Is this even needed? We already have relativePath??
 
 						if (exists) {
@@ -293,13 +293,13 @@ export class MakeProject {
 								const customAttributes = this.settings.objectAttributes[`${ileObject.systemName}.${ileObject.type}`];
 
 								lines.push(
-									`$(PREPATH)/${ileObject.systemName}.${data.becomes}: ${asPosix(ileObject.relativePath)}`,
+									`$(PREPATH)/${ileObject.systemName}.${data.becomes}: ${asPosix(ileObject.source.relativePath)}`,
 									...(commands.map(l => `\t-system -q "${toCl(l, customAttributes)}"`)),
 									``,
 								);
 
 							} catch (e) {
-								console.log(`Failed to parse '${ileObject.relativePath}'`);
+								console.log(`Failed to parse '${ileObject.source.relativePath}'`);
 								process.exit();
 							}
 						}
@@ -319,8 +319,8 @@ export class MakeProject {
 						const possibleTarget: ILEObjectTarget = this.targets.getTarget(ileObject) || (ileObject as ILEObjectTarget);
 						const customAttributes = this.getObjectAttributes(data, possibleTarget);
 
-						if (ileObject.relativePath) {
-							const possibleAction = this.projectActions.getActionForPath(ileObject.relativePath);
+						if (ileObject.source?.relativePath) {
+							const possibleAction = this.projectActions.getActionForPath(ileObject.source.relativePath);
 							if (possibleAction) {
 								const clData = fromCl(possibleAction.command);
 								// If there is an action for this object, we want to apply the action's parameters
@@ -399,12 +399,12 @@ export class MakeProject {
 		const objectKey = `${ileObject.systemName}.${ileObject.type}`;
 
 		lines.push(
-			`$(PREPATH)/${objectKey}: ${asPosix(ileObject.relativePath)}`,
+			`$(PREPATH)/${objectKey}: ${asPosix(ileObject.source.relativePath)}`,
 			...(qsysTempName && data.member ?
 				[
 					// TODO: consider CCSID when creating the source file
 					`\t-system -qi "CRTSRCPF FILE(${data.parameters[`srcfile`]}) RCDLEN(112) CCSID(${sourceFileCcsid})"`,
-					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${data.parameters[`srcmbr`]}.MBR') MBROPT(*REPLACE)"`
+					`\tsystem "CPYFRMSTMF FROMSTMF('${asPosix(ileObject.source.relativePath)}') TOMBR('$(PREPATH)/${qsysTempName}.FILE/${data.parameters[`srcmbr`]}.MBR') MBROPT(*REPLACE)"`
 				] : []),
 			...(data.preCommands ? data.preCommands.map(cmd => `\t${MakeProject.resolveCommand(cmd, ileObject)}`) : []),
 			...(data.command ?
@@ -446,7 +446,7 @@ export class MakeProject {
 
 		command = command.replace(new RegExp(`\\*CURLIB`, `g`), libraryValue);
 		command = command.replace(new RegExp(`\\$\\*`, `g`), ileObject.systemName);
-		command = command.replace(new RegExp(`\\$<`, `g`), asPosix(ileObject.relativePath));
+		command = command.replace(new RegExp(`\\$<`, `g`), asPosix(ileObject.source.relativePath));
 		command = command.replace(new RegExp(`\\$\\(SRCPF\\)`, `g`), qsysTempName);
 
 		// Additionally, we have to support Actions variables
@@ -456,9 +456,9 @@ export class MakeProject {
 			command = simpleReplace(command, `&LIBLS`, ``);
 			command = simpleReplace(command, `&BRANCHLIB`, libraryValue);
 
-			const pathDetail = path.parse(ileObject.relativePath || ``);
+			const pathDetail = path.parse(ileObject.source?.relativePath || ``);
 
-			command = simpleReplace(command, `&RELATIVEPATH`, asPosix(ileObject.relativePath));
+			command = simpleReplace(command, `&RELATIVEPATH`, asPosix(ileObject.source?.relativePath));
 			command = simpleReplace(command, `&BASENAME`, pathDetail.base);
 			command = simpleReplace(command, `{filename}`, pathDetail.base);
 			command = simpleReplace(command, `&NAME`, getTrueBasename(pathDetail.name));

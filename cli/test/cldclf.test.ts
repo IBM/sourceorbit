@@ -26,15 +26,15 @@ describe(`CL with DCLF`, () => {
 
     expect(targetObjects.length).toBe(2);
 
-    expect(targetObjects.some(t => t.systemName === `APGM` && t.type === `PGM` && t.extension === `clle`)).toBeTruthy();
-    expect(targetObjects.some(t => t.systemName === `DEPARTMENT` && t.type === `FILE` && t.extension === `table`)).toBeTruthy();
+    expect(targetObjects.some(t => t.systemName === `APGM` && t.type === `PGM` && t.source.extension === `clle`)).toBeTruthy();
+    expect(targetObjects.some(t => t.systemName === `DEPARTMENT` && t.type === `FILE` && t.source.extension === `table`)).toBeTruthy();
   });
 
   test(`CL has valid dependency`, () => {
     const apgm = targets.getTarget({systemName: `APGM`, type: `PGM`});
     expect(apgm).toBeDefined();
 
-    const logs = targets.logger.getLogsFor(apgm.relativePath);
+    const logs = targets.logger.getLogsFor(apgm.source.relativePath);
     console.log(logs);
     expect(logs.length).toBe(0);
 

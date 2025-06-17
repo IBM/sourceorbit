@@ -1,5 +1,10 @@
 // https://www.ibm.com/docs/en/i/7.4?topic=reference-built-in-functions
 
+import Statement from "vscode-db2i/src/language/sql/statement";
+import { ObjectRef } from "vscode-db2i/src/language/sql/types";
+import { SourceSymbol } from "../targets";
+import { trimQuotes } from "../utils";
+
 const AGGREGATE_FUNCTIONS = [
   "ANY_VALUE",
   "ARRAY_AGG",
@@ -290,4 +295,33 @@ export function isSqlFunction(name: string): boolean {
     AGGREGATE_FUNCTIONS.includes(name) ||
     SCALAR_FUNCTIONS.includes(name)
   );
+}
+
+export function getSymbolFromCreate(relativePath: string, statement: Statement, mainDef: ObjectRef) {
+  const symbol: SourceSymbol = {
+    name: mainDef.object.system || trimQuotes(mainDef.object.name, `"`),
+    type: mainDef.createType || `object`,
+    relativePath,
+    references: {[relativePath]: [{
+      start: mainDef.tokens[0].range.start,
+      end: mainDef.tokens[mainDef.tokens.length - 1].range.end
+    }]}
+  }
+
+  const createTypesWithFields = [`table`];
+
+  if (createTypesWithFields.includes(mainDef.createType.toLowerCase())) { 
+    const children = statement.getRoutineParameters();
+
+    if (children && children.length > 0) {
+      symbol.children = children.map(child => ({
+        name: child.alias,
+        type: child.createType,
+        relativePath,
+        references: { [relativePath]: [child.tokens[0].range] }
+      }))
+    }
+  }
+
+  return symbol;
 }

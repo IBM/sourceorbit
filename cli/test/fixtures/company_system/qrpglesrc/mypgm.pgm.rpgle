@@ -14,5 +14,6 @@ mytext = 'Hello to all you people';
 printf(mytext);
 
 dsply mytext;
+dsply F01;
 
 return;

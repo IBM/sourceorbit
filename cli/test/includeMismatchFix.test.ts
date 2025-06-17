@@ -26,7 +26,7 @@ describe(`include_mismatch_fix tests`, () => {
     const articlePf = targets.getTarget({systemName: `ARTICLE`, type: `FILE`});
     expect(articlePf).toBeDefined();
 
-    const articlePfLogs = targets.logger.getLogsFor(articlePf.relativePath);
+    const articlePfLogs = targets.logger.getLogsFor(articlePf.source?.relativePath);
     expect(articlePfLogs.length).toBe(1);
     expect(articlePfLogs[0].message).toBe(`no object found for reference 'SAMREF'`);
     expect(articlePfLogs[0].type).toBe(`warning`);

@@ -12,7 +12,7 @@ describe(`dds_refs tests`, () => {
   const project = setupFixture(`dds_deps`);
 
   const fs = new ReadFileSystem();
-  const targets = new Targets(project.cwd, fs);
+  const targets = new Targets(project.cwd, fs, true);
   targets.setSuggestions({ renames: true, includes: true })
 
   beforeAll(async () => {
@@ -44,7 +44,7 @@ describe(`dds_refs tests`, () => {
     expect(deps.length).toBe(1);
     expect(deps[0].systemName).toBe(`PROVIDER`);
 
-    const logs = targets.logger.getLogsFor(pro250d.relativePath);
+    const logs = targets.logger.getLogsFor(pro250d.source?.relativePath);
     expect(logs.length).toBe(1);
     expect(logs[0]).toMatchObject({
       message: `no object found for reference 'COUNTRY'`,
@@ -60,7 +60,7 @@ describe(`dds_refs tests`, () => {
     const deps = provider.deps;
     expect(deps.length).toBe(0);
 
-    const logs = targets.logger.getLogsFor(provider.relativePath);
+    const logs = targets.logger.getLogsFor(provider.source.relativePath);
     expect(logs.length).toBe(1);
     expect(logs[0]).toMatchObject({
       message: `no object found for reference 'SAMREF'`,
@@ -76,7 +76,7 @@ describe(`dds_refs tests`, () => {
     const deps = providerLf.deps;
     expect(deps.length).toBe(1);
 
-    const logs = targets.logger.getLogsFor(providerLf.relativePath);
+    const logs = targets.logger.getLogsFor(providerLf.source?.relativePath);
     expect(logs).toBeUndefined();
   });
 
@@ -102,5 +102,34 @@ describe(`dds_refs tests`, () => {
     expect(baseRules).toContain(`PRO250D.FILE: PRO250D.DSPF PROVIDER.FILE`);
     expect(baseRules).toContain(`PROVIDER.FILE: PROVIDER.PF`);
     expect(baseRules).toContain(`PROVIDE1.FILE: PROVIDE1.LF PROVIDER.FILE`);
+  });
+
+  test(`DDS symbols`, () => {
+    const pro250d = targets.searchForObject({ systemName: `PRO250D`, type: `FILE` });
+    expect(pro250d).toBeDefined();
+    const provider = targets.searchForObject({ systemName: `PROVIDER`, type: `FILE` });
+    expect(provider).toBeDefined();
+
+    const provide1 = targets.searchForObject({ systemName: `PROVIDE1`, type: `FILE` });
+    expect(provide1).toBeDefined();
+
+    const files = [pro250d, provider];
+
+    for (const f of files) {
+      console.log(`File: ${f.systemName}`)
+      expect(f.source).toBeDefined();
+      expect(f.source.symbols).toBeDefined();
+      expect(f.source.symbols.length).toBeGreaterThan(0);
+
+      for (const recordFormat of f.source.symbols) {
+        if (recordFormat.name !== `GLOBAL`) {
+          console.log(`Record format: ${recordFormat.name}`);
+          console.log(recordFormat);
+          expect(recordFormat.children.length).toBeGreaterThan(0);
+        }
+      }
+    }
+
+    // TODO: better test for checking keys?
   });
 });

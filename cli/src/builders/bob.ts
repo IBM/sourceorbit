@@ -16,13 +16,13 @@ export class BobProject {
 
 		for (let target of targets.getTargets()) {
 			let dirname: string|undefined;
-			if (target.relativePath) {
-				dirname = path.dirname(target.relativePath);
+			if (target.source?.relativePath) {
+				dirname = path.dirname(target.source.relativePath);
 			} else if (target.type === `PGM`) {
 				// If there is no relative path, this might mean it's a multimodule program
 				const possibleModule = targets.getTarget({systemName: target.systemName, type: `MODULE`});
-				if (possibleModule) {
-					dirname = path.dirname(possibleModule.relativePath);
+				if (possibleModule && possibleModule.source) {
+					dirname = path.dirname(possibleModule.source.relativePath);
 				}
 			}
 
@@ -55,7 +55,7 @@ export class BobProject {
 
 		if (this.targets.binderRequired()) {
 			const servicePrograms = this.targets.getResolvedObjects(`SRVPGM`);
-			const relativePaths = servicePrograms.map(sp => path.dirname(sp.relativePath));
+			const relativePaths = servicePrograms.map(sp => path.dirname(sp.source.relativePath));
 
 			if (relativePaths.length === 1) {
 				// We know the rules
@@ -123,7 +123,7 @@ class RulesFile {
 
 		const existingLine = this.parsed.find(r => r.target === objName && r.isUserWritten !== true);
 
-		const lineContent = `${target.relativePath ? path.relative(this.subdir, target.relativePath) + ' ' : ``}${target.headers ? target.headers.join(` `) + ` ` : ``}${target.deps.filter(d => d.reference !== true).map(d => `${d.systemName}.${d.type}`).join(` `)}`.trimEnd();
+		const lineContent = `${target.source?.relativePath ? path.relative(this.subdir, target.source.relativePath) : ``} ${target.headers ? target.headers.join(` `) + ` ` : ``}${target.deps.filter(d => d.reference !== true).map(d => `${d.systemName}.${d.type}`).join(` `)}`.trim();
 
 		if (existingLine) {
 			existingLine.ogLine = `${objName}: ${lineContent}`;
