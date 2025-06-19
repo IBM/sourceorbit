@@ -1,4 +1,3 @@
-import glob from 'glob';
 import path from 'path';
 import Cache from "vscode-rpgle/language/models/cache";
 import { IncludeStatement } from "vscode-rpgle/language/parserTypes";
@@ -294,22 +293,19 @@ export class Targets {
 		return this.getResolvedObjects().find(o => (o.systemName === lookFor.name || o.longName?.toUpperCase() === lookFor.name) && (lookFor.types === undefined || lookFor.types.includes(o.type)));
 	}
 
-	public resolveLocalFile(name: string, baseFile?: string): string | undefined {
+	public async resolveLocalFile(name: string, baseFile?: string): Promise<string> {
 		name = name.toUpperCase();
 
 		if (this.resolvedSearches[name]) return this.resolvedSearches[name];
 
 		if (!this.pathCache) {
-			// We don't really want to spam the FS
-			// So we can a list of files which can then
-			// use in glob again later.
 			this.pathCache = {};
 
-			glob.sync(`**/*`, {
+			(await this.fs.getFiles(this.getCwd(), `**/*`, {
 				cwd: this.cwd,
 				absolute: true,
 				nocase: true,
-			}).forEach(localPath => {
+			})).forEach(localPath => {
 				this.pathCache[localPath] = true;
 			});
 		}
