@@ -1,4 +1,3 @@
-import glob from 'glob';
 import path from 'path';
 import Cache from "vscode-rpgle/language/models/cache";
 import { IncludeStatement } from "vscode-rpgle/language/parserTypes";
@@ -11,7 +10,7 @@ import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensi
 import Parser from "vscode-rpgle/language/parser";
 import { setupParser } from './languages/rpgle';
 import { Logger } from './logger';
-import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
+import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, globalEntryIsValid, toLocalPath } from './utils';
 import { extCanBeProgram, getObjectType } from './builders/environment';
 import { isSqlFunction } from './languages/sql';
 import { ReadFileSystem } from './readFileSystem';
@@ -294,40 +293,43 @@ export class Targets {
 		return this.getResolvedObjects().find(o => (o.systemName === lookFor.name || o.longName?.toUpperCase() === lookFor.name) && (lookFor.types === undefined || lookFor.types.includes(o.type)));
 	}
 
-	public resolveLocalFile(name: string, baseFile?: string): string | undefined {
+	public async resolveLocalFile(name: string, baseFile?: string): Promise<string> {
 		name = name.toUpperCase();
 
 		if (this.resolvedSearches[name]) return this.resolvedSearches[name];
 
 		if (!this.pathCache) {
-			// We don't really want to spam the FS
-			// So we can a list of files which can then
-			// use in glob again later.
 			this.pathCache = {};
 
-			glob.sync(`**/*`, {
+			(await this.fs.getFiles(this.getCwd(), `**/*`, {
 				cwd: this.cwd,
 				absolute: true,
 				nocase: true,
-			}).forEach(localPath => {
+			})).forEach(localPath => {
 				this.pathCache[localPath] = true;
 			});
 		}
 
-		let globString = `**/${name}*`;
+		const searchCache = (): string|undefined => {
+			for (let entry in this.pathCache) {
+				if (Array.isArray(this.pathCache[entry])) {
+					const subEntry = this.pathCache[entry].find(e => globalEntryIsValid(e, name));
+					if (subEntry) { 
+						return subEntry;
+					}
+				} else {
+					if (globalEntryIsValid(entry, name)) {
+						return entry;
+					}
+				}
+			}
+		}
 
-		// TODO: replace with rfs.getFiles
-		const results = glob.sync(globString, {
-			cwd: this.cwd,
-			absolute: true,
-			nocase: true,
-			ignore: baseFile ? `**/${baseFile}` : undefined,
-			cache: this.pathCache
-		});
+		const result = searchCache();
 
-		if (results[0]) {
+		if (result) {
 			// To local path is required because glob returns posix paths
-			const localPath = toLocalPath(results[0])
+			const localPath = toLocalPath(result)
 			this.resolvedSearches[name] = localPath;
 			return localPath;
 		}

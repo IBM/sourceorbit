@@ -26,7 +26,7 @@ export function setupParser(targets: Targets): Parser {
 			// Keep making the path less specific until we find a possible include
 			let parts = includeFile.split(`/`);
 			while (!file && parts.length > 0) {
-				file = targets.resolveLocalFile(includeFile);
+				file = await targets.resolveLocalFile(includeFile);
 
 				if (!file) {
 					parts.shift();
@@ -39,9 +39,9 @@ export function setupParser(targets: Targets): Parser {
 			includeFile = `${parent}/${includeFile}`;
 
 
-			file = targets.resolveLocalFile(includeFile);
+			file = await targets.resolveLocalFile(includeFile);
 		} else {
-			file = targets.resolveLocalFile(includeFile);
+			file = await targets.resolveLocalFile(includeFile);
 		}
 
 		if (file) {
