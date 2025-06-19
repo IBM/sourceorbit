@@ -172,7 +172,7 @@ export function getReferenceObjectsFrom(content: string) {
 	return pseudoObjects;
 }
 
-export function fromCl(cl: string): {command: string, parameters: CommandParameters} {
+export function fromCl(cl: string): { command: string, parameters: CommandParameters } {
 	let gotCommandnName = false;
 	let parmDepth = 0;
 
@@ -253,7 +253,59 @@ export function toCl(command: string, parameters?: CommandParameters) {
 }
 
 export function checkFileExists(file) {
-  return fs.promises.access(file, fs.constants.F_OK)
+	return fs.promises.access(file, fs.constants.F_OK)
 		.then(() => true)
 		.catch(() => false)
+}
+
+export function globalEntryIsValid(fullPath: string, search: string, ignoreBase?: string) {
+	search = search.toUpperCase();
+
+	if (ignoreBase) {
+		if (fullPath.toUpperCase().endsWith(ignoreBase.toUpperCase())) {
+			return false;
+		}
+	}
+
+	const baseParts = fullPath.toUpperCase().split(path.sep);
+	const nameParts = search.split(path.sep);
+
+	// Check the preceding parts of the path match
+	if (nameParts.length > 1) {
+		for (let i = 1; i < nameParts.length - 1; i++) {
+			const bPart = baseParts[baseParts.length - i];
+			const nPart = nameParts[nameParts.length - i - 1];
+
+			if (bPart && nPart) {
+				if (bPart !== nPart) return false;
+			}
+		}
+	}
+
+	const baseName = nameParts[nameParts.length - 1];
+
+	// Check different variations of the name.
+
+	if (baseName.endsWith('*')) {
+		// If the name ends with *, we do a startsWith check
+		const tempName = search.substring(0, search.length - 1);
+		const lastChar = tempName.charAt(tempName.length - 1);
+		const messedUpFullName = fullPath.lastIndexOf(lastChar) >= 0 ? fullPath.substring(0, fullPath.lastIndexOf(lastChar) + 1) : fullPath;
+		if (messedUpFullName.toUpperCase().endsWith(tempName)) return true;
+	} else if (!baseName.includes('.')) {
+		// If the name does not include a dot, we check if the current part (without extension) matches
+		let currentPart = baseParts[baseParts.length - 1];
+		if (currentPart.includes('.')) {
+			currentPart = currentPart.substring(0, currentPart.indexOf('.'));
+		}
+
+		if (currentPart === baseName) {
+			return true;
+		}
+
+	} else if (baseParts[baseParts.length - 1] === baseName) {
+		return true;
+	}
+
+	return false;
 }

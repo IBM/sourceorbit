@@ -168,6 +168,8 @@ test(`Fix includes in same directory`, async () => {
   const programs = targets.getTargetsOfType(`PGM`);
   expect(programs.length).toBe(1);
 
+  expect(programs[0].headers.length).toBe(1);
+
   let allLogs = targets.logger.getAllLogs();
   expect(Object.keys(allLogs).length).toBe(1)
 

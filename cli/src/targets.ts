@@ -11,7 +11,7 @@ import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensi
 import Parser from "vscode-rpgle/language/parser";
 import { setupParser } from './languages/rpgle';
 import { Logger } from './logger';
-import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, toLocalPath } from './utils';
+import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, globalEntryIsValid, toLocalPath } from './utils';
 import { extCanBeProgram, getObjectType } from './builders/environment';
 import { isSqlFunction } from './languages/sql';
 import { ReadFileSystem } from './readFileSystem';
@@ -314,20 +314,26 @@ export class Targets {
 			});
 		}
 
-		let globString = `**/${name}*`;
+		const searchCache = (): string|undefined => {
+			for (let entry in this.pathCache) {
+				if (Array.isArray(this.pathCache[entry])) {
+					const subEntry = this.pathCache[entry].find(e => globalEntryIsValid(e, name));
+					if (subEntry) { 
+						return subEntry;
+					}
+				} else {
+					if (globalEntryIsValid(entry, name)) {
+						return entry;
+					}
+				}
+			}
+		}
 
-		// TODO: replace with rfs.getFiles
-		const results = glob.sync(globString, {
-			cwd: this.cwd,
-			absolute: true,
-			nocase: true,
-			ignore: baseFile ? `**/${baseFile}` : undefined,
-			cache: this.pathCache
-		});
+		const result = searchCache();
 
-		if (results[0]) {
+		if (result) {
 			// To local path is required because glob returns posix paths
-			const localPath = toLocalPath(results[0])
+			const localPath = toLocalPath(result)
 			this.resolvedSearches[name] = localPath;
 			return localPath;
 		}
