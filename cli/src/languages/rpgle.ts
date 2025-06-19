@@ -53,7 +53,7 @@ export function setupParser(targets: Targets): Parser {
 				}
 
 			} else {
-				const content = readFileSync(file, { encoding: `utf-8` });
+				const content = await targets.rfs.readFile(file);
 				includeFileCache[file] = content;
 
 				return {
