@@ -12,7 +12,6 @@ export let cliSettings = {
 	userBranch: ``,
 	makeFileNoChildren: false,
 	assumeSourcesArePrograms: false,
-	mcp: -1,
 };
 
 export function infoOut(message: string) {

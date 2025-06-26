@@ -1046,7 +1046,7 @@ export class Targets {
 
 				const includeDetail = path.parse(include.toPath);
 
-				if (includeDetail.ext !== `.rpgleinc`) {
+				if (includeDetail.ext.toLowerCase() !== `.rpgleinc`) {
 					const possibleName = includeDetail.name.toLowerCase().endsWith(`.pgm`) ? includeDetail.name.substring(0, includeDetail.name.length - 4) : includeDetail.name;
 
 					if (this.suggestions.renames) {
