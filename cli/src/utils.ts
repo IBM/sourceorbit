@@ -274,7 +274,7 @@ export function globalEntryIsValid(fullPath: string, search: string, ignoreBase?
 	}
 
 	const baseParts = fullPath.toUpperCase().split(path.sep);
-	const nameParts = search.split(path.sep);
+	const nameParts = search.split(path.posix.sep);
 
 	// Check the preceding parts of the path match
 	if (nameParts.length > 1) {
@@ -297,7 +297,7 @@ export function globalEntryIsValid(fullPath: string, search: string, ignoreBase?
 		const tempName = search.substring(0, search.length - 1);
 		const lastChar = tempName.charAt(tempName.length - 1);
 		const messedUpFullName = fullPath.lastIndexOf(lastChar) >= 0 ? fullPath.substring(0, fullPath.lastIndexOf(lastChar) + 1) : fullPath;
-		if (messedUpFullName.toUpperCase().endsWith(tempName)) return true;
+		if (messedUpFullName.replace(/\\/g, '/').toUpperCase().endsWith(tempName)) return true;
 	} else if (!baseName.includes('.')) {
 		// If the name does not include a dot, we check if the current part (without extension) matches
 		let currentPart = baseParts[baseParts.length - 1];
