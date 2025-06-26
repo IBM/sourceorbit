@@ -927,7 +927,11 @@ export class Targets {
 								const simpleName = trimQuotes(def.object.name, `"`);
 								// TODO: do we need to look for SRVPGM (function) or PGM (procedure) here?
 								const resolvedObject = this.searchForAnyObject({ name: simpleName, types: [`FILE`, `SRVPGM`, `PGM`] });
-								if (resolvedObject) newTarget.deps.push(resolvedObject);
+								if (resolvedObject) {
+									if (!newTarget.deps.find(d => d.systemName === resolvedObject.systemName && d.type === resolvedObject.type)) {
+										newTarget.deps.push(resolvedObject);
+									}
+								}
 								else if (!isSqlFunction(def.object.name)) {
 									this.logger.fileLog(newTarget.relativePath, {
 										message: `No object found for reference '${def.object.name}'`,
