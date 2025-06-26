@@ -5,6 +5,7 @@ export let cliSettings = {
 	cliMode: false,
 	infoMessages: false,
 	buildFile: "none" as BuildFiles,
+	withActions: false,
 	fixIncludes: false,
 	autoRename: false,
 	fileList: false,

@@ -58,6 +58,10 @@ async function main() {
 				i++;
 				break;
 
+			case `-wa`:
+				cliSettings.withActions = true;
+				break;
+
 			case '-nc':
 			case '--no-children':
 				cliSettings.makeFileNoChildren = true;
@@ -94,6 +98,9 @@ async function main() {
 				console.log(``);
 				console.log(`\t-bf make|bob|imd|json\tCreate build files of a specific format`);
 				console.log(`\t\t\t\tExample: -bf make`);
+				console.log(``);
+				console.log(`\t-wa\t\tWhen using '-bf make', use commands`);
+				console.log(`\t\t\tthat are found in the 'actions.json' files.`);
 				console.log(``);
 				console.log(`\t-bl <name>\tSet the BRANCHLIB environment variable based on `);
 				console.log(`\t\t\ta user provided branch name, and will write it out.`);
@@ -213,6 +220,12 @@ async function main() {
 			break;
 		case `make`:
 			const makeProj = new MakeProject(cwd, targets, fs);
+
+			// Enables the use of actions.json for commands
+			if (cliSettings.withActions) {
+				makeProj.useActions();
+			}
+
 			await makeProj.setupSettings();
 			
 			makeProj.setNoChildrenInBuild(cliSettings.makeFileNoChildren);

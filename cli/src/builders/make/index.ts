@@ -24,6 +24,7 @@ export class MakeProject {
 	private noChildren: boolean = false;
 	private settings: iProject = new iProject();
 	private projectActions: ProjectActions;
+	private actionsEnabled: boolean = false;
 
 	private folderSettings: {[folder: string]: FolderOptions} = {};
 
@@ -35,8 +36,14 @@ export class MakeProject {
 		this.noChildren = noChildren;
 	}
 
+	public useActions() {
+		this.actionsEnabled = true;
+	}
+
 	async setupSettings() {
-		await this.projectActions.loadAllActions();
+		if (this.actionsEnabled) {
+			await this.projectActions.loadAllActions();
+		}
 
 		// First, let's setup the project settings
 		try {
