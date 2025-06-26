@@ -24,9 +24,9 @@ describe(`include_mismatch_fix tests`, () => {
 
   test(`Ensure rename is against correct file`, async () => {
     const articlePf = targets.getTarget({systemName: `ARTICLE`, type: `FILE`});
-    expect(articlePf).toBeDefined();
+    expect(articlePf).toBeDefined();articlePf.relativePath
 
-    const articlePfLogs = targets.logger.getLogsFor(articlePf.relativePath);
+    const articlePfLogs = targets.logger.getLogsFor(path.join(`QDDSSRC`, `ARTICLE.PF`));
     expect(articlePfLogs.length).toBe(1);
     expect(articlePfLogs[0].message).toBe(`no object found for reference 'SAMREF'`);
     expect(articlePfLogs[0].type).toBe(`warning`);
