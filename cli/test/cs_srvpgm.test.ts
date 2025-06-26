@@ -78,6 +78,7 @@ describe(`pseudo tests`, () => {
 
   test('makefile', async () => {
     const makefile = new MakeProject(targets.getCwd(), targets, fs);
+    makefile.useActions();
     await makefile.setupSettings();
 
     const contents = makefile.getMakefile().join(`\n`);
@@ -87,8 +88,7 @@ describe(`pseudo tests`, () => {
 
     expect(contents).not.toContain(`EMPDET.SRVPGM`); // Ensure no service program is created
     expect(contents).toContain(`EMPDET.MODULE`);
-
-    console.log(contents);
+    expect(contents).toContain(`CRTSQLRPGI OBJ($(BIN_LIB)/EMPDET) SRCSTMF('qrpglesrc/empdet.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) COMPILEOPT('TGTCCSID(*JOB)') RPGPPOPT(*LVL2) OPTION(*EVENTF) OBJTYPE(*MODULE)`);
 
     // As picked up from the actions.json
     expect(contents).toContain(`system "CRTBNDRPG NAME(mypgm) THEPARM('qrpglesrc/mypgm.pgm.rpgle')" > .logs/mypgm.splf`);
