@@ -67,8 +67,9 @@ export function readAllRules(targets: Targets, project: MakeProject) {
             const currentTarget = targets.getTarget({systemName: targetName, type: targetType});
 
             if (currentTarget) {
-              // We set this to empty since we're overriding them
-              currentTarget.deps = [];
+              // We actually don't want to clear out existing deps found by SO
+              // Instead, let's combine them with the deps found in rules.mk
+              // currentTarget.deps = [];
 
               const parts = value.split(` `).map(p => p.trim()).filter(p => p.length > 0);
 
@@ -80,17 +81,19 @@ export function readAllRules(targets: Targets, project: MakeProject) {
                 const objType = partSplit[1] as ObjectType;
 
                 if (objName && objType) {
-                  const obj = targets.searchForObject({systemName: objName, type: objType});
+                  if (!currentTarget.deps.some(d => d.systemName === objName && d.type === objType)) {
+                    const obj = targets.searchForObject({systemName: objName, type: objType});
 
-                  if (obj) {
-                    currentTarget.deps.push(obj);
-                  } else {
-                    warningOut(`make: Failed to find '${part}' in '${relative}'`);
+                    if (obj) {
+                      currentTarget.deps.push(obj);
+                    } else {
+                      warningOut(`make: Failed to find '${part}' in '${relative}'`);
+                    }
                   }
                 }
               }
             }
-        }
+          }
 
         }
       }
