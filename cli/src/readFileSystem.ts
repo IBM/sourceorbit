@@ -4,12 +4,11 @@ import glob from "glob";
 import path from 'path';
 import os from 'os';
 import { getFiles } from './utils';
-import { scanGlob } from './extensions';
 
 export class ReadFileSystem {
   constructor() {}
 
-  async getFiles(cwd: string, globPath = scanGlob, additionalOpts: any = {}): Promise<string[]> {
+  async getFiles(cwd: string, globPath, additionalOpts: any = {}): Promise<string[]> {
     return getFiles(cwd, globPath, additionalOpts);
   }
 

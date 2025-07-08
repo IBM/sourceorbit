@@ -4,6 +4,8 @@ import { FileOptions, ILEObjectTarget, Targets } from "..";
 import { infoOut } from "../../cli";
 import { trimQuotes } from "../../utils";
 
+export const binderExtensions = [`binder`, `bnd`];
+
 export async function binderTargetCallback(targets: Targets, localPath: string, content: string, options: FileOptions) {
   const clDocs = new CLParser();
   const tokens = clDocs.parseDocument(content);

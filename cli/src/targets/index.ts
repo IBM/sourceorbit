@@ -6,7 +6,6 @@ import { DefinitionType, File, Module, CLParser } from 'vscode-clle/language';
 import { DisplayFile as dds } from "vscode-displayfile/src/dspf";
 import Document from "vscode-db2i/src/language/sql/document";
 import { ObjectRef, StatementType } from 'vscode-db2i/src/language/sql/types';
-import { rpgExtensions, clExtensions, ddsExtension, sqlExtensions, srvPgmExtensions, cmdExtensions } from '../extensions';
 import Parser from "vscode-rpgle/language/parser";
 import { setupParser } from '../languages/rpgle';
 import { Logger } from '../logger';
@@ -15,6 +14,7 @@ import { extCanBeProgram, getObjectType } from '../builders/environment';
 import { isSqlFunction } from '../languages/sql';
 import { ReadFileSystem } from '../readFileSystem';
 import { TargetsLanguageProvider } from './languages';
+import { sqlExtensions } from './languages/sql';
 
 export type ObjectType = "PGM" | "SRVPGM" | "MODULE" | "FILE" | "BNDDIR" | "DTAARA" | "CMD" | "MENU" | "DTAQ";
 
@@ -104,6 +104,10 @@ export class Targets {
 		return ignoredObjects;
 	}
 
+	getSearchGlob(): string {
+		return this.languageProvider.getGlob();
+	}
+
 	public getCwd() {
 		return this.cwd;
 	}
@@ -141,7 +145,7 @@ export class Targets {
 			await this.handleRefsFile(path.join(this.cwd, withRef));
 		}
 
-		const initialFiles = await this.fs.getFiles(this.cwd);
+		const initialFiles = await this.fs.getFiles(this.cwd, this.getSearchGlob());
 		await this.loadObjectsFromPaths(initialFiles);
 		await Promise.allSettled(initialFiles.map(f => this.parseFile(f)));
 	}

@@ -3,7 +3,7 @@ import { FileOptions, ILEObject, ILEObjectTarget, Targets } from "..";
 import { infoOut } from "../../cli";
 
 import Document from "vscode-db2i/src/language/sql/document";
-import { ObjectRef, StatementType } from 'vscode-db2i/src/language/sql/types';
+import { StatementType } from 'vscode-db2i/src/language/sql/types';
 import { isSqlFunction } from "../../languages/sql";
 import { trimQuotes } from "../../utils";
 
@@ -16,6 +16,8 @@ const sqlTypeExtension = {
   'ALIAS': `sqlalias`,
   'SEQUENCE': `sqlseq`
 };
+
+export const sqlExtensions = [`sql`, `table`, `view`, `index`, `alias`, `sqlprc`, `sqludf`, `sqludt`, `sqltrg`, `sqlalias`, `sqlseq`];
 
 export async function sqlTargetCallback(targets: Targets, localPath: string, content: string, options: FileOptions) {
   const document = new Document(content);

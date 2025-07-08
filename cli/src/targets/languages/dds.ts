@@ -3,6 +3,8 @@ import { DisplayFile as dds } from "vscode-displayfile/src/dspf";
 import { FileOptions, ILEObjectTarget, Targets } from "..";
 import { infoOut } from "../../cli";
 
+export const ddsExtension = [`pf`, `lf`, `dspf`, `prtf`];
+
 export async function ddsTargetCallback(targets: Targets, filePath: string, content: string, options: FileOptions) {
   const eol = content.indexOf(`\r\n`) >= 0 ? `\r\n` : `\n`;
 

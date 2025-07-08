@@ -6,6 +6,8 @@ import { IncludeStatement } from "vscode-rpgle/language/parserTypes";
 import { asPosix, toLocalPath, trimQuotes } from "../../utils";
 import { isSqlFunction } from "../../languages/sql";
 
+export const rpgExtensions = [`sqlrpgle`, `rpgle`];
+
 interface RpgLookup {
 	lookup: string,
 	line?: number

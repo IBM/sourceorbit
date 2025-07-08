@@ -3,6 +3,8 @@ import { CLParser, DefinitionType, Module, File } from "vscode-clle/language";
 import { FileOptions, ILEObjectTarget, Targets } from "..";
 import { infoOut } from "../../cli";
 
+export const clExtensions = [`clle`, `cl`, `clp`];
+
 export async function clleTargetCallback(targets: Targets, filePath: string, content: string, options: FileOptions) {
   const clDocs = new CLParser();
   const tokens = clDocs.parseDocument(content);

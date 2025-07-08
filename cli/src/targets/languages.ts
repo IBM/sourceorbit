@@ -1,11 +1,11 @@
 import { FileOptions, Targets } from ".";
-import { clExtensions, cmdExtensions, ddsExtension, rpgExtensions, sqlExtensions, srvPgmExtensions } from "../extensions";
-import { clleTargetCallback } from "./languages/clle";
-import { ddsTargetCallback } from "./languages/dds";
-import { rpgleTargetParser } from "./languages/rpgle";
-import { sqlTargetCallback } from "./languages/sql";
-import { binderTargetCallback } from "./languages/binder";
-import { cmdTargetCallback } from "./languages/cmd";
+import { clExtensions, clleTargetCallback } from "./languages/clle";
+import { ddsExtension, ddsTargetCallback } from "./languages/dds";
+import { rpgExtensions, rpgleTargetParser } from "./languages/rpgle";
+import { sqlExtensions, sqlTargetCallback } from "./languages/sql";
+import { binderExtensions, binderTargetCallback } from "./languages/binder";
+import { cmdExtensions, cmdTargetCallback } from "./languages/cmd";
+import { noSourceObjects, noSourceTargetCallback } from "./languages/nosrc";
 
 export type LanguageCallback = (targets: Targets, relativePath: string, content: string, options: FileOptions) => Promise<void>
 interface LanguageGroup {
@@ -18,8 +18,9 @@ export class TargetsLanguageProvider {
     {extensions: clExtensions, callback: clleTargetCallback},
     {extensions: sqlExtensions, callback: sqlTargetCallback},
     {extensions: ddsExtension, callback: ddsTargetCallback},
-    {extensions: srvPgmExtensions, callback: binderTargetCallback},
-    {extensions: cmdExtensions, callback: cmdTargetCallback}
+    {extensions: binderExtensions, callback: binderTargetCallback},
+    {extensions: cmdExtensions, callback: cmdTargetCallback},
+    {extensions: noSourceObjects, callback: noSourceTargetCallback}
   ];
 
   constructor(private readonly targets: Targets) {
