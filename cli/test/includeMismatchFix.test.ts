@@ -24,7 +24,7 @@ describe(`include_mismatch_fix tests`, () => {
 
   test(`Ensure rename is against correct file`, async () => {
     const articlePf = targets.getTarget({systemName: `ARTICLE`, type: `FILE`});
-    expect(articlePf).toBeDefined();articlePf.relativePath
+    expect(articlePf).toBeDefined();
 
     const articlePfLogs = targets.logger.getLogsFor(path.join(`QDDSSRC`, `ARTICLE.PF`));
     expect(articlePfLogs.length).toBe(1);
