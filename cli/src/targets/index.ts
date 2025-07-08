@@ -1,17 +1,9 @@
 import path from 'path';
-import Cache from "vscode-rpgle/language/models/cache";
-import { IncludeStatement } from "vscode-rpgle/language/parserTypes";
-import { infoOut, warningOut } from '../cli';
-import { DefinitionType, File, Module, CLParser } from 'vscode-clle/language';
-import { DisplayFile as dds } from "vscode-displayfile/src/dspf";
+import { infoOut } from '../cli';
 import Document from "vscode-db2i/src/language/sql/document";
 import { ObjectRef, StatementType } from 'vscode-db2i/src/language/sql/types';
-import Parser from "vscode-rpgle/language/parser";
-import { setupParser } from '../languages/rpgle';
 import { Logger } from '../logger';
-import { asPosix, getReferenceObjectsFrom, getSystemNameFromPath, globalEntryIsValid, toLocalPath, trimQuotes } from '../utils';
-import { extCanBeProgram, getObjectType } from '../builders/environment';
-import { isSqlFunction } from '../languages/sql';
+import { getReferenceObjectsFrom, getSystemNameFromPath, globalEntryIsValid, toLocalPath } from '../utils';
 import { ReadFileSystem } from '../readFileSystem';
 import { TargetsLanguageProvider } from './languages';
 import { sqlExtensions } from './languages/sql';
@@ -150,6 +142,10 @@ export class Targets {
 		await Promise.allSettled(initialFiles.map(f => this.parseFile(f)));
 	}
 
+	private extCanBeProgram(ext: string): boolean {
+		return [`MODULE`, `PGM`].includes(this.languageProvider.getObjectType(ext));
+	}
+
 	public async resolvePathToObject(localPath: string, newText?: string) {
 		if (this.resolvedObjects[localPath]) {
 			if (newText) this.resolvedObjects[localPath].text = newText;
@@ -161,7 +157,7 @@ export class Targets {
 
 		const extension = detail.ext.length > 1 ? detail.ext.substring(1) : detail.ext;
 		const hasProgramAttribute = detail.name.toUpperCase().endsWith(`.PGM`);
-		const isProgram = this.assumePrograms ? extCanBeProgram(extension) : hasProgramAttribute;
+		const isProgram = this.assumePrograms ? this.extCanBeProgram(extension) : hasProgramAttribute;
 		const name = getSystemNameFromPath(hasProgramAttribute ? detail.name.substring(0, detail.name.length - 4) : detail.name);
 		const type: ObjectType = (isProgram ? "PGM" : this.getObjectType(relativePath, extension));
 
@@ -335,7 +331,7 @@ export class Targets {
 
 	// TODO: move this to language provider
 	getObjectType(relativePath: string, ext: string): ObjectType {
-		const objType = getObjectType(ext);
+		const objType = this.languageProvider.getObjectType(ext);
 
 		if (!objType) {
 			this.logger.fileLog(relativePath, {

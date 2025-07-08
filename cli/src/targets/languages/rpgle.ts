@@ -5,8 +5,13 @@ import Parser from "vscode-rpgle/language/parser";
 import { IncludeStatement } from "vscode-rpgle/language/parserTypes";
 import { asPosix, toLocalPath, trimQuotes } from "../../utils";
 import { isSqlFunction } from "../../languages/sql";
+import { ExtensionMap } from "../languages";
 
 export const rpgExtensions = [`sqlrpgle`, `rpgle`];
+export const rpgObjects: ExtensionMap = {
+  sqlrpgle: `MODULE`,
+  rpgle: `MODULE`,
+}
 
 interface RpgLookup {
 	lookup: string,

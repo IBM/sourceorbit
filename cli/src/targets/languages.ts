@@ -1,11 +1,11 @@
-import { FileOptions, Targets } from ".";
-import { clExtensions, clleTargetCallback } from "./languages/clle";
-import { ddsExtension, ddsTargetCallback } from "./languages/dds";
-import { rpgExtensions, rpgleTargetParser } from "./languages/rpgle";
-import { sqlExtensions, sqlTargetCallback } from "./languages/sql";
-import { binderExtensions, binderTargetCallback } from "./languages/binder";
-import { cmdExtensions, cmdTargetCallback } from "./languages/cmd";
-import { noSourceObjects, noSourceTargetCallback } from "./languages/nosrc";
+import { FileOptions, ObjectType, Targets } from ".";
+import { clExtensions, clleTargetCallback, clObjects } from "./languages/clle";
+import { ddsExtension, ddsObjects, ddsTargetCallback } from "./languages/dds";
+import { rpgExtensions, rpgleTargetParser, rpgObjects } from "./languages/rpgle";
+import { sqlExtensions, sqlObjects, sqlTargetCallback } from "./languages/sql";
+import { binderExtensions, binderObjects, binderTargetCallback } from "./languages/binder";
+import { cmdExtensions, cmdObjects, cmdTargetCallback } from "./languages/cmd";
+import { noSourceObjects, noSourceTargetCallback, noSourceTargetObjects } from "./languages/nosrc";
 
 export type LanguageCallback = (targets: Targets, relativePath: string, content: string, options: FileOptions) => Promise<void>
 interface LanguageGroup {
@@ -13,28 +13,29 @@ interface LanguageGroup {
   callback: LanguageCallback;
 }
 
+export type ExtensionMap = {[ext: string]: ObjectType};
+
 export class TargetsLanguageProvider {
-  private languages: LanguageGroup[] = [
-    {extensions: clExtensions, callback: clleTargetCallback},
-    {extensions: sqlExtensions, callback: sqlTargetCallback},
-    {extensions: ddsExtension, callback: ddsTargetCallback},
-    {extensions: binderExtensions, callback: binderTargetCallback},
-    {extensions: cmdExtensions, callback: cmdTargetCallback},
-    {extensions: noSourceObjects, callback: noSourceTargetCallback}
-  ];
+  private languageTargets: LanguageGroup[] = [];
+  private extensionMap: ExtensionMap = {};
 
   constructor(private readonly targets: Targets) {
     const rpgleTargets = new rpgleTargetParser(this.targets);
-    this.languages.push({
-      extensions: rpgExtensions,
-      callback: (targets, relativePath, content, options) => {
-        return rpgleTargets.rpgleTargetCallback(targets, relativePath, content, options);
-      }
-    })
+
+    this.registerLanguage(clExtensions, clleTargetCallback, clObjects);
+    this.registerLanguage(sqlExtensions, sqlTargetCallback, sqlObjects);
+    this.registerLanguage(ddsExtension, ddsTargetCallback, ddsObjects);
+    this.registerLanguage(binderExtensions, binderTargetCallback, binderObjects);
+    this.registerLanguage(cmdExtensions, cmdTargetCallback, cmdObjects);
+    this.registerLanguage(noSourceObjects, noSourceTargetCallback, noSourceTargetObjects);
+
+    this.registerLanguage(rpgExtensions, (targets, relativePath, content, options) => {
+      return rpgleTargets.rpgleTargetCallback(targets, relativePath, content, options);
+    }, rpgObjects);
   }
 
   public getExtensions() {
-    return this.languages.map(lang => lang.extensions).flat();
+    return this.languageTargets.map(lang => lang.extensions).flat();
   }
 
   public getGlob() {
@@ -44,19 +45,25 @@ export class TargetsLanguageProvider {
 
   public async handleLanguage(relativePath: string, content: string, options: FileOptions = {}) {
     const ext = relativePath.split('.').pop()?.toLowerCase();
-    const language = this.languages.find(lang => lang.extensions.includes(ext));
+    const language = this.languageTargets.find(lang => lang.extensions.includes(ext));
     if (ext && language) {
       await language.callback(this.targets, relativePath, content, options);
     }
   }
 
-  public registerLanguage(extensions: string[], callback: LanguageCallback) {
+  public registerLanguage(extensions: string[], callback: LanguageCallback, objectTypes: ExtensionMap = {}) {
     for (const ext of extensions) {
-      if (this.languages.some(lang => lang.extensions.includes(ext))) {
+      if (this.languageTargets.some(lang => lang.extensions.includes(ext))) {
         throw new Error(`Language with extension '${ext}' is already registered.`);
       }
     }
 
-    this.languages.push({extensions, callback});
+    this.extensionMap = {...this.extensionMap, ...objectTypes};
+
+    this.languageTargets.push({extensions, callback});
+  }
+
+  public getObjectType(ext: string): ObjectType | undefined {
+    return this.extensionMap[ext.toLowerCase()];
   }
 }

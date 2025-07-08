@@ -3,8 +3,13 @@ import { CLParser, DefinitionType, Module, File } from "vscode-clle/language";
 import { FileOptions, ILEObjectTarget, Targets } from "..";
 import { infoOut } from "../../cli";
 import { trimQuotes } from "../../utils";
+import { ExtensionMap } from "../languages";
 
 export const binderExtensions = [`binder`, `bnd`];
+export const binderObjects: ExtensionMap = {
+  binder: `SRVPGM`,
+  bnd: `SRVPGM`,
+}
 
 export async function binderTargetCallback(targets: Targets, localPath: string, content: string, options: FileOptions) {
   const clDocs = new CLParser();

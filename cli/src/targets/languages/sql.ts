@@ -6,6 +6,7 @@ import Document from "vscode-db2i/src/language/sql/document";
 import { StatementType } from 'vscode-db2i/src/language/sql/types';
 import { isSqlFunction } from "../../languages/sql";
 import { trimQuotes } from "../../utils";
+import { ExtensionMap } from "../languages";
 
 const sqlTypeExtension = {
   'TABLE': `table`,
@@ -18,6 +19,23 @@ const sqlTypeExtension = {
 };
 
 export const sqlExtensions = [`sql`, `table`, `view`, `index`, `alias`, `sqlprc`, `sqludf`, `sqludt`, `sqltrg`, `sqlalias`, `sqlseq`];
+export const sqlObjects: ExtensionMap = {
+  'sql': `FILE`,
+  'table': `FILE`,
+  'view': `FILE`,
+  'index': `FILE`,
+  'alias': `FILE`,
+  'sqludf': `FILE`,
+  'sqludt': `FILE`,
+  'sqlalias': `FILE`,
+  'sqlseq': `FILE`,
+  'sequence': `FILE`,
+  'function': `SRVPGM`,
+  'procedure': `PGM`,
+  'sqlprc': `PGM`,
+  'trigger': `PGM`,
+  'sqltrg': `PGM`
+}
 
 export async function sqlTargetCallback(targets: Targets, localPath: string, content: string, options: FileOptions) {
   const document = new Document(content);
