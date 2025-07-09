@@ -3,7 +3,6 @@ import { setupFixture } from "./fixtures/projects";
 
 import { Targets } from '../src/targets'
 import { renameFiles } from "../src/utils";
-import { scanGlob } from "../src/extensions";
 
 import * as path from "path";
 import { ReadFileSystem } from "../src/readFileSystem";

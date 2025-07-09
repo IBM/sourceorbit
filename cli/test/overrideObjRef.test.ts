@@ -5,7 +5,7 @@ import path from 'path';
 import { MakeProject } from '../src/builders/make';
 import { getFiles } from '../src/utils';
 import { setupFixture } from './fixtures/projects';
-import { referencesFileName, scanGlob } from '../src/extensions';
+import { referencesFileName } from '../src/extensions';
 import { writeFileSync } from 'fs';
 import { BobProject } from '../src/builders/bob';
 import { ReadFileSystem } from '../src/readFileSystem';

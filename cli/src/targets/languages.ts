@@ -29,7 +29,7 @@ export class TargetsLanguageProvider {
     this.registerLanguage(cmdExtensions, cmdTargetCallback, cmdObjects);
     this.registerLanguage(noSourceObjects, noSourceTargetCallback, noSourceTargetObjects);
 
-    this.registerLanguage(rpgExtensions, (targets, relativePath, content, options) => {
+    this.registerLanguage(rpgExtensions, (tazrgets, relativePath, content, options) => {
       return rpgleTargets.rpgleTargetCallback(targets, relativePath, content, options);
     }, rpgObjects);
   }
