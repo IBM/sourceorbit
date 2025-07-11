@@ -8,7 +8,7 @@ import path from 'path';
 import { BuildFiles, cliSettings, error, infoOut, warningOut } from './cli';
 import { BobProject } from "./builders/bob";
 import { ImpactMarkdown } from "./builders/imd";
-import { allExtensions, referencesFileName } from "./extensions";
+import { referencesFileName } from "./extensions";
 import { getBranchLibraryName } from "./builders/environment";
 import { renameFiles, replaceIncludes } from './utils';
 import { ReadFileSystem } from './readFileSystem';
@@ -23,7 +23,7 @@ if (isCli || process.env.VSCODE_INSPECTOR_OPTIONS) {
 async function main() {
 	const parms = process.argv.slice(2);
 	let cwd = process.cwd();
-	let scanGlob = `**/*.{${allExtensions.join(`,`)},${allExtensions.map(e => e.toUpperCase()).join(`,`)}}`;
+	let scanGlob: string|undefined = undefined;
 
 	for (let i = 0; i < parms.length; i++) {
 		switch (parms[i]) {
@@ -162,6 +162,10 @@ async function main() {
 
 	let files: string[];
 
+	if (!scanGlob) {
+		scanGlob = targets.getSearchGlob();
+	}
+
 	try {
 		files = await fs.getFiles(cwd, scanGlob);
 	} catch (e) {
@@ -295,6 +299,5 @@ async function listDeps(cwd: string, targets: Targets, query: string) {
 export { Targets } from './targets';
 export { MakeProject } from './builders/make';
 export { BobProject } from "./builders/bob";
-export { ImpactMarkdown } from "./builders/imd" 
-export { allExtensions } from "./extensions";
+export { ImpactMarkdown } from "./builders/imd"
 export * as Utils from './utils';

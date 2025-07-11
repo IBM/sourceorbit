@@ -4,7 +4,6 @@ import { Targets } from '../src/targets'
 import path from 'path';
 import { MakeProject } from '../src/builders/make';
 import { setupFixture } from './fixtures/projects';
-import { scanGlob } from '../src/extensions';
 import { writeFileSync } from 'fs';
 import { getDefaultCompiles } from '../src/builders/environment';
 import { ReadFileSystem } from '../src/readFileSystem';
