@@ -1,14 +1,12 @@
 /* eslint-disable no-case-declarations */
 
-import { Targets, allExtensions } from "@ibm/sourceorbit";
+import { Targets } from "@ibm/sourceorbit";
 import { ILEObject } from "@ibm/sourceorbit/dist/src/targets";
 
 import { URI } from 'vscode-uri';
 import { ReadFileSystem } from './readFileSystem';
 
 import path = require("path");
-
-export const SupportedGlob = `**/*.{${allExtensions.join(`,`)}}`;
 
 export class TargetsManager {
   private static projects: { [workspacePath: string]: Targets | undefined } = {};
@@ -45,11 +43,12 @@ export class TargetsManager {
     const url = uri.fsPath;
 
     const rfs = new ReadFileSystem();
-    const files = await rfs.getFiles(url, SupportedGlob);
 
     const targets = new Targets(url, rfs);
 
-    targets.loadObjectsFromPaths(files);
+    const files = await rfs.getFiles(url, targets.getSearchGlob());
+
+    await targets.loadObjectsFromPaths(files);
 
     await Promise.allSettled(files.map(f => targets.parseFile(f)));
 
@@ -75,14 +74,12 @@ export class TargetsManager {
     if (pathDetail.ext.length > 1) {
       const ext = pathDetail.ext.substring(1).toLowerCase();
 
-      if (allExtensions.includes(ext)) {
-        const targets = this.getTargetsForFile(uriString);
+      const targets = this.getTargetsForFile(uriString);
 
-        if (targets) {
-          return targets.parseFile(uri.fsPath);
+      if (targets) {
+        return targets.parseFile(uri.fsPath);
 
-          // TODO: think about re-resolving later if changing a module?
-        }
+        // TODO: think about re-resolving later if changing a module?
       }
     }
   }
@@ -95,24 +92,22 @@ export class TargetsManager {
     if (pathDetail.ext.length > 1) {
       const ext = pathDetail.ext.substring(1);
 
-      if (allExtensions.includes(ext)) {
-        const targets = this.getTargetsForFile(uriString);
+      const targets = this.getTargetsForFile(uriString);
 
-        if (targets) {
-          const impacted = targets.removeObjectByPath(uri.fsPath);
+      if (targets) {
+        const impacted = targets.removeObjectByPath(uri.fsPath);
 
-          if (impacted.length > 0) {
-            const cwd = this.getWorkspaceFolder(uri.fsPath);
+        if (impacted.length > 0) {
+          const cwd = this.getWorkspaceFolder(uri.fsPath);
 
-            if (cwd) {
-              const impactedSources = impacted
-                .filter(obj => obj.relativePath)
-                .map(obj => path.join(cwd, obj.relativePath!));
+          if (cwd) {
+            const impactedSources = impacted
+              .filter(obj => obj.relativePath)
+              .map(obj => path.join(cwd, obj.relativePath!));
 
-              console.log(`Impacted sources:  ${impactedSources.join(`, `)}`);
+            console.log(`Impacted sources:  ${impactedSources.join(`, `)}`);
 
-              return Promise.allSettled(impactedSources.map(sourcePath => targets.parseFile(sourcePath)));
-            }
+            return Promise.allSettled(impactedSources.map(sourcePath => targets.parseFile(sourcePath)));
           }
         }
       }
