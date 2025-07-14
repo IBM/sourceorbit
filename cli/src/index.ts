@@ -297,6 +297,7 @@ async function listDeps(cwd: string, targets: Targets, query: string) {
 }
 
 export { Targets } from './targets';
+export { TargetsLanguageProvider } from './targets/languages';
 export { MakeProject } from './builders/make';
 export { BobProject } from "./builders/bob";
 export { ImpactMarkdown } from "./builders/imd"

@@ -6,15 +6,16 @@ import path from 'path';
 import { URI } from 'vscode-uri';
 import { ReadFileSystem } from './readFileSystem';
 import { connection } from './server';
-import { SupportedGlob, TargetsManager } from './TargetsManager';
+import { TargetsManager } from './TargetsManager';
 
 export async function initAndRefresh(workspaceUri: string) {
 	const progress = await connection.window.createWorkDoneProgress();
-	progress.begin(`Source Orbit`, undefined, `Initializing..`);
+	progress.begin(`Source Orbit`, undefined, `Indexing..`);
+	console.log(`Indexing started`);
 
 	try {
 		await TargetsManager.refreshProject(workspaceUri);
-		progress.report(`Initialized`);
+		progress.report(`Indexed successfully`);
 
 	} catch (e) {
 		progress.report(`Failed to initialize`);
@@ -89,13 +90,15 @@ export async function fixProject(workspaceUri: string, suggestions: TargetSugges
 	progress.begin(`Source Orbit`, undefined, `Fetching files..`);
 	
 	const rfs = new ReadFileSystem();
-	const files = await rfs.getFiles(url, SupportedGlob);
 
 	const targets = new Targets(url, rfs);
+
+	const files = await rfs.getFiles(url, targets.getSearchGlob());
+
 	targets.setSuggestions(suggestions);
 
 	progress.report(`Loading files..`);
-	targets.loadObjectsFromPaths(files);
+	await targets.loadObjectsFromPaths(files);
 
 	progress.report(`Processing files..`);
 	await Promise.allSettled(files.map(f => targets.parseFile(f)));
