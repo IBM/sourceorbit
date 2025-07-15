@@ -207,12 +207,16 @@ export class Targets {
 		const pseudoObjects = getReferenceObjectsFrom(content);
 
 		for (const ileObject of pseudoObjects) {
-			if (!this.searchForObject(ileObject)) {
-				const key = `${ileObject.systemName}.${ileObject.type}`;
-				ileObject.reference = true;
-				this.resolvedObjects[key] = ileObject;
-			}
+			this.handleNewRefObject(ileObject);
 		};
+	}
+
+	public handleNewRefObject(ileObject: ILEObject) {
+		if (!this.searchForObject(ileObject)) {
+			const key = `${ileObject.systemName}.${ileObject.type}`;
+			ileObject.reference = true;
+			this.resolvedObjects[key] = ileObject;
+		}
 	}
 
 	public isReferenceObject(ileObject: ILEObject, remove?: boolean) {
