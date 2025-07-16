@@ -1,4 +1,4 @@
-import { TargetsLanguageProvider } from '@ibm/sourceorbit';
+import { Targets } from '@ibm/sourceorbit';
 import {
 	createConnection,
 	InitializeParams,
@@ -32,9 +32,9 @@ connection.onInitialize((params: InitializeParams) => {
 	if (hasWorkspaceFolderCapability) {
 		result.capabilities.workspace = {
 			fileOperations: {
-				didCreate: { filters: [{ pattern: { glob: TargetsLanguageProvider.getStandardGlob(), options: { ignoreCase: true } } }] },
-				didRename: { filters: [{ pattern: { glob: TargetsLanguageProvider.getStandardGlob(), options: { ignoreCase: true } } }] },
-				didDelete: { filters: [{ pattern: { glob: TargetsLanguageProvider.getStandardGlob(), options: { ignoreCase: true } } }] }
+				didCreate: { filters: [{ pattern: { glob: Targets.LanguageProvider.getGlob(), options: { ignoreCase: true } } }] },
+				didRename: { filters: [{ pattern: { glob: Targets.LanguageProvider.getGlob(), options: { ignoreCase: true } } }] },
+				didDelete: { filters: [{ pattern: { glob: Targets.LanguageProvider.getGlob(), options: { ignoreCase: true } } }] }
 			},
 			workspaceFolders: {
 				supported: true,

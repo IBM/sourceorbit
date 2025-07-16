@@ -38,11 +38,6 @@ export class TargetsLanguageProvider {
     return `**/*.{${allExtensions.join(`,`)},${allExtensions.map(e => e.toUpperCase()).join(`,`)}}`;
   }
 
-  public static getStandardGlob() {
-    const allExtensions = [...clExtensions, ...sqlExtensions, ...ddsExtension, ...binderExtensions, ...cmdExtensions, ...rpgleExtensions];
-    return `**/*.{${allExtensions.join(`,`)},${allExtensions.map(e => e.toUpperCase()).join(`,`)}}`;
-  }
-
   public async handleLanguage(targets: Targets, relativePath: string, content: string, options: FileOptions = {}) {
     const ext = relativePath.split('.').pop()?.toLowerCase();
     const language = this.languageTargets.find(lang => lang.extensions.includes(ext));
