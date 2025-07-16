@@ -68,7 +68,7 @@ export interface FileOptions {
  */
 
 export class Targets {
-	private languageProvider: TargetsLanguageProvider;
+	static LanguageProvider: TargetsLanguageProvider = new TargetsLanguageProvider();
 
 	/* pathCache and resolvedSearches are used for file resolving. */
 	private pathCache: { [path: string]: true | string[] } | undefined;
@@ -89,7 +89,6 @@ export class Targets {
 
 	constructor(private cwd: string, private fs: ReadFileSystem) {
 		this.logger = new Logger();
-		this.languageProvider = new TargetsLanguageProvider(this);
 	}
 
 	static get ignoredObjects() {
@@ -97,7 +96,7 @@ export class Targets {
 	}
 
 	getSearchGlob(): string {
-		return this.languageProvider.getGlob();
+		return Targets.LanguageProvider.getGlob();
 	}
 
 	public getCwd() {
@@ -143,7 +142,7 @@ export class Targets {
 	}
 
 	private extCanBeProgram(ext: string): boolean {
-		return [`MODULE`, `PGM`].includes(this.languageProvider.getObjectType(ext));
+		return [`MODULE`, `PGM`].includes(Targets.LanguageProvider.getObjectType(ext));
 	}
 
 	public async resolvePathToObject(localPath: string, newText?: string) {
@@ -335,7 +334,7 @@ export class Targets {
 
 	// TODO: move this to language provider
 	getObjectType(relativePath: string, ext: string): ObjectType {
-		const objType = this.languageProvider.getObjectType(ext);
+		const objType = Targets.LanguageProvider.getObjectType(ext);
 
 		if (!objType) {
 			this.logger.fileLog(relativePath, {
@@ -389,7 +388,7 @@ export class Targets {
 					text: textMatch
 				};
 
-				await this.languageProvider.handleLanguage(filePath, content, options);
+				await Targets.LanguageProvider.handleLanguage(this, filePath, content, options);
 			} catch (e) {
 				this.logger.fileLog(relative, {
 					message: `Failed to parse file.`,

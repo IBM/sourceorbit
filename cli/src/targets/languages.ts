@@ -1,7 +1,7 @@
 import { FileOptions, ObjectType, Targets } from ".";
 import { clExtensions, clleTargetCallback, clObjects } from "./languages/clle";
 import { ddsExtension, ddsObjects, ddsTargetCallback } from "./languages/dds";
-import { rpgExtensions, rpgleTargetParser, rpgObjects } from "./languages/rpgle";
+import { rpgleExtensions, rpgleObjects, rpgleTargetCallback } from "./languages/rpgle";
 import { sqlExtensions, sqlObjects, sqlTargetCallback } from "./languages/sql";
 import { binderExtensions, binderObjects, binderTargetCallback } from "./languages/binder";
 import { cmdExtensions, cmdObjects, cmdTargetCallback } from "./languages/cmd";
@@ -19,19 +19,14 @@ export class TargetsLanguageProvider {
   private languageTargets: LanguageGroup[] = [];
   private extensionMap: ExtensionMap = {};
 
-  constructor(private readonly targets: Targets) {
-    const rpgleTargets = new rpgleTargetParser(this.targets);
-
+  constructor() {
     this.registerLanguage(clExtensions, clleTargetCallback, clObjects);
     this.registerLanguage(sqlExtensions, sqlTargetCallback, sqlObjects);
     this.registerLanguage(ddsExtension, ddsTargetCallback, ddsObjects);
     this.registerLanguage(binderExtensions, binderTargetCallback, binderObjects);
     this.registerLanguage(cmdExtensions, cmdTargetCallback, cmdObjects);
     this.registerLanguage(noSourceObjects, noSourceTargetCallback, noSourceTargetObjects);
-
-    this.registerLanguage(rpgExtensions, (tazrgets, relativePath, content, options) => {
-      return rpgleTargets.rpgleTargetCallback(targets, relativePath, content, options);
-    }, rpgObjects);
+    this.registerLanguage(rpgleExtensions, rpgleTargetCallback, rpgleObjects);
   }
 
   public getExtensions() {
@@ -43,16 +38,11 @@ export class TargetsLanguageProvider {
     return `**/*.{${allExtensions.join(`,`)},${allExtensions.map(e => e.toUpperCase()).join(`,`)}}`;
   }
 
-  public static getStandardGlob() {
-    const allExtensions = [...clExtensions, ...sqlExtensions, ...ddsExtension, ...binderExtensions, ...cmdExtensions, ...rpgExtensions];
-    return `**/*.{${allExtensions.join(`,`)},${allExtensions.map(e => e.toUpperCase()).join(`,`)}}`;
-  }
-
-  public async handleLanguage(relativePath: string, content: string, options: FileOptions = {}) {
+  public async handleLanguage(targets: Targets, relativePath: string, content: string, options: FileOptions = {}) {
     const ext = relativePath.split('.').pop()?.toLowerCase();
     const language = this.languageTargets.find(lang => lang.extensions.includes(ext));
     if (ext && language) {
-      await language.callback(this.targets, relativePath, content, options);
+      await language.callback(targets, relativePath, content, options);
     }
   }
 
