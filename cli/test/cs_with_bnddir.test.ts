@@ -65,7 +65,7 @@ describe(`pseudo tests`, () => {
     expect(contents).toContain(`BNDDIR=($(BIN_LIB)/$(APP_BNDDIR))\n`);
 
     expect(contents).toContain(`$(PREPATH)/EMPLOYEES.PGM: $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/EMPS.FILE $(PREPATH)/EMPDET.SRVPGM`);
-    expect(contents).toContain(`system "CRTSQLRPGI OBJ($(BIN_LIB)/EMPLOYEES) SRCSTMF('qrpglesrc/employees.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)')"`);
+    expect(contents).toContain(`system "CRTSQLRPGI OBJ($(BIN_LIB)/EMPLOYEES) SRCSTMF('qrpglesrc/employees.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(*JOB) BNDDIR($(APP_BNDDIR)) DFTACTGRP(*no)')"`);
 
     expect(contents).toContain(`$(PREPATH)/APP.BNDDIR: $(PREPATH)/EMPDET.SRVPGM`);
     expect(contents).toContain(`$(PREPATH)/EMPDET.SRVPGM: $(PREPATH)/EMPDET.MODULE`);
