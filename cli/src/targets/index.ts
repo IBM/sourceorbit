@@ -706,9 +706,10 @@ export class Targets {
 			if (deps.some(s => s.systemName === dep.systemName && s.type === dep.type)) return; // Already added
 			if (dep.reference) return; // Skip references
 
-			if (`deps` in dep) {
-				if (dep.deps && dep.deps.length > 0) {
-					for (const cDep of dep.deps) {
+			const possibleTarget = ('deps' in dep ? dep : this.getTarget(dep));
+			if (possibleTarget) {
+				if (possibleTarget.deps && possibleTarget.deps.length > 0) {
+					for (const cDep of possibleTarget.deps) {
 						const d = this.getTarget(cDep) || cDep;
 						addDep(d);
 					}
