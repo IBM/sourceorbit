@@ -8,6 +8,13 @@ This section only applies if you use `-bf make`.
 
 Using `so -bf make` will generate a makefile to rebuild the entire project. This is fine when deploying to new systems. It is also possible to do incremental builds.
 
+To do an incremental build, also referred to as a partial build, you can specify the targets you want to build:
+
+```bash
+so -bf make -f 'qrpglesrc/ord500.pgm.rpgle'
+so -bf make -l `git diff --name-only origin/main origin/${GITHUB_HEAD_REF}`
+```
+
 A incremental build means building a specific targets, their parents and optionally their children. Let's assume this is our dependency tree:
 
 ```
@@ -22,7 +29,9 @@ Next, assume that we want to do a incremental build of `ORD501.PGM`, which has
 * one parent: `ORD500.PGM`
 * two children: `DEPARTMENT.FILE` and `DEPTS.FILE`
 
-So that means that 4 objects are going to be rebuilt. Usually, parents always need to be rebuilt to ensure level checking happens. Sometimes, we don't want to rebuild the children because they haven't changed (and can depend on the library list to find the existing objects). **You can use option `-nc` to ensure no target children get built** as part of the make file.
+So that means that 3 objects are going to be rebuilt. Sometimes, we don't want to rebuild the children because they haven't changed (and can depend on the library list to find the existing objects).
+
+Usually, parents always need to be rebuilt to ensure level checking happens. If you use the `-wp` (with-parents) options, then the `makefile` will also include targets to rebuild the parent objects too (`ORD500`), but the `all` target will only build the specified target (`ORD501`).
 
 ### When is a incremental build right?
 
