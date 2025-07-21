@@ -487,6 +487,11 @@ export class Targets {
 				currentTarget.deps = currentTarget.deps.filter(d => ![`SRVPGM`].includes(d.type));
 
 				for (const importName of currentTarget.imports) {
+					if (currentTarget.exports?.includes(importName.toUpperCase())) {
+						// This happens when a source copy has the prototype and the implementation (export)
+						continue; // Don't add imports that are also exports
+					}
+
 					// Find if this import resolves to another object
 					const possibleSrvPgmDep = this.resolvedExports[importName.toUpperCase()];
 					// We can't add a module as a dependency at this step.
