@@ -3,7 +3,7 @@ import path from 'path';
 import { ILEObject, ILEObjectTarget, ImpactedObject, ObjectType, Targets } from '../../targets';
 import { asPosix, fromCl, getFiles, toCl } from '../../utils';
 import { warningOut } from '../../cli';
-import { name } from '../../../webpack.config';
+import { name, target } from '../../../webpack.config';
 import { FolderOptions, getFolderOptions } from './folderSettings';
 import { readAllRules } from './customRules';
 import { CompileData, CommandParameters, getTrueBasename } from '../environment';
@@ -21,7 +21,7 @@ interface Step {
 }
 
 export class MakeProject {
-	private noChildren: boolean = false;
+	private partialWithImpacts: boolean = false;
 	private settings: iProject = new iProject();
 	private projectActions: ProjectActions;
 	private actionsEnabled: boolean = false;
@@ -32,8 +32,8 @@ export class MakeProject {
 		this.projectActions = new ProjectActions(this.targets, this.rfs);
 	}
 
-	public setNoChildrenInBuild(noChildren: boolean) {
-		this.noChildren = noChildren;
+	public setPartialWithImpacts(partialWithImpacts: boolean) {
+		this.partialWithImpacts = partialWithImpacts;
 	}
 
 	public useActions() {
@@ -217,17 +217,18 @@ export class MakeProject {
 	public generateTargets(partialBuild?: ILEObject[]): string[] {
 		let lines = [];
 
+		let allParents: ILEObject[]|undefined;
+
 		// A 'partial build' means we only want to build specific objects
 		// and we also want to build their parents too. We update `partialBuild`
 		// to include all the parents of the specific objects.
 		if (partialBuild) {
+			allParents = [];
 			const impacts = partialBuild.map(o => this.targets.getImpactFor(o));
 
-			let allAffected: ILEObject[] = [];
-
 			const addImpact = (impactedObj: ImpactedObject) => {
-				if (!allAffected.some(o => o.systemName === impactedObj.ileObject.systemName && o.type === impactedObj.ileObject.type)) {
-					allAffected.push(impactedObj.ileObject);
+				if (!allParents.some(o => o.systemName === impactedObj.ileObject.systemName && o.type === impactedObj.ileObject.type)) {
+					allParents.push(impactedObj.ileObject);
 				}
 
 				impactedObj.children.forEach(child => addImpact(child));
@@ -235,8 +236,13 @@ export class MakeProject {
 
 			impacts.forEach(impact => addImpact(impact));
 
-			partialBuild = allAffected;
+			if (this.partialWithImpacts) {
+				// If we want to include the impacts, we need to add them to the partialBuild
+				partialBuild = allParents;
+			}
 		}
+
+		let allRequirements: ILEObject[]|undefined = partialBuild ? this.targets.getRequiredObjects(partialBuild) : undefined;
 
 		const all = partialBuild || [
 			...(this.targets.binderRequired() ? [this.targets.getBinderTarget()] : []),
@@ -251,7 +257,19 @@ export class MakeProject {
 			)
 		}
 
-		if (!this.noChildren) {
+		if (partialBuild) {
+			// If we don't want the children to get built, we only generate the targets for the specific objects
+			for (const obj of allRequirements || []) {
+				if (obj.reference) continue; // Skip references
+
+				const target = this.targets.getTarget(obj);
+				if (target && target.deps && target.deps.length > 0) {
+					lines.push(
+						`$(PREPATH)/${target.systemName}.${target.type}: ${target.deps.filter(d => d.reference !== true).map(dep => `$(PREPATH)/${dep.systemName}.${dep.type}`).join(` `)}`
+					)
+				}
+			}
+		} else {
 			// If we don't want the children to get built, we don't generate the dependency targets
 			for (const target of this.targets.getTargets()) {
 				if (target && target.deps.length > 0) {
@@ -279,7 +297,32 @@ export class MakeProject {
 		let lines = [];
 
 		// If this is a partial build, we only want to generate rules for the specific objects
-		const filterObjects: ILEObject[]|undefined = partialBuild ? this.targets.getRequiredObjects(partialBuild) : undefined;
+		let allParents: ILEObject[]|undefined;
+
+		// A 'partial build' means we only want to build specific objects
+		// and we also want to build their parents too. We update `partialBuild`
+		// to include all the parents of the specific objects.
+		if (partialBuild) {
+			allParents = [];
+			const impacts = partialBuild.map(o => this.targets.getImpactFor(o));
+
+			const addImpact = (impactedObj: ImpactedObject) => {
+				if (!allParents.some(o => o.systemName === impactedObj.ileObject.systemName && o.type === impactedObj.ileObject.type)) {
+					allParents.push(impactedObj.ileObject);
+				}
+
+				impactedObj.children.forEach(child => addImpact(child));
+			}
+
+			impacts.forEach(impact => addImpact(impact));
+
+			if (this.partialWithImpacts) {
+				// If we want to include the impacts, we need to add them to the partialBuild
+				partialBuild = allParents;
+			}
+		}
+
+		let allRequirements: ILEObject[]|undefined = partialBuild ? this.targets.getRequiredObjects(partialBuild) : undefined;
 
 		for (const entry of Object.entries(this.settings.compiles)) {
 			let [type, data] = entry;
@@ -324,7 +367,7 @@ export class MakeProject {
 					for (const ileObject of objects) {
 						if (ileObject.reference) continue;
 
-						if (filterObjects && !filterObjects.some(o => o.systemName === ileObject.systemName && o.type === ileObject.type)) {
+						if (allRequirements && !allRequirements.some(o => o.systemName === ileObject.systemName && o.type === ileObject.type)) {
 							continue; // Skip this object
 						}
 						
