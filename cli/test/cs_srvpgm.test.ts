@@ -51,6 +51,12 @@ describe(`pseudo tests`, () => {
     expect(empdet.deps.find(f => f.systemName === `EMPLOYEE`)).toBeDefined();
     expect(empdet.deps.find(f => f.systemName === `DEPARTMENT`)).toBeDefined();
 
+    const allRequirements = targets.getRequiredObjects([empdet]);
+    expect(allRequirements.length).toBe(3);
+    expect(allRequirements.find(f => f.systemName === `EMPLOYEE` && f.type === `FILE`)).toBeDefined();
+    expect(allRequirements.find(f => f.systemName === `DEPARTMENT` && f.type === `FILE`)).toBeDefined();
+    expect(allRequirements.find(f => f.systemName === `EMPDET` && f.type === `MODULE`)).toBeDefined();
+
     const employees = targets.getTarget({systemName: `EMPLOYEES`, type: `PGM`});
     expect(employees).toBeDefined();
 
@@ -59,6 +65,16 @@ describe(`pseudo tests`, () => {
     expect(employees.deps.find(f => f.systemName === `EMPDET` && f.type === `MODULE`)).toBeDefined();
     expect(employees.deps.find(f => f.systemName === `EMPS` && f.type === `FILE`)).toBeDefined();
     expect(employees.deps.find(f => f.systemName === `EMPLOYEE` && f.type === `FILE`)).toBeDefined();
+
+    const requiredForEmployees = targets.getRequiredObjects([employees]);
+    expect(requiredForEmployees.length).toBe(6);
+
+    expect(requiredForEmployees.find(f => f.systemName === `EMPLOYEES` && f.type === `PGM`)).toBeDefined();
+    expect(requiredForEmployees.find(f => f.systemName === `EMPDET` && f.type === `MODULE`)).toBeDefined();
+    expect(requiredForEmployees.find(f => f.systemName === `EMPLOYEE` && f.type === `FILE`)).toBeDefined();
+    expect(requiredForEmployees.find(f => f.systemName === `DEPARTMENT` && f.type === `FILE`)).toBeDefined();
+    expect(requiredForEmployees.find(f => f.systemName === `EMPS` && f.type === `FILE`)).toBeDefined();
+    expect(requiredForEmployees.find(f => f.systemName === `EMPDET` && f.type === `MODULE`)).toBeDefined
   });
 
   test('ibmi-bob rules', () => {

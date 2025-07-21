@@ -700,7 +700,7 @@ export class Targets {
 	 * Returns a list of all the required objects to build this target
 	 */
 	public getRequiredObjects(bases: (ILEObject|ILEObjectTarget)[]) {
-		let deps: ILEObject[];
+		let deps: ILEObject[] = [];
 
 		const addDep = (dep: ILEObject|ILEObjectTarget) => {
 			if (deps.some(s => s.systemName === dep.systemName && s.type === dep.type)) return; // Already added
