@@ -28,7 +28,7 @@ So that means that 4 objects are going to be rebuilt. Usually, parents always ne
 
 To ensure library lists are supported correctly, the following rules are recommended:
 
-* When building an object, always qualified the name of the object being built.
+* When building an object, always use the qualified name of the object being built.
 * When referenceing an object, always use the unqualified name of the object so that the library list can be used to find the object.
 
 ### When is a incremental build right?
