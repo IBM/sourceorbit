@@ -61,4 +61,12 @@ export class TargetsLanguageProvider {
   public getObjectType(ext: string): ObjectType | undefined {
     return this.extensionMap[ext.toLowerCase()];
   }
+
+  public getObjectMap(): ExtensionMap {
+    return this.extensionMap;
+  }
+
+  public getObjectTypes(): ObjectType[] {
+    return Object.values(this.extensionMap);
+  }
 }
