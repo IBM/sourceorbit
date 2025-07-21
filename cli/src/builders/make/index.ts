@@ -188,7 +188,7 @@ export class MakeProject {
 			``,
 			...this.generateTargets(specificObjects),
 			``,
-			...this.generateGenericRules()
+			...this.generateGenericRules(specificObjects)
 		];
 	}
 
@@ -275,8 +275,11 @@ export class MakeProject {
 		return lines;
 	}
 
-	public generateGenericRules(): string[] {
+	public generateGenericRules(partialBuild?: ILEObject[]): string[] {
 		let lines = [];
+
+		// If this is a partial build, we only want to generate rules for the specific objects
+		const filterObjects: ILEObject[]|undefined = partialBuild ? this.targets.getRequiredObjects(partialBuild) : undefined;
 
 		for (const entry of Object.entries(this.settings.compiles)) {
 			let [type, data] = entry;
@@ -320,6 +323,10 @@ export class MakeProject {
 				if (objects.length > 0) {
 					for (const ileObject of objects) {
 						if (ileObject.reference) continue;
+
+						if (filterObjects && !filterObjects.some(o => o.systemName === ileObject.systemName && o.type === ileObject.type)) {
+							continue; // Skip this object
+						}
 						
 						// This is used when your object really has source
 

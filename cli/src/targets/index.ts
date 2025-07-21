@@ -697,6 +697,35 @@ export class Targets {
 	}
 
 	/**
+	 * Returns a list of all the required objects to build this target
+	 */
+	public getRequiredObjects(bases: (ILEObject|ILEObjectTarget)[]) {
+		let deps: ILEObject[];
+
+		const addDep = (dep: ILEObject|ILEObjectTarget) => {
+			if (deps.some(s => s.systemName === dep.systemName && s.type === dep.type)) return; // Already added
+			if (dep.reference) return; // Skip references
+
+			if (`deps` in dep) {
+				if (dep.deps && dep.deps.length > 0) {
+					for (const cDep of dep.deps) {
+						const d = this.getTarget(cDep) || cDep;
+						addDep(d);
+					}
+				}
+			}
+
+			deps.push(dep);
+		}
+
+		for (const required of bases) {
+			addDep(required);
+		}
+
+		return deps;
+	}
+
+	/**
 	 * This is used when loading in all objects.
 	 * SQL sources can have two object names: a system name and a long name
 	 * Sadly the long name is not typically part of the path name, so we need to
