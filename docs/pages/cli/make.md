@@ -24,6 +24,13 @@ Next, assume that we want to do a incremental build of `ORD501.PGM`, which has
 
 So that means that 4 objects are going to be rebuilt. Usually, parents always need to be rebuilt to ensure level checking happens. Sometimes, we don't want to rebuild the children because they haven't changed (and can depend on the library list to find the existing objects). **You can use option `-nc` to ensure no target children get built** as part of the make file.
 
+### General rule for builds
+
+To ensure library lists are supported correctly, the following rules are recommended:
+
+* When building an object, always use the qualified name of the object being built.
+* When referenceing an object, always use the unqualified name of the object so that the library list can be used to find the object.
+
 ### When is a incremental build right?
 
 It is always recommended to do a incremental build when working in a new branch. Ensure that you have a library of objects from a previous full build on the library list.

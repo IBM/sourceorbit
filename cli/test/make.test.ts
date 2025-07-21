@@ -153,7 +153,7 @@ test(`Multi-module program and service program`, async () => {
     '$(PREPATH)/MYWEBAPP.PGM: ',
     '\tliblist -c $(BIN_LIB);\\',
     '\tliblist -a $(LIBL);\\',
-    '\tsystem "CRTPGM PGM($(BIN_LIB)/MYWEBAPP) ENTMOD(MYWEBAPP) MODULE(HANDLERA HANDLERB MYWEBAPP) TGTRLS(*CURRENT) BNDDIR($(BNDDIR)) ACTGRP(*NEW)" > .logs/mywebapp.splf'
+    '\tsystem "CRTPGM PGM($(BIN_LIB)/MYWEBAPP) ENTMOD(MYWEBAPP) MODULE(HANDLERA HANDLERB MYWEBAPP) TGTRLS(*CURRENT) BNDDIR($(APP_BNDDIR)) ACTGRP(*NEW)" > .logs/mywebapp.splf'
   ].join());
 
   const webappMod = targets.getTarget({systemName: `MYWEBAPP`, type: `MODULE`});
@@ -178,7 +178,7 @@ test(`Multi-module program and service program`, async () => {
     '\t-system "DLTOBJ OBJ($(BIN_LIB)/UTILS) OBJTYPE(*SRVPGM)"',
     '\tliblist -c $(BIN_LIB);\\',
     '\tliblist -a $(LIBL);\\',
-    `\tsystem "CRTSRVPGM SRVPGM($(BIN_LIB)/UTILS) MODULE(JWTHANDLER VALIDATE) SRCSTMF('qsrvsrc/utils.binder') BNDDIR($(BNDDIR))" > .logs/utils.splf`,
+    `\tsystem "CRTSRVPGM SRVPGM($(BIN_LIB)/UTILS) MODULE(JWTHANDLER VALIDATE) SRCSTMF('qsrvsrc/utils.binder') BNDDIR($(APP_BNDDIR))" > .logs/utils.splf`,
     '\t-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/UTILS *SRVPGM *IMMED))"'
   ].join());
 })
