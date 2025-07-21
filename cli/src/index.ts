@@ -64,7 +64,12 @@ async function main() {
 
 			case '-nc':
 			case '--no-children':
-				cliSettings.makeFileNoChildren = true;
+				warningOut(`--no-children is deprecated and is default when doing partial builds.`);
+				break;
+
+			case `-wp`:
+			case `--with-parents`:
+				cliSettings.makefileWithParents = true;
 				break;
 
 			case '-ap':
@@ -127,9 +132,9 @@ async function main() {
 				console.log(``);
 				console.log(`Options specific to '-bf make':`);
 				console.log(``);
-				console.log(`\t-nc`);
-				console.log(`\t--no-children\tUsed with '-bf make' and won't include children of`);
-				console.log(`\t\t\tobjects in the makefile. Useful in conjuction with '-f'.`);
+				console.log(`\t-wp`);
+				console.log(`\t--with-parents\tUsed with '-bf make' and will add parents of`);
+				console.log(`\t\t\tobjects being partially built to the makefile.`);
 				console.log(``);
 				process.exit(0);
 				break;
@@ -232,7 +237,7 @@ async function main() {
 
 			await makeProj.setupSettings();
 			
-			makeProj.setNoChildrenInBuild(cliSettings.makeFileNoChildren);
+			makeProj.setPartialWithImpacts(cliSettings.makefileWithParents);
 
 			let specificObjects: ILEObject[] | undefined = cliSettings.fileList ? cliSettings.lookupFiles.map(f => targets.getResolvedObject(path.join(cwd, f))).filter(o => o) : undefined;
 			writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile(specificObjects).join(`\n`));

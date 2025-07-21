@@ -11,7 +11,7 @@ export let cliSettings = {
 	fileList: false,
 	lookupFiles: [] as string[],
 	userBranch: ``,
-	makeFileNoChildren: false,
+	makefileWithParents: false,
 	assumeSourcesArePrograms: false,
 };
 
