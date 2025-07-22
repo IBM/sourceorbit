@@ -135,6 +135,13 @@ export async function rpgleTargetCallback(targets: Targets, localPath: string, c
             line: include.line,
           });
         }
+
+        if (targets.shouldAssumePrograms()) {
+          const mistakenObject = targets.getResolvedObject(include.toPath);
+          if (mistakenObject) {
+            targets.removeObject(mistakenObject);
+          }
+        }
       });
     }
 
