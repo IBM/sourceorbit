@@ -115,6 +115,10 @@ export class Targets {
 		this.assumePrograms = assumePrograms;
 	}
 
+	public shouldAssumePrograms() {
+		return this.assumePrograms;
+	}
+
 	public setSuggestions(newSuggestions: TargetSuggestions) {
 		this.actionSuggestions = newSuggestions;
 	}
@@ -125,6 +129,10 @@ export class Targets {
 
 	public getRelative(fullPath: string) {
 		return path.relative(this.cwd, fullPath);
+	}
+
+	public getFull(relativePath: string) {
+		return path.join(this.cwd, relativePath);
 	}
 
 	storeResolved(localPath: string, ileObject: ILEObject) {
@@ -270,9 +278,13 @@ export class Targets {
 		this.targets[`${resolvedObject.systemName}.${resolvedObject.type}`] = undefined;
 		this.resolvedSearches[`${resolvedObject.systemName}.${resolvedObject.type}`] = undefined;
 
+		if (resolvedObject.relativePath) {
+			this.resolvedObjects[this.getFull(resolvedObject.relativePath)] = undefined;
+			this.logger.flush(resolvedObject.relativePath)
+		}
+
 		// Remove possible logs
 		if (resolvedObject.relativePath) {
-			this.logger.flush(resolvedObject.relativePath)
 		}
 
 		return impactedTargets;
@@ -590,7 +602,7 @@ export class Targets {
 		};
 
 		// Replace the old resolved object with the module
-		this.storeResolved(path.join(this.cwd, basePath), newModule);
+		this.storeResolved(this.getFull(basePath), newModule);
 
 		// Create a new target for the module
 		const newModTarget = this.createOrAppend(newModule);
