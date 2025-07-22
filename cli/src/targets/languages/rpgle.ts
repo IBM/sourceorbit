@@ -106,10 +106,12 @@ export async function rpgleTargetCallback(targets: Targets, localPath: string, c
               }
             });
           } else {
-            targets.logger.fileLog(targets.getRelative(include.toPath), {
-              message: `referenced as include, but should use the '.rpgleinc' extension.`,
-              type: `warning`,
-            });
+            if (!targets.shouldAssumePrograms()) {
+              targets.logger.fileLog(targets.getRelative(include.toPath), {
+                message: `referenced as include, but should use the '.rpgleinc' extension.`,
+                type: `warning`,
+              });
+            }
           }
         }
 
@@ -180,7 +182,7 @@ export async function rpgleTargetCallback(targets: Targets, localPath: string, c
         });
       } else {
         targets.logger.fileLog(ileObject.relativePath, {
-          message: `type detected as ${ileObject.type} but NOMAIN keyword was not found. Is it possible the extension should include '.pgm'?`,
+          message: `type detected as ${ileObject.type} but NOMAIN keyword was not found.`,
           type: `warning`,
         });
       }
@@ -188,7 +190,7 @@ export async function rpgleTargetCallback(targets: Targets, localPath: string, c
 
     if (cache.keyword[`BNDDIR`]) {
       targets.logger.fileLog(ileObject.relativePath, {
-        message: `has the BNDDIR keyword. 'binders' property in iproj.json should be used instead.`,
+        message: `has the BNDDIR keyword. Binding directory should be set at global level or object level.`,
         type: `info`,
       });
     }

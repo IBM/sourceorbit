@@ -115,6 +115,10 @@ export class Targets {
 		this.assumePrograms = assumePrograms;
 	}
 
+	public shouldAssumePrograms() {
+		return this.assumePrograms;
+	}
+
 	public setSuggestions(newSuggestions: TargetSuggestions) {
 		this.actionSuggestions = newSuggestions;
 	}
