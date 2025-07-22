@@ -38,6 +38,26 @@ describe(`pseudo tests`, () => {
     expect(testModule.deps.find(f => f.systemName === `EMPDET` && f.type === `SRVPGM`)).toBeDefined();
   });
 
+  test(`We can get a list of headers`, () => {
+    const allHeaders = targets.getAllHeaders();
+    expect(allHeaders.length).toBe(2);
+    expect(allHeaders).toContain(`qrpgleref/constants.rpgleinc`);
+    expect(allHeaders).toContain(`qrpgleref/empdet.rpgleinc`);
+
+    const constantImpacts = targets.getAffectedByHeader([`qrpgleref/constants.rpgleinc`]);
+    expect(constantImpacts.length).toBe(4);
+    expect(constantImpacts.find(f => f.systemName === `DEPTS` && f.type === `PGM`)).toBeDefined();
+    expect(constantImpacts.find(f => f.systemName === `EMPLOYEES` && f.type === `PGM`)).toBeDefined();
+    expect(constantImpacts.find(f => f.systemName === `MYPGM` && f.type === `PGM`)).toBeDefined();
+    expect(constantImpacts.find(f => f.systemName === `NEWEMP` && f.type === `PGM`)).toBeDefined();
+
+    const empdetImpacts = targets.getAffectedByHeader([`qrpgleref/empdet.rpgleinc`]);
+    expect(empdetImpacts.length).toBe(3);
+    expect(empdetImpacts.find(f => f.systemName === `EMPDET` && f.type === `MODULE`)).toBeDefined();
+    expect(empdetImpacts.find(f => f.systemName === `EMPLOYEES` && f.type === `PGM`)).toBeDefined();
+    expect(empdetImpacts.find(f => f.systemName === `TEMPDETT` && f.type === `MODULE`)).toBeDefined();
+  });
+
   test('Deps are picked up for the module', () => {
     const empdet = targets.getTarget({systemName: `EMPDET`, type: `MODULE`});
     expect(empdet).toBeDefined();
