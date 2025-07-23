@@ -673,8 +673,9 @@ export class Targets {
 		}
 
 		return Object.values(this.resolvedObjects).filter(obj =>
-			(obj.extension?.toUpperCase() === extension && (obj.type === `PGM`) === shouldBeProgram) ||
-			(anyPrograms === true && obj.type === `PGM` && obj.extension.toUpperCase() === extension)
+			obj &&
+			((obj.extension?.toUpperCase() === extension && (obj.type === `PGM`) === shouldBeProgram) ||
+			(anyPrograms === true && obj.type === `PGM` && obj.extension.toUpperCase() === extension))
 		);
 	}
 
