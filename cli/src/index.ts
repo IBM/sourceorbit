@@ -67,6 +67,11 @@ async function main() {
 				warningOut(`--no-children is deprecated and is default when doing partial builds.`);
 				break;
 
+			case `-ip`:
+			case `--is-partial`:
+				cliSettings.makefileIsPartial = true;
+				break;
+
 			case `-wp`:
 			case `--with-parents`:
 				cliSettings.makefileWithParents = true;
@@ -84,7 +89,7 @@ async function main() {
 			case `-f`:
 			case `--files`:
 			case `-l`:
-				cliSettings.fileList = true;
+				cliSettings.lookupFiles = [];
 				break;
 
 			case `-h`:
@@ -132,6 +137,10 @@ async function main() {
 				console.log(``);
 				console.log(`Options specific to '-bf make':`);
 				console.log(``);
+				console.log(`\t-ip`);
+				console.log(`\t--is-partial\tWill only generate targets that are needed for`);
+				console.log(`\t\t\tthe objects that are being built.`);
+				console.log(``);
 				console.log(`\t-wp`);
 				console.log(`\t--with-parents\tUsed with '-bf make' and will add parents of`);
 				console.log(`\t\t\tobjects being partially built to the makefile.`);
@@ -140,7 +149,7 @@ async function main() {
 				break;
 
 			default:
-				if (cliSettings.fileList) {
+				if (cliSettings.lookupFiles !== undefined) {
 					cliSettings.lookupFiles.push(parms[i]);
 				}
 				break;
@@ -237,9 +246,12 @@ async function main() {
 
 			await makeProj.setupSettings();
 			
-			makeProj.setPartialWithImpacts(cliSettings.makefileWithParents);
+			makeProj.setPartialOptions({
+				partial: cliSettings.makefileIsPartial,
+				parents: cliSettings.makefileWithParents
+			})
 
-			let specificObjects: ILEObject[] | undefined = cliSettings.fileList ? cliSettings.lookupFiles.map(f => targets.getResolvedObject(path.join(cwd, f))).filter(o => o) : undefined;
+			let specificObjects: ILEObject[] | undefined = cliSettings.lookupFiles ? cliSettings.lookupFiles.map(f => targets.getResolvedObject(path.join(cwd, f))).filter(o => o) : undefined;
 			writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile(specificObjects).join(`\n`));
 			
 			break;

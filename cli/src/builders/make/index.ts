@@ -28,7 +28,7 @@ type PartialOptions = { partial: boolean, parents: boolean };
 
 interface PartialTargets {
 	partial: ILEObject[];
-	children: ILEObject[];
+	children?: ILEObject[];
 }
 
 export class MakeProject {
@@ -231,7 +231,7 @@ export class MakeProject {
 	 * If `parents` is true, it will return all parent objects of the partial build objects, and their children/
 	 */
 	private getPartialTargets(partialBuild?: ILEObject[]): PartialTargets|undefined {
-		if (!partialBuild) {
+		if (partialBuild === undefined) {
 			return;
 		}
 
@@ -288,9 +288,9 @@ export class MakeProject {
 			)
 		}
 
-		if (buildObjects) {
+		if (buildObjects && buildObjects.children) {
 			// If we don't want the children to get built, we only generate the targets for the specific objects
-			for (const obj of buildObjects.children || []) {
+			for (const obj of buildObjects.children) {
 				if (obj.reference) continue; // Skip references
 
 				const target = this.targets.getTarget(obj);
@@ -376,7 +376,7 @@ export class MakeProject {
 					for (const ileObject of objects) {
 						if (ileObject.reference) continue;
 
-						if (buildObjects && !buildObjects.children.some(o => o.systemName === ileObject.systemName && o.type === ileObject.type)) {
+						if (buildObjects && buildObjects.children && !buildObjects.children.some(o => o.systemName === ileObject.systemName && o.type === ileObject.type)) {
 							continue; // Skip this object
 						}
 						
