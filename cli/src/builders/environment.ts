@@ -86,7 +86,7 @@ export function getDefaultCompiles(): CompileAttribute {
         entmod: `$*`,
         module: `*MODULES`,
         tgtrls: `*CURRENT`,
-        bnddir: `$(BNDDIR)`,
+        bnddir: `$(APP_BNDDIR)`,
         actgrp: `*NEW`
       }
     },
@@ -100,7 +100,7 @@ export function getDefaultCompiles(): CompileAttribute {
         dbgview: `*SOURCE`,
         tgtrls: `*CURRENT`,
         tgtccsid: `*JOB`,
-        bnddir: `$(BNDDIR)`,
+        bnddir: `$(APP_BNDDIR)`,
         dftactgrp: `*NO`
       }
     },
@@ -114,7 +114,7 @@ export function getDefaultCompiles(): CompileAttribute {
         dbgview: `*SOURCE`,
         option: `*EVENTF`,
         rpgppopt: `*LVL2`,
-        compileopt: `TGTCCSID(*JOB) BNDDIR($(BNDDIR)) DFTACTGRP(*no)`
+        compileopt: `TGTCCSID(*JOB) BNDDIR($(APP_BNDDIR)) DFTACTGRP(*no)`
       }
     },
     "rpgle": {
@@ -226,7 +226,7 @@ export function getDefaultCompiles(): CompileAttribute {
         srvpgm: `$(BIN_LIB)/$*`,
         module: `*MODULES`,
         srcstmf: `'$<'`,
-        bnddir: `$(BNDDIR)`
+        bnddir: `$(APP_BNDDIR)`
       },
       postCommands: [
         `-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/$* *SRVPGM *IMMED))"`

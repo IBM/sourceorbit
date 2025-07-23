@@ -115,6 +115,10 @@ export class Targets {
 		this.assumePrograms = assumePrograms;
 	}
 
+	public shouldAssumePrograms() {
+		return this.assumePrograms;
+	}
+
 	public setSuggestions(newSuggestions: TargetSuggestions) {
 		this.actionSuggestions = newSuggestions;
 	}
@@ -125,6 +129,10 @@ export class Targets {
 
 	public getRelative(fullPath: string) {
 		return path.relative(this.cwd, fullPath);
+	}
+
+	public getFull(relativePath: string) {
+		return path.join(this.cwd, relativePath);
 	}
 
 	storeResolved(localPath: string, ileObject: ILEObject) {
@@ -270,9 +278,13 @@ export class Targets {
 		this.targets[`${resolvedObject.systemName}.${resolvedObject.type}`] = undefined;
 		this.resolvedSearches[`${resolvedObject.systemName}.${resolvedObject.type}`] = undefined;
 
+		if (resolvedObject.relativePath) {
+			this.resolvedObjects[this.getFull(resolvedObject.relativePath)] = undefined;
+			this.logger.flush(resolvedObject.relativePath)
+		}
+
 		// Remove possible logs
 		if (resolvedObject.relativePath) {
-			this.logger.flush(resolvedObject.relativePath)
 		}
 
 		return impactedTargets;
@@ -487,6 +499,11 @@ export class Targets {
 				currentTarget.deps = currentTarget.deps.filter(d => ![`SRVPGM`].includes(d.type));
 
 				for (const importName of currentTarget.imports) {
+					if (currentTarget.exports?.includes(importName.toUpperCase())) {
+						// This happens when a source copy has the prototype and the implementation (export)
+						continue; // Don't add imports that are also exports
+					}
+
 					// Find if this import resolves to another object
 					const possibleSrvPgmDep = this.resolvedExports[importName.toUpperCase()];
 					// We can't add a module as a dependency at this step.
@@ -585,7 +602,7 @@ export class Targets {
 		};
 
 		// Replace the old resolved object with the module
-		this.storeResolved(path.join(this.cwd, basePath), newModule);
+		this.storeResolved(this.getFull(basePath), newModule);
 
 		// Create a new target for the module
 		const newModTarget = this.createOrAppend(newModule);

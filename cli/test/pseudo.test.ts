@@ -64,7 +64,7 @@ describe(`pseudo tests`, () => {
     const testerProgram = makefile.findIndex(l => l.startsWith(`$(PREPATH)/OTHER.PGM: qrpglesrc/other.pgm.sqlrpgle`));
     expect(testerProgram).toBeGreaterThan(-1);
     expect(makefile[testerProgram + 3]).toBe([
-      `\tsystem "CRTSQLRPGI OBJ($(BIN_LIB)/OTHER) SRCSTMF('qrpglesrc/other.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(273) BNDDIR($(BNDDIR)) DFTACTGRP(*no)')" > .logs/other.splf || \\`,
+      `\tsystem "CRTSQLRPGI OBJ($(BIN_LIB)/OTHER) SRCSTMF('qrpglesrc/other.pgm.sqlrpgle') COMMIT(*NONE) DBGVIEW(*SOURCE) OPTION(*EVENTF) RPGPPOPT(*LVL2) COMPILEOPT('TGTCCSID(273) BNDDIR($(APP_BNDDIR)) DFTACTGRP(*no)')" > .logs/other.splf || \\`,
       `\t(system "CPYTOSTMF FROMMBR('$(PREPATH)/EVFEVENT.FILE/OTHER.MBR') TOSTMF('.evfevent/other.evfevent') DBFCCSID(*FILE) STMFCCSID(1208) STMFOPT(*REPLACE)"; $(SHELL) -c 'exit 1')`
     ].join('\n'));
   });

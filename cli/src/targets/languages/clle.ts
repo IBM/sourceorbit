@@ -41,10 +41,12 @@ export async function clleTargetCallback(targets: Targets, filePath: string, con
         }
       });
     } else {
-      targets.logger.fileLog(ileObject.relativePath, {
-        message: `Extension is '${ileObject.extension}', but Source Orbit doesn't support CLP. Is it possible the extension should use '.pgm.clle'?`,
-        type: `warning`,
-      });
+      if (!targets.shouldAssumePrograms()) {
+        targets.logger.fileLog(ileObject.relativePath, {
+          message: `Extension is '${ileObject.extension}', but CLP isn't supported. Is it possible the extension should use '.pgm.clle'?`,
+          type: `warning`,
+        });
+      }
     }
 
   } else {
@@ -61,10 +63,12 @@ export async function clleTargetCallback(targets: Targets, filePath: string, con
           }
         });
       } else {
-        targets.logger.fileLog(ileObject.relativePath, {
-          message: `Type detected as ${ileObject.type} but Source Orbit doesn't support CL modules. Is it possible the extension should include '.pgm'?`,
-          type: `warning`,
-        });
+        if (!targets.shouldAssumePrograms()) {
+          targets.logger.fileLog(ileObject.relativePath, {
+            message: `Type detected as ${ileObject.type} but CL modules aren't supported. Is it possible the extension should include '.pgm'?`,
+            type: `warning`,
+          });
+        }
       }
     }
   }

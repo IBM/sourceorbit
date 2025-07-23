@@ -66,7 +66,7 @@ describe(`multi_module_two tests`, () => {
     expect(runnerDepsString).toContain(`$(PREPATH)/RUNNER.MODULE`);
     expect(runnerDepsString).toContain(`$(PREPATH)/DATA.MODULE`);
 
-    expect(targetContent).toContain(`\tsystem "CRTPGM PGM($(BIN_LIB)/RUNNER) ENTMOD(RUNNER) MODULE(DB RUNNER DATA) TGTRLS(*CURRENT) BNDDIR($(BNDDIR)) ACTGRP(*NEW)" > .logs/runner.splf`);
+    expect(targetContent).toContain(`\tsystem "CRTPGM PGM($(BIN_LIB)/RUNNER) ENTMOD(RUNNER) MODULE(DB RUNNER DATA) TGTRLS(*CURRENT) BNDDIR($(APP_BNDDIR)) ACTGRP(*NEW)" > .logs/runner.splf`);
     expect(targetContent).toContain(`$(PREPATH)/RUNNER.MODULE: rpgle/runner.pgm.rpgle`);
   });
 });

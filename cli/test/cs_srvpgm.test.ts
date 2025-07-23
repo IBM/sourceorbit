@@ -100,7 +100,7 @@ describe(`pseudo tests`, () => {
     const contents = makefile.getMakefile().join(`\n`);
 
     expect(contents).toContain(`$(PREPATH)/EMPLOYEES.PGM:`);
-    expect(contents).toContain(`system "CRTPGM PGM($(BIN_LIB)/EMPLOYEES) ENTMOD(EMPLOYEES) MODULE(EMPDET EMPLOYEES) TGTRLS(*CURRENT) BNDDIR($(BNDDIR)) ACTGRP(*NEW)" > .logs/employees.splf`);
+    expect(contents).toContain(`system "CRTPGM PGM($(BIN_LIB)/EMPLOYEES) ENTMOD(EMPLOYEES) MODULE(EMPDET EMPLOYEES) TGTRLS(*CURRENT) BNDDIR($(APP_BNDDIR)) ACTGRP(*NEW)" > .logs/employees.splf`);
 
     expect(contents).not.toContain(`EMPDET.SRVPGM`); // Ensure no service program is created
     expect(contents).toContain(`EMPDET.MODULE`);

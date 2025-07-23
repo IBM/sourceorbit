@@ -74,7 +74,7 @@ export class ImpactMarkdown {
           lines.push(
             `##### \`${relativePath}\``,
             ``,
-            ...fileLogs.map(log => `* ${LogEmoji[log.type] || `❔`} ${log.message}`),
+            ...fileLogs.map(log => `* ${LogEmoji[log.type] || `❔`}${log.line ? `line ${log.line}:` : ''} ${log.message}`),
             ``
           )
         }
@@ -110,7 +110,7 @@ export class ImpactMarkdown {
         warningMarkdown.push(
           `**\`${relativePath}\`**`,
           ``,
-          ...logs.filter(l => l.type === 'warning').map(log => `* [ ] ${LogEmoji[log.type] || `❔`} ${log.message}`),
+          ...logs.filter(l => l.type === 'warning').map(log => `* [ ] ${LogEmoji[log.type] || `❔`}${log.line ? `line ${log.line}:` : ''} ${log.message}`),
           ``
         )
       }

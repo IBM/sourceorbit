@@ -33,6 +33,13 @@ So that means that 3 objects are going to be rebuilt. Sometimes, we don't want t
 
 Usually, parents always need to be rebuilt to ensure level checking happens. If you use the `-wp` (with-parents) options, then the `makefile` will also include targets to rebuild the parent objects too (`ORD500`), but the `all` target will only build the specified target (`ORD501`).
 
+### General rule for builds
+
+To ensure library lists are supported correctly, the following rules are recommended:
+
+* When building an object, always use the qualified name of the object being built.
+* When referenceing an object, always use the unqualified name of the object so that the library list can be used to find the object.
+
 ### When is a incremental build right?
 
 It is always recommended to do a incremental build when working in a new branch. Ensure that you have a library of objects from a previous full build on the library list.
