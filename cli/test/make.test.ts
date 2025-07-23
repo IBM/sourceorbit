@@ -199,6 +199,8 @@ test('generateTargets (post-resolve)', async () => {
     `SRVPGMA`
   ]);
 
+  project.setPartialOptions({partial: true, parents: false});
+
   const targetContent = project.generateTargets([srvpgma]);
 
   console.log(targetContent.join('\n'));
@@ -220,6 +222,8 @@ test('generateTargets (post-resolve)', async () => {
   );
 
   const rules = project.generateGenericRules([srvpgma]);
+
+  console.log(rules.join('\n'));
   expect(rules).toContain(`$(PREPATH)/MODULEB.MODULE: qrpglesrc/moduleB.sqlrpgle`);
   expect(rules).toContain(`$(PREPATH)/SRVPGMA.SRVPGM: qsrvsrc/srvpgmA.bnd`);
   expect(rules).toContain(`$(PREPATH)/FILEB.FILE: qddssrc/fileB.pf`);
