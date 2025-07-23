@@ -8,13 +8,6 @@ This section only applies if you use `-bf make`.
 
 Using `so -bf make` will generate a makefile to rebuild the entire project. This is fine when deploying to new systems. It is also possible to do incremental builds.
 
-To do an incremental build, also referred to as a partial build, you can specify the targets you want to build:
-
-```bash
-so -bf make -f 'qrpglesrc/ord500.pgm.rpgle'
-so -bf make -l `git diff --name-only origin/main origin/${GITHUB_HEAD_REF}`
-```
-
 A incremental build means building a specific targets, their parents and optionally their children. Let's assume this is our dependency tree:
 
 ```
@@ -32,6 +25,18 @@ Next, assume that we want to do a incremental build of `ORD501.PGM`, which has
 So that means that 3 objects are going to be rebuilt. Sometimes, we don't want to rebuild the children because they haven't changed (and can depend on the library list to find the existing objects).
 
 Usually, parents always need to be rebuilt to ensure level checking happens. If you use the `-wp` (with-parents) options, then the `makefile` will also include targets to rebuild the parent objects too (`ORD500`), but the `all` target will only build the specified target (`ORD501`).
+
+### Parameters for increment builds
+
+When you use `so -bf make`, you can specify the following parameters to control the incremental build:
+
+* `-f`/`-l` to specify the list of sources to build. This can be a single file or a list of files.
+    * `so -bf make -f qrpglesrc/employees.pgm.sqlrpgle` will build the `EMPLOYEES.PGM` object.
+* With `-ip` (is-partial), then only the specified objects and its dependents will be put into the `makefile`.
+    * `so -bf make -f qrpglesrc/employees.pgm.sqlrpgle -ip` 
+		* This will generate a makefile only for the specific objects.
+* With `-wp` (with-parents), then the parents of the specified objects will also be included in the `makefile`.
+    * `so -bf make -f qrpglesrc/employees.pgm.sqlrpgle -ip -wp`
 
 ### General rule for builds
 
