@@ -489,72 +489,81 @@ export class Targets {
 			}
 		}
 
-		// We loop through all programs and module and study their imports.
-		// We do this in case they depend on another service programs based on import
-		for (let currentTarget of allTargets) {
-			if ([`PGM`, `MODULE`].includes(currentTarget.type) && currentTarget.imports) {
-				let newImports: ILEObject[] = [];
+		const resolveExportsForObject = (currentTarget: ILEObjectTarget) => {
+			if (!currentTarget.imports || currentTarget.imports.length === 0) return; // Nothing to resolve
 
-				// Remove any service program deps so we can resolve them cleanly
-				currentTarget.deps = currentTarget.deps.filter(d => ![`SRVPGM`].includes(d.type));
+			let newImports: ILEObject[] = [];
 
-				for (const importName of currentTarget.imports) {
-					if (currentTarget.exports?.includes(importName.toUpperCase())) {
-						// This happens when a source copy has the prototype and the implementation (export)
-						continue; // Don't add imports that are also exports
+			// Remove any service program deps so we can resolve them cleanly
+			currentTarget.deps = currentTarget.deps.filter(d => ![`SRVPGM`].includes(d.type));
+
+			for (const importName of currentTarget.imports) {
+				if (currentTarget.exports?.includes(importName.toUpperCase())) {
+					// This happens when a source copy has the prototype and the implementation (export)
+					continue; // Don't add imports that are also exports
+				}
+
+				// Find if this import resolves to another object
+				const possibleSrvPgmDep = this.resolvedExports[importName.toUpperCase()];
+				// We can't add a module as a dependency at this step.
+				if (possibleSrvPgmDep && possibleSrvPgmDep.type === `SRVPGM`) {
+					// Make sure we haven't imported it before!
+					if (!newImports.some(i => i.systemName === possibleSrvPgmDep.systemName && i.type === possibleSrvPgmDep.type)) {
+						newImports.push(possibleSrvPgmDep);
 					}
 
-					// Find if this import resolves to another object
-					const possibleSrvPgmDep = this.resolvedExports[importName.toUpperCase()];
-					// We can't add a module as a dependency at this step.
-					if (possibleSrvPgmDep && possibleSrvPgmDep.type === `SRVPGM`) {
-						// Make sure we haven't imported it before!
-						if (!newImports.some(i => i.systemName === possibleSrvPgmDep.systemName && i.type === possibleSrvPgmDep.type)) {
-							newImports.push(possibleSrvPgmDep);
-						}
+				} else if ([`PGM`, `MODULE`].includes(currentTarget.type)) {
+					// Perhaps we're looking at a program object, which actually should be a multi
+					// module program, so we do a lookup for additional modules.
+					const possibleModuleDep = allModules.find(mod => mod.exports && mod.exports.includes(importName.toUpperCase()));
+					if (possibleModuleDep) {
+						if (!newImports.some(i => i.systemName === possibleModuleDep.systemName && i.type === possibleModuleDep.type)) {
+							newImports.push(possibleModuleDep);
 
-					} else if ([`PGM`, `MODULE`].includes(currentTarget.type)) {
-						// Perhaps we're looking at a program object, which actually should be a multi
-						// module program, so we do a lookup for additional modules.
-						const possibleModuleDep = allModules.find(mod => mod.exports && mod.exports.includes(importName.toUpperCase()))
-						if (possibleModuleDep) {
-							if (!newImports.some(i => i.systemName === possibleModuleDep.systemName && i.type === possibleModuleDep.type)) {
-								newImports.push(possibleModuleDep);
-
-								// TODO: consider other IMPORTS that `possibleModuleDep` needs.
-							}
+							// TODO: consider other IMPORTS that `possibleModuleDep` needs.
 						}
 					}
-				};
+				}
+			};
 
-				// If the program or module has imports that we ca resolve, then we add them as deps
-				if (newImports.length > 0) {
-					infoOut(`${currentTarget.systemName}.${currentTarget.type} has additional dependencies: ${newImports.map(i => `${i.systemName}.${i.type}`)}`);
-					currentTarget.deps.push(...newImports);
+			// If the program or module has imports that we can resolve, then we add them as deps
+			if (newImports.length > 0) {
+				infoOut(`${currentTarget.systemName}.${currentTarget.type} has additional dependencies: ${newImports.map(i => `${i.systemName}.${i.type}`)}`);
+				currentTarget.deps.push(...newImports);
 
-					if (currentTarget.type === `PGM`) {
-						// If this program has MODULE dependecies, that means we need to change the way it's compiled
-						// to be a program made up of many modules, usually done with CRTPGM
-						if (currentTarget.deps.some(d => d.type === `MODULE`)) {
-							this.convertBoundProgramToMultiModuleProgram(currentTarget);
+				if (currentTarget.type === `PGM`) {
+					// If this program has MODULE dependecies, that means we need to change the way it's compiled
+					// to be a program made up of many modules, usually done with CRTPGM
+					if (currentTarget.deps.some(d => d.type === `MODULE`)) {
+						this.convertBoundProgramToMultiModuleProgram(currentTarget);
 
-							// Then, also include any of the modules dep modules into the currentTarget deps!!
-							const depTargets = currentTarget.deps
-								.filter(d => d.type === `MODULE`)
-								.map(m => this.getTarget(m));
+						// Then, also include any of the modules dep modules into the currentTarget deps!!
+						const depTargets = currentTarget.deps
+							.filter(d => d.type === `MODULE`)
+							.map(m => this.getTarget(m));
 
-							// Confusing names, it means: dependencies of the dependencies that are modules
-							const depDeps = depTargets.map(m => m?.deps).flat().filter(d => d.type === `MODULE`);
+						// Confusing names, it means: dependencies of the dependencies that are modules
+						const depDeps = depTargets.map(m => m?.deps).flat().filter(d => d.type === `MODULE`);
 
-							for (const newDep of depDeps) {
-								if (newDep && !currentTarget.deps.some(d => d.systemName === newDep.systemName && d.type === newDep.type)) {
-									currentTarget.deps.push(newDep);
-								}
+						for (const newDep of depDeps) {
+							if (newDep && !currentTarget.deps.some(d => d.systemName === newDep.systemName && d.type === newDep.type)) {
+								currentTarget.deps.push(newDep);
 							}
 						}
 					}
 				}
 			}
+		}
+
+		// Next, resolve the exports for all modules and programs
+
+		for (const module of allModules) {
+			resolveExportsForObject(module);
+		}
+
+		const allPrograms = this.getTargetsOfType(`PGM`);
+		for (const program of allPrograms) {
+			resolveExportsForObject(program);
 		}
 
 		const commandObjects = this.getResolvedObjects(`CMD`);
