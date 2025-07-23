@@ -181,4 +181,51 @@ test(`Multi-module program and service program`, async () => {
     `\tsystem "CRTSRVPGM SRVPGM($(BIN_LIB)/UTILS) MODULE(JWTHANDLER VALIDATE) SRCSTMF('qsrvsrc/utils.binder') BNDDIR($(APP_BNDDIR))" > .logs/utils.splf`,
     '\t-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$(APP_BNDDIR)) OBJ((*LIBL/UTILS *SRVPGM *IMMED))"'
   ].join());
-})
+});
+
+test('generateTargets (post-resolve)', async () => {
+  const targets = await baseTargets(true);
+
+  targets.resolveBinder();
+
+  const project = new MakeProject(cwd, targets, new ReadFileSystem());
+
+  const srvpgma = targets.getTarget({systemName: `SRVPGMA`, type: `SRVPGM`});
+  const srvpgmaRequirements = targets.getRequiredObjects([srvpgma]);
+  expect(srvpgmaRequirements.length).toBe(3);
+  expect(srvpgmaRequirements.map(r => r.systemName)).toEqual([
+    `FILEB`,
+    `MODULEB`,
+    `SRVPGMA`
+  ]);
+
+  project.setPartialOptions({partial: true, parents: false});
+
+  const targetContent = project.generateTargets([srvpgma]);
+
+  console.log(targetContent.join('\n'));
+
+  expect(targetContent).toEqual(
+    [
+      'all: .logs .evfevent library $(PREPATH)/SRVPGMA.SRVPGM',
+      '',
+      '$(PREPATH)/MODULEB.MODULE: $(PREPATH)/FILEB.FILE',
+      `$(PREPATH)/SRVPGMA.SRVPGM: $(PREPATH)/MODULEB.MODULE`,
+      ``,
+      `.logs:`,
+			`\tmkdir .logs`,
+			`.evfevent:`,
+			`\tmkdir .evfevent`,
+			`library:`,
+			`\t-system -q "CRTLIB LIB($(BIN_LIB))"`,
+    ]
+  );
+
+  const rules = project.generateGenericRules([srvpgma]);
+
+  console.log(rules.join('\n'));
+  expect(rules).toContain(`$(PREPATH)/MODULEB.MODULE: qrpglesrc/moduleB.sqlrpgle`);
+  expect(rules).toContain(`$(PREPATH)/SRVPGMA.SRVPGM: qsrvsrc/srvpgmA.bnd`);
+  expect(rules).toContain(`$(PREPATH)/FILEB.FILE: qddssrc/fileB.pf`);
+  expect(rules.length).toBe(39);
+});

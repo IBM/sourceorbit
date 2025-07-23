@@ -8,10 +8,10 @@ export let cliSettings = {
 	withActions: false,
 	fixIncludes: false,
 	autoRename: false,
-	fileList: false,
-	lookupFiles: [] as string[],
+	lookupFiles: undefined as string[]|undefined,
 	userBranch: ``,
-	makeFileNoChildren: false,
+	makefileIsPartial: false,
+	makefileWithParents: false,
 	assumeSourcesArePrograms: false,
 };
 

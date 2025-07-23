@@ -3,7 +3,7 @@ import path from 'path';
 import { ILEObject, ILEObjectTarget, ImpactedObject, ObjectType, Targets } from '../../targets';
 import { asPosix, fromCl, getFiles, toCl } from '../../utils';
 import { warningOut } from '../../cli';
-import { name } from '../../../webpack.config';
+import { name, target } from '../../../webpack.config';
 import { FolderOptions, getFolderOptions } from './folderSettings';
 import { readAllRules } from './customRules';
 import { CompileData, CommandParameters, getTrueBasename } from '../environment';
@@ -20,8 +20,19 @@ interface Step {
 	command: string;
 }
 
+/**
+ * parents: this property controls the all target. It will include all the parents of partial build objects.
+ * partial: if this property is true, the makefile will only include targets for the partial build objects (and optionally their parents)
+ */
+type PartialOptions = { partial: boolean, parents: boolean };
+
+interface PartialTargets {
+	partial: ILEObject[];
+	children?: ILEObject[];
+}
+
 export class MakeProject {
-	private noChildren: boolean = false;
+	private partialOptions: PartialOptions = { partial: false, parents: false };
 	private settings: iProject = new iProject();
 	private projectActions: ProjectActions;
 	private actionsEnabled: boolean = false;
@@ -32,8 +43,8 @@ export class MakeProject {
 		this.projectActions = new ProjectActions(this.targets, this.rfs);
 	}
 
-	public setNoChildrenInBuild(noChildren: boolean) {
-		this.noChildren = noChildren;
+	public setPartialOptions(options: PartialOptions) {
+		this.partialOptions = options;
 	}
 
 	public useActions() {
@@ -188,7 +199,7 @@ export class MakeProject {
 			``,
 			...this.generateTargets(specificObjects),
 			``,
-			...this.generateGenericRules()
+			...this.generateGenericRules(specificObjects)
 		];
 	}
 
@@ -214,20 +225,27 @@ export class MakeProject {
 		];
 	}
 
-	public generateTargets(partialBuild?: ILEObject[]): string[] {
-		let lines = [];
+	/**
+	 * Used to return the objects required to do a partial build.
+	 * If `partial` is true, it will return the object and all objects depending on it recursively.
+	 * If `parents` is true, it will return all parent objects of the partial build objects, and their children/
+	 */
+	private getPartialTargets(partialBuild?: ILEObject[]): PartialTargets|undefined {
+		if (partialBuild === undefined) {
+			return;
+		}
 
-		// A 'partial build' means we only want to build specific objects
-		// and we also want to build their parents too. We update `partialBuild`
+		let allParents: ILEObject[]|undefined;
+
+		// we also want to build their parents too. We update `partialBuild`
 		// to include all the parents of the specific objects.
-		if (partialBuild) {
+		if (this.partialOptions.parents) {
+			allParents = [];
 			const impacts = partialBuild.map(o => this.targets.getImpactFor(o));
 
-			let allAffected: ILEObject[] = [];
-
 			const addImpact = (impactedObj: ImpactedObject) => {
-				if (!allAffected.some(o => o.systemName === impactedObj.ileObject.systemName && o.type === impactedObj.ileObject.type)) {
-					allAffected.push(impactedObj.ileObject);
+				if (!allParents.some(o => o.systemName === impactedObj.ileObject.systemName && o.type === impactedObj.ileObject.type)) {
+					allParents.push(impactedObj.ileObject);
 				}
 
 				impactedObj.children.forEach(child => addImpact(child));
@@ -235,9 +253,28 @@ export class MakeProject {
 
 			impacts.forEach(impact => addImpact(impact));
 
-			partialBuild = allAffected;
+			partialBuild = allParents;
 		}
 
+		let allChildren: ILEObject[]|undefined = this.partialOptions.partial ? this.targets.getRequiredObjects(partialBuild) : undefined;
+
+		return {
+			partial: partialBuild,
+			children: allChildren
+		}
+	}
+
+	public generateTargets(partialBuild?: ILEObject[]): string[] {
+		let lines = [];
+
+		// A 'partial build' means we only want to build specific objects
+		const buildObjects = this.getPartialTargets(partialBuild);
+
+		if (buildObjects) {
+			partialBuild = buildObjects.partial;
+		}
+
+		// If we are in partial mode, we only want to generate targets for the specific objects
 		const all = partialBuild || [
 			...(this.targets.binderRequired() ? [this.targets.getBinderTarget()] : []),
 			...this.targets.getTargetsOfType(`PGM`),
@@ -251,7 +288,19 @@ export class MakeProject {
 			)
 		}
 
-		if (!this.noChildren) {
+		if (buildObjects && buildObjects.children) {
+			// If we don't want the children to get built, we only generate the targets for the specific objects
+			for (const obj of buildObjects.children) {
+				if (obj.reference) continue; // Skip references
+
+				const target = this.targets.getTarget(obj);
+				if (target && target.deps && target.deps.length > 0) {
+					lines.push(
+						`$(PREPATH)/${target.systemName}.${target.type}: ${target.deps.filter(d => d.reference !== true).map(dep => `$(PREPATH)/${dep.systemName}.${dep.type}`).join(` `)}`
+					)
+				}
+			}
+		} else {
 			// If we don't want the children to get built, we don't generate the dependency targets
 			for (const target of this.targets.getTargets()) {
 				if (target && target.deps.length > 0) {
@@ -275,8 +324,14 @@ export class MakeProject {
 		return lines;
 	}
 
-	public generateGenericRules(): string[] {
+	public generateGenericRules(partialBuild?: ILEObject[]): string[] {
 		let lines = [];
+
+		const buildObjects = this.getPartialTargets(partialBuild);
+
+		if (buildObjects) {
+			partialBuild = buildObjects.partial;
+		}
 
 		for (const entry of Object.entries(this.settings.compiles)) {
 			let [type, data] = entry;
@@ -320,6 +375,10 @@ export class MakeProject {
 				if (objects.length > 0) {
 					for (const ileObject of objects) {
 						if (ileObject.reference) continue;
+
+						if (buildObjects && buildObjects.children && !buildObjects.children.some(o => o.systemName === ileObject.systemName && o.type === ileObject.type)) {
+							continue; // Skip this object
+						}
 						
 						// This is used when your object really has source
 

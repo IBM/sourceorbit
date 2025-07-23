@@ -22,7 +22,21 @@ Next, assume that we want to do a incremental build of `ORD501.PGM`, which has
 * one parent: `ORD500.PGM`
 * two children: `DEPARTMENT.FILE` and `DEPTS.FILE`
 
-So that means that 4 objects are going to be rebuilt. Usually, parents always need to be rebuilt to ensure level checking happens. Sometimes, we don't want to rebuild the children because they haven't changed (and can depend on the library list to find the existing objects). **You can use option `-nc` to ensure no target children get built** as part of the make file.
+So that means that 3 objects are going to be rebuilt. Sometimes, we don't want to rebuild the children because they haven't changed (and can depend on the library list to find the existing objects).
+
+Usually, parents always need to be rebuilt to ensure level checking happens. If you use the `-wp` (with-parents) options, then the `makefile` will also include targets to rebuild the parent objects too (`ORD500`), but the `all` target will only build the specified target (`ORD501`).
+
+### Parameters for increment builds
+
+When you use `so -bf make`, you can specify the following parameters to control the incremental build:
+
+* `-f`/`-l` to specify the list of sources to build. This can be a single file or a list of files.
+    * `so -bf make -f qrpglesrc/employees.pgm.sqlrpgle` will build the `EMPLOYEES.PGM` object.
+* With `-ip` (is-partial), then only the specified objects and its dependents will be put into the `makefile`.
+    * `so -bf make -f qrpglesrc/employees.pgm.sqlrpgle -ip` 
+		* This will generate a makefile only for the specific objects.
+* With `-wp` (with-parents), then the parents of the specified objects will also be included in the `makefile`.
+    * `so -bf make -f qrpglesrc/employees.pgm.sqlrpgle -ip -wp`
 
 ### General rule for builds
 
