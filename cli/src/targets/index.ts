@@ -238,6 +238,32 @@ export class Targets {
 		return isRef;
 	}
 
+	public getAllHeaders() {
+		const allObjects = this.getResolvedObjects();
+		const allHeaders: string[] = [];
+		for (const obj of allObjects) {
+			if (obj.headers) {
+				for (const header of obj.headers) {
+					if (!allHeaders.includes(header)) {
+						allHeaders.push(header);
+					}
+				}
+			}
+		}
+		return allHeaders;
+	}
+
+	public getAffectedByHeader(headers: string[]): ILEObject[] {
+		const allObjects = this.getResolvedObjects();
+		const affectedObjects: ILEObject[] = [];
+		for (const obj of allObjects) {
+			if (obj.headers && headers.some(header => obj.headers.includes(header))) {
+				affectedObjects.push(obj);
+			}
+		}
+		return affectedObjects;
+	}
+
 	public removeObjectByPath(localPath: string) {
 		const resolvedObject = this.resolvedObjects[localPath];
 
@@ -759,7 +785,7 @@ export class Targets {
 	 * Sadly the long name is not typically part of the path name, so we need to
 	 * find the name inside of the source code.
 	 */
-	async sqlObjectDataFromPath(fullPath: string): Promise<ObjectRef> {
+	private async sqlObjectDataFromPath(fullPath: string): Promise<ObjectRef> {
 		const relativePath = this.getRelative(fullPath);
 
 		if (await this.fs.exists(fullPath)) {
