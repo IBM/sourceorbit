@@ -1,5 +1,5 @@
 import path from 'path';
-import { infoOut } from '../cli';
+import { infoOut, warningOut } from '../cli';
 import Document from "vscode-db2i/src/language/sql/document";
 import { ObjectRef, StatementType } from 'vscode-db2i/src/language/sql/types';
 import { Logger } from '../logger';
@@ -15,6 +15,14 @@ const ignoredObjects = [`QSYSPRT`, `QCMDEXC`, `*LDA.DTAARA`, `QDCXLATE`, `QUSRJO
 const DEFAULT_BINDER_TARGET: ILEObject = { systemName: `$(APP_BNDDIR)`, type: `BNDDIR` };
 
 const TextRegex = /\%TEXT.*(?=\n|\*)/gm
+
+export interface ParserError {
+	filePath: string;
+	content: string;
+	ileObject: ILEObject;
+}
+
+export type ParserErrorCallback = (error: ParserError) => void;
 
 export interface ILEObject {
 	systemName: string;
@@ -85,6 +93,7 @@ export class Targets {
 
 	private actionSuggestions: TargetSuggestions = {};
 
+	private parserErrorCallback: ParserErrorCallback | undefined;
 	public logger: Logger;
 
 	constructor(private cwd: string, private fs: ReadFileSystem) {
@@ -93,6 +102,10 @@ export class Targets {
 
 	static get ignoredObjects() {
 		return ignoredObjects;
+	}
+
+	public setParserErrorCallback(callback: ParserErrorCallback) {
+		this.parserErrorCallback = callback;
 	}
 
 	public getCwd() {
@@ -397,8 +410,6 @@ export class Targets {
 				this.logger.flush(relative);
 			}
 
-			const ext = pathDetail.ext.substring(1).toLowerCase();
-
 			try {
 				const content = await this.fs.readFile(filePath);
 
@@ -427,13 +438,21 @@ export class Targets {
 					type: `warning`
 				});
 
-				console.log(relative);
-				console.log(e);
+				if (this.parserErrorCallback) {
+					this.parserErrorCallback({
+						filePath,
+						content: e.content,
+						ileObject: { systemName: pathDetail.name, type: this.getObjectType(relative, pathDetail.ext) }
+					});
+
+				} else {
+					warningOut(`Failed to parse file ${filePath}!`);
+					warningOut(`Error: ${e.message}`);
+					warningOut(`Create a GitHub issue if this persists.`);
+				}
 
 				success = false;
 			}
-
-			infoOut(``);
 		} else {
 			success = false;
 		}
