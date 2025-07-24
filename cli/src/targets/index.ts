@@ -178,11 +178,6 @@ export class Targets {
 		const type: ObjectType = (isProgram ? "PGM" : this.getObjectType(relativePath, extension));
 
 		if (!type) {
-			this.logger.fileLog(relativePath, {
-				type: `warning`,
-				message: `Unknown object type for ${relativePath} with extension ${extension}.`
-			});
-			
 			return;
 		}
 
