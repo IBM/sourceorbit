@@ -20,6 +20,7 @@ export interface ParserError {
 	filePath: string;
 	content: string;
 	ileObject: ILEObject;
+	error: Error;
 }
 
 export type ParserErrorCallback = (error: ParserError) => void;
@@ -437,7 +438,8 @@ export class Targets {
 					this.parserErrorCallback({
 						filePath,
 						content: e.content,
-						ileObject: { systemName: pathDetail.name, type: this.getObjectType(relative, pathDetail.ext) }
+						ileObject: { systemName: pathDetail.name, type: this.getObjectType(relative, pathDetail.ext) },
+						error: e as Error
 					});
 
 				} else {
