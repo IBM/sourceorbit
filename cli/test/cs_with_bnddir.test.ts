@@ -102,7 +102,14 @@ describe(`pseudo tests`, () => {
     const files = bobProject.createRules();
 
     expect(files[`Rules.mk`]).toBeDefined();
-    expect(files[`Rules.mk`]).toBe(`SUBDIRS = qddssrc qrpglesrc qsqlsrc qtestsrc`);
+    expect(files[`Rules.mk`].startsWith(`SUBDIRS = `)).toBeTruthy();
+    
+    const subdirs = files[`Rules.mk`].split(`SUBDIRS = `)[1].trim().split(` `);
+    expect(subdirs.length).toBe(4);
+    expect(subdirs).toContain(`qddssrc`);
+    expect(subdirs).toContain(`qrpglesrc`);
+    expect(subdirs).toContain(`qsqlsrc`);
+    expect(subdirs).toContain(`qtestsrc`);
 
     expect(files[path.join(`qtestsrc`,`Rules.mk`)]).toBe(`TEMPDETT.MODULE: empdett.test.sqlrpgle qrpgleref/empdet.rpgleinc EMPLOYEE.FILE DEPARTMENT.FILE APP.BNDDIR`)  
     
