@@ -18,10 +18,13 @@ describe(`pseudo tests`, () => {
 
   beforeAll(async () => {
     project.setup();
-    await targets.loadProject();
+    await targets.loadProject({additionalExtensions: [`rpgleinc`]});
 
-    expect(targets.getTargets().length).toBeGreaterThan(0);
+    expect(targets.getResolvedObjects().length).toBe(13);
+    expect(targets.getResolvedObjectsByFileExtension(`rpgleinc`).length).toBe(0);
+
     targets.resolveBinder();
+    expect(targets.getTargets().length).toBeGreaterThan(0);
 
     make = new MakeProject(project.cwd, targets, fs);
     await make.setupSettings();
