@@ -1,13 +1,9 @@
-import { assert, beforeAll, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 import { Targets } from '../src/targets'
 import path from 'path';
-import { MakeProject } from '../src/builders/make';
-import { getFiles } from '../src/utils';
 import { setupFixture } from './fixtures/projects';
 import { referencesFileName } from '../src/extensions';
-import { writeFileSync } from 'fs';
-import { BobProject } from '../src/builders/bob';
 import { ReadFileSystem } from '../src/readFileSystem';
 
 const cwd = setupFixture(`override_objref`);

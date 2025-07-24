@@ -33,8 +33,8 @@ export class TargetsLanguageProvider {
     return this.languageTargets.map(lang => lang.extensions).flat();
   }
 
-  public getGlob() {
-    const allExtensions = this.getExtensions();
+  public getGlob(additionalExtensions: string[] = []): string {
+    const allExtensions = this.getExtensions().concat(additionalExtensions);
     return `**/*.{${allExtensions.join(`,`)},${allExtensions.map(e => e.toUpperCase()).join(`,`)}}`;
   }
 

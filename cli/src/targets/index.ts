@@ -95,10 +95,6 @@ export class Targets {
 		return ignoredObjects;
 	}
 
-	getSearchGlob(): string {
-		return Targets.LanguageProvider.getGlob();
-	}
-
 	public getCwd() {
 		return this.cwd;
 	}
@@ -139,12 +135,12 @@ export class Targets {
 		this.resolvedObjects[localPath] = ileObject;
 	}
 
-	public async loadProject(withRef?: string) {
-		if (withRef) {
-			await this.handleRefsFile(path.join(this.cwd, withRef));
+	public async loadProject(options: { withRef?: string, additionalExtensions?: string[] } = {}) {
+		if (options.withRef) {
+			await this.handleRefsFile(path.join(this.cwd, options.withRef));
 		}
 
-		const initialFiles = await this.fs.getFiles(this.cwd, this.getSearchGlob());
+		const initialFiles = await this.fs.getFiles(this.cwd, Targets.LanguageProvider.getGlob(options.additionalExtensions));
 		await this.loadObjectsFromPaths(initialFiles);
 		await Promise.allSettled(initialFiles.map(f => this.parseFile(f)));
 	}

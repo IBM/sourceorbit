@@ -93,7 +93,7 @@ export async function fixProject(workspaceUri: string, suggestions: TargetSugges
 
 	const targets = new Targets(url, rfs);
 
-	const files = await rfs.getFiles(url, targets.getSearchGlob());
+	const files = await rfs.getFiles(url, Targets.LanguageProvider.getGlob());
 
 	targets.setSuggestions(suggestions);
 

@@ -46,7 +46,7 @@ export class TargetsManager {
 
     const targets = new Targets(url, rfs);
 
-    const files = await rfs.getFiles(url, targets.getSearchGlob());
+    const files = await rfs.getFiles(url, Targets.LanguageProvider.getGlob());
 
     await targets.loadObjectsFromPaths(files);
 
