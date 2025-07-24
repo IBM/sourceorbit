@@ -177,7 +177,7 @@ async function main() {
 	let files: string[];
 
 	if (!scanGlob) {
-		scanGlob = targets.getSearchGlob();
+		scanGlob = Targets.LanguageProvider.getGlob();
 	}
 
 	try {

@@ -16,7 +16,7 @@ describe(`dds_refs tests with reference file`, () => {
   targets.setSuggestions({renames: true, includes: true})
   
   beforeAll(async () => {
-    await targets.loadProject(`.objrefs`);
+    await targets.loadProject({withRef: `.objrefs`});
 
     expect(targets.getTargets().length).toBeGreaterThan(0);
     targets.resolveBinder();

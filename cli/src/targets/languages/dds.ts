@@ -1,6 +1,6 @@
 import path from "path";
 import { DisplayFile as dds } from "vscode-displayfile/src/dspf";
-import { FileOptions, ILEObjectTarget, Targets } from "..";
+import { FileOptions, ILEObject, ILEObjectTarget, Targets } from "..";
 import { infoOut } from "../../cli";
 import { ExtensionMap } from "../languages";
 
@@ -12,13 +12,11 @@ export const ddsObjects: ExtensionMap = {
   prtf: `FILE`
 }
 
-export async function ddsTargetCallback(targets: Targets, filePath: string, content: string, options: FileOptions) {
+export async function ddsTargetCallback(targets: Targets, filePath: string, content: string, ileObject: ILEObject) {
   const eol = content.indexOf(`\r\n`) >= 0 ? `\r\n` : `\n`;
 
   const ddsFile = new dds();
   ddsFile.parse(content.split(eol));
-
-  const ileObject = await targets.resolvePathToObject(filePath, options.text);
 
   const target: ILEObjectTarget = {
     ...ileObject,

@@ -1,4 +1,4 @@
-import { FileOptions, ObjectType, Targets } from ".";
+import { FileOptions, ILEObject, ObjectType, Targets } from ".";
 import { clExtensions, clleTargetCallback, clObjects } from "./languages/clle";
 import { ddsExtension, ddsObjects, ddsTargetCallback } from "./languages/dds";
 import { rpgleExtensions, rpgleObjects, rpgleTargetCallback } from "./languages/rpgle";
@@ -7,7 +7,7 @@ import { binderExtensions, binderObjects, binderTargetCallback } from "./languag
 import { cmdExtensions, cmdObjects, cmdTargetCallback } from "./languages/cmd";
 import { noSourceObjects, noSourceTargetCallback, noSourceTargetObjects } from "./languages/nosrc";
 
-export type LanguageCallback = (targets: Targets, relativePath: string, content: string, options: FileOptions) => Promise<void>
+export type LanguageCallback = (targets: Targets, relativePath: string, content: string, ileObject: ILEObject) => Promise<void>
 interface LanguageGroup {
   extensions: string[];
   callback: LanguageCallback;
@@ -33,16 +33,16 @@ export class TargetsLanguageProvider {
     return this.languageTargets.map(lang => lang.extensions).flat();
   }
 
-  public getGlob() {
-    const allExtensions = this.getExtensions();
+  public getGlob(additionalExtensions: string[] = []): string {
+    const allExtensions = this.getExtensions().concat(additionalExtensions);
     return `**/*.{${allExtensions.join(`,`)},${allExtensions.map(e => e.toUpperCase()).join(`,`)}}`;
   }
 
-  public async handleLanguage(targets: Targets, relativePath: string, content: string, options: FileOptions = {}) {
+  public async handleLanguage(targets: Targets, relativePath: string, content: string, ileObject: ILEObject) {
     const ext = relativePath.split('.').pop()?.toLowerCase();
     const language = this.languageTargets.find(lang => lang.extensions.includes(ext));
     if (ext && language) {
-      await language.callback(targets, relativePath, content, options);
+      await language.callback(targets, relativePath, content, ileObject);
     }
   }
 
