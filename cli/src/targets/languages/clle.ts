@@ -1,6 +1,6 @@
 import path from "path";
 import { CLParser, DefinitionType, Module, File } from "vscode-clle/language";
-import { FileOptions, ILEObjectTarget, Targets } from "..";
+import { FileOptions, ILEObject, ILEObjectTarget, Targets } from "..";
 import { infoOut } from "../../cli";
 import { ExtensionMap } from "../languages";
 
@@ -11,14 +11,12 @@ export const clObjects: ExtensionMap = {
   clp: `PGM`
 }
 
-export async function clleTargetCallback(targets: Targets, filePath: string, content: string, options: FileOptions) {
+export async function clleTargetCallback(targets: Targets, filePath: string, content: string, ileObject: ILEObject) {
   const clDocs = new CLParser();
   const tokens = clDocs.parseDocument(content);
 
   const module = new Module();
   module.parseStatements(tokens);
-
-  const ileObject = await targets.resolvePathToObject(filePath);
 
   const pathDetail = path.parse(filePath);
   const target: ILEObjectTarget = {

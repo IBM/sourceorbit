@@ -37,7 +37,7 @@ export const sqlObjects: ExtensionMap = {
   'sqltrg': `PGM`
 }
 
-export async function sqlTargetCallback(targets: Targets, localPath: string, content: string, options: FileOptions) {
+export async function sqlTargetCallback(targets: Targets, localPath: string, content: string, ileObject: ILEObject) {
   const document = new Document(content);
 
   const pathDetail = path.parse(localPath);
@@ -130,16 +130,18 @@ export async function sqlTargetCallback(targets: Targets, localPath: string, con
             let hasLongName = mainDef.object.name && mainDef.object.name.length > 10 ? mainDef.object.name : undefined;
             let objectName = mainDef.object.system || trimQuotes(mainDef.object.name, `"`);
 
-            const extension = pathDetail.ext.substring(1);
+            // let ileObject: ILEObject = {
+            //   systemName: objectName.toUpperCase(),
+            //   longName: hasLongName,
+            //   type: targets.getObjectType(relativePath, mainDef.createType),
+            //   text: defaultObject.text,
+            //   relativePath,
+            //   extension
+            // }
 
-            let ileObject: ILEObject = {
-              systemName: objectName.toUpperCase(),
-              longName: hasLongName,
-              type: targets.getObjectType(relativePath, mainDef.createType),
-              text: options.text,
-              relativePath,
-              extension
-            }
+            ileObject.systemName = objectName.toUpperCase();
+            ileObject.longName = hasLongName;
+            ileObject.type = targets.getObjectType(relativePath, mainDef.createType);
 
             let suggestRename = false;
             const sqlFileName = pathDetail.name;
@@ -152,7 +154,7 @@ export async function sqlTargetCallback(targets: Targets, localPath: string, con
             }
 
             // Then make an extension suggestion
-            if (extension.toUpperCase() === `SQL` && mainDef.createType) {
+            if (ileObject.extension.toUpperCase() === `SQL` && mainDef.createType) {
               suggestRename = true;
             }
 
@@ -213,9 +215,6 @@ export async function sqlTargetCallback(targets: Targets, localPath: string, con
             if (newTarget.deps.length > 0) {
               infoOut(`Depends on: ${newTarget.deps.map(d => `${d.systemName}.${d.type}`).join(` `)}`);
             }
-
-            // So we can later resolve the path to the created object
-            targets.storeResolved(localPath, ileObject);
 
             targets.addNewTarget(newTarget);
 

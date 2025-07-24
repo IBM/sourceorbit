@@ -1,5 +1,5 @@
 import path from "path";
-import { FileOptions, ILEObjectTarget, Targets } from "..";
+import { FileOptions, ILEObject, ILEObjectTarget, Targets } from "..";
 import { infoOut } from "../../cli";
 import Parser from "vscode-rpgle/language/parser";
 import { IncludeStatement } from "vscode-rpgle/language/parserTypes";
@@ -20,7 +20,7 @@ interface RpgLookup {
 
 const includeFileCache: { [path: string]: string } = {};
 
-export async function rpgleTargetCallback(targets: Targets, localPath: string, content: string, options: FileOptions) {
+export async function rpgleTargetCallback(targets: Targets, localPath: string, content: string, ileObject: ILEObject) {
   const parser = setupParser(targets);
 
   const cache = await parser.getDocs(
@@ -33,9 +33,9 @@ export async function rpgleTargetCallback(targets: Targets, localPath: string, c
   );
 
   if (cache) {
-    const ileObject = await targets.resolvePathToObject(localPath, options.text);
-
+    const isFree = (content.length >= 6 ? content.substring(0, 6).toLowerCase() === `**free` : false);
     const pathDetail = path.parse(localPath);
+
     // define internal imports
     ileObject.imports = cache.procedures
       .filter((proc: any) => proc.keyword[`EXTPROC`] && !proc.keyword[`EXPORT`])
@@ -125,7 +125,7 @@ export async function rpgleTargetCallback(targets: Targets, localPath: string, c
             type: `includeFix`,
             line: include.line,
             change: {
-              lineContent: (options.isFree ? `` : ``.padEnd(6)) + `/copy '${theIncludePath}'`
+              lineContent: (isFree ? `` : ``.padEnd(6)) + `/copy '${theIncludePath}'`
             }
           });
         } else {

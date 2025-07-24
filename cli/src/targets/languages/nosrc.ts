@@ -1,4 +1,4 @@
-import { Targets, FileOptions } from "..";
+import { Targets, FileOptions, ILEObject } from "..";
 import { ExtensionMap } from "../languages";
 
 export const noSourceObjects = [`dtaara`, `mnucmd`, `msgf`, `dtaq`, `bnddir`];
@@ -10,6 +10,6 @@ export const noSourceTargetObjects: ExtensionMap = {
   bnddir: `BNDDIR`
 }
 
-export async function noSourceTargetCallback(targets: Targets, localPath: string, content: string, options: FileOptions) {
-  targets.resolvePathToObject(localPath, options.text);
+export async function noSourceTargetCallback(targets: Targets, localPath: string, content: string, ileObject: ILEObject) {
+  // Do nothing!
 }

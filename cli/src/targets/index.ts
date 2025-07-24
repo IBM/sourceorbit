@@ -153,7 +153,7 @@ export class Targets {
 		return [`MODULE`, `PGM`].includes(Targets.LanguageProvider.getObjectType(ext));
 	}
 
-	public async resolvePathToObject(localPath: string, newText?: string) {
+	public async resolvePathToObject(localPath: string, newText?: string): Promise<ILEObject|undefined> {
 		if (this.resolvedObjects[localPath]) {
 			if (newText) this.resolvedObjects[localPath].text = newText;
 			return this.resolvedObjects[localPath];
@@ -167,6 +167,15 @@ export class Targets {
 		const isProgram = this.assumePrograms ? this.extCanBeProgram(extension) : hasProgramAttribute;
 		const name = getSystemNameFromPath(hasProgramAttribute ? detail.name.substring(0, detail.name.length - 4) : detail.name);
 		const type: ObjectType = (isProgram ? "PGM" : this.getObjectType(relativePath, extension));
+
+		if (!type) {
+			this.logger.fileLog(relativePath, {
+				type: `warning`,
+				message: `Unknown object type for ${relativePath} with extension ${extension}.`
+			});
+			
+			return;
+		}
 
 		const theObject: ILEObject = {
 			systemName: name,
@@ -371,19 +380,8 @@ export class Targets {
 	}
 
 	// TODO: move this to language provider
-	getObjectType(relativePath: string, ext: string): ObjectType {
-		const objType = Targets.LanguageProvider.getObjectType(ext);
-
-		if (!objType) {
-			this.logger.fileLog(relativePath, {
-				type: `warning`,
-				message: `'${ext}' not found a matching object type. Defaulting to '${ext}'`
-			});
-
-			return (ext.toUpperCase() as ObjectType);
-		}
-
-		return objType;
+	getObjectType(relativePath: string, ext: string): ObjectType|undefined {
+		return Targets.LanguageProvider.getObjectType(ext);
 	}
 
 	public loadObjectsFromPaths(paths: string[]) {
@@ -408,9 +406,6 @@ export class Targets {
 			try {
 				const content = await this.fs.readFile(filePath);
 
-				// Really only applied to rpg
-				const isFree = (content.length >= 6 ? content.substring(0, 6).toLowerCase() === `**free` : false);
-
 				let textMatch;
 				try {
 					[textMatch] = content.match(TextRegex);
@@ -422,11 +417,14 @@ export class Targets {
 				} catch (e) { }
 
 				const options: FileOptions = {
-					isFree,
 					text: textMatch
 				};
 
-				await Targets.LanguageProvider.handleLanguage(this, filePath, content, options);
+  			const ileObject = await this.resolvePathToObject(filePath, options.text);
+				if (ileObject) {
+					await Targets.LanguageProvider.handleLanguage(this, filePath, content, ileObject);
+				}
+				
 			} catch (e) {
 				this.logger.fileLog(relative, {
 					message: `Failed to parse file.`,
