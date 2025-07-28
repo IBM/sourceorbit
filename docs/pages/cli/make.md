@@ -31,12 +31,12 @@ Usually, parents always need to be rebuilt to ensure level checking happens. If 
 When you use `so -bf make`, you can specify the following parameters to control the incremental build:
 
 * `-f`/`-l` to specify the list of sources to build. This can be a single file or a list of files.
-    * `so -bf make -f qrpglesrc/employees.pgm.sqlrpgle` will build the `EMPLOYEES.PGM` object.
-* With `-ip` (is-partial), then only the specified objects and its dependents will be put into the `makefile`.
-    * `so -bf make -f qrpglesrc/employees.pgm.sqlrpgle -ip` 
-		* This will generate a makefile only for the specific objects.
+    * `so -bf make -f qrpglesrc/employees.pgm.sqlrpgle` will build the `EMPLOYEES.PGM` object and the children for that object.
+		* Use option `-nc` (no-children) to not include children in the build.
 * With `-wp` (with-parents), then the parents of the specified objects will also be included in the `makefile`.
-    * `so -bf make -f qrpglesrc/employees.pgm.sqlrpgle -ip -wp`
+    * `so -bf make -f qrpglesrc/employees.pgm.sqlrpgle -wp`
+* With `-wpc` (with-parents-children), then the parents and children of the specified objects will also be included in the `makefile`.
+    * `so -bf make -f qrpglesrc/employees.pgm.sqlrpgle -wpc`
 
 ### General rule for builds
 

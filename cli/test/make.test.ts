@@ -191,7 +191,7 @@ test('generateTargets (post-resolve)', async () => {
   const project = new MakeProject(cwd, targets, new ReadFileSystem());
 
   const srvpgma = targets.getTarget({systemName: `SRVPGMA`, type: `SRVPGM`});
-  const srvpgmaRequirements = targets.getRequiredObjects([srvpgma]);
+  const srvpgmaRequirements = targets.getRequiredChildren([srvpgma]);
   expect(srvpgmaRequirements.length).toBe(3);
   expect(srvpgmaRequirements.map(r => r.systemName)).toEqual([
     `FILEB`,
@@ -199,7 +199,7 @@ test('generateTargets (post-resolve)', async () => {
     `SRVPGMA`
   ]);
 
-  project.setPartialOptions({partial: true, parents: false});
+  project.setPartialOptions({withChildren: true});
 
   const targetContent = project.generateTargets([srvpgma]);
 

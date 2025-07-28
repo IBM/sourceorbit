@@ -437,7 +437,6 @@ function setupParser(targets: Targets): Parser {
       }
     } else if (!includeFile.includes(`/`)) {
       const parent = path.basename(path.dirname(baseFile));
-      console.log(parent);
       includeFile = `${parent}/${includeFile}`;
 
 
