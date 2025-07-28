@@ -64,12 +64,7 @@ async function main() {
 
 			case '-nc':
 			case '--no-children':
-				warningOut(`--no-children is deprecated and is default when doing partial builds.`);
-				break;
-
-			case `-ip`:
-			case `--is-partial`:
-				cliSettings.makefileIsPartial = true;
+				cliSettings.makefileWithChildren = false;
 				break;
 
 			case `-wp`:
@@ -142,12 +137,16 @@ async function main() {
 				console.log(``);
 				console.log(`Options specific to '-bf make':`);
 				console.log(``);
-				console.log(`\t-ip`);
-				console.log(`\t--is-partial\tWill only generate targets that are needed for`);
-				console.log(`\t\t\tthe objects that are being built.`);
-				console.log(``);
 				console.log(`\t-wp`);
-				console.log(`\t--with-parents\tUsed with '-bf make' and will add parents of`);
+				console.log(`\t--with-parents\tWill add parents of`);
+				console.log(`\t\t\tobjects being partially built to the makefile.`);
+				console.log(``);
+				console.log(`\t-wpc`);
+				console.log(`\t--with-parents-children\tWill add children of parents`);
+				console.log(`\t\t\t\tto makefile.`);
+				console.log(``);
+				console.log(`\t-nc`);
+				console.log(`\t--no-children\tWill not add children of`);
 				console.log(`\t\t\tobjects being partially built to the makefile.`);
 				console.log(``);
 				process.exit(0);
@@ -251,11 +250,13 @@ async function main() {
 
 			await makeProj.setupSettings();
 			
-			makeProj.setPartialOptions({
-				partial: cliSettings.makefileIsPartial,
-				parents: cliSettings.makefileWithParents,
-				parentsChildren: cliSettings.makefileWithParentsChildren
-			})
+			if (cliSettings.lookupFiles) {
+				makeProj.setPartialOptions({
+					withChildren: cliSettings.makefileWithChildren,
+					parents: cliSettings.makefileWithParents,
+					parentsChildren: cliSettings.makefileWithParentsChildren
+				});
+			}
 
 			let specificObjects: ILEObject[] | undefined = cliSettings.lookupFiles ? cliSettings.lookupFiles.map(f => targets.getResolvedObject(path.join(cwd, f))).filter(o => o) : undefined;
 			writeFileSync(path.join(cwd, `makefile`), makeProj.getMakefile(specificObjects).join(`\n`));

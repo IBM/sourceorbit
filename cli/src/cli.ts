@@ -10,7 +10,7 @@ export let cliSettings = {
 	autoRename: false,
 	lookupFiles: undefined as string[]|undefined,
 	userBranch: ``,
-	makefileIsPartial: false,
+	makefileWithChildren: true,
 	makefileWithParents: false,
 	makefileWithParentsChildren: false,
 	assumeSourcesArePrograms: false,
