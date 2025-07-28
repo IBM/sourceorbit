@@ -302,7 +302,7 @@ describe(`company_system tests`, () => {
     const makeProject = new MakeProject(project.cwd, targets, fs);
     await makeProject.setupSettings();
 
-    makeProject.setPartialOptions({partial: false, parents: true});
+    makeProject.setPartialOptions({withChildren: true, parents: true});
 
     const deptsFile = targets.getTarget({systemName: `DEPTS`, type: `FILE`});
 
@@ -319,7 +319,7 @@ describe(`company_system tests`, () => {
     const makeProject = new MakeProject(project.cwd, targets, fs);
     await makeProject.setupSettings();
 
-    makeProject.setPartialOptions({partial: false, parents: true});
+    makeProject.setPartialOptions({withChildren: true, parents: true});
 
     const employeeFile = targets.getTarget({systemName: `EMPLOYEE`, type: `FILE`});
 
@@ -347,7 +347,7 @@ describe(`company_system tests`, () => {
     const makeProject = new MakeProject(project.cwd, targets, fs);
     await makeProject.setupSettings();
 
-    makeProject.setPartialOptions({partial: false, parents: true});
+    makeProject.setPartialOptions({withChildren: true, parents: true});
 
     const empFile = targets.getTarget({systemName: `EMPLOYEE`, type: `FILE`});
 

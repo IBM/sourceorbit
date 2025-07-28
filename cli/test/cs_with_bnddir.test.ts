@@ -96,9 +96,70 @@ describe(`pseudo tests`, () => {
     expect(steps.length).toBe(8);
   });
 
-  test('makefile partial', async () => {
+  test('makefile partial (without parents, object has no children)', async () => {
     const makefile = new MakeProject(targets.getCwd(), targets, fs);
-    makefile.setPartialOptions({partial: true, parents: true});
+    makefile.setPartialOptions({parents: false});
+    await makefile.setupSettings();
+
+    const resolvedObjects = targets.getResolvedObjects();
+
+    const nept = resolvedObjects.find(f => f.systemName === `NEMP` && f.type === `FILE`);
+    const targetsOut = makefile.generateTargets([nept]).join(`\n`);
+    console.log(targetsOut);
+
+    expect(targetsOut).toContain(`all: .logs .evfevent library $(PREPATH)/NEMP.FILE`);
+    expect(targetsOut).not.toContain(`$(PREPATH)/NEWEMP.PGM:`);
+
+    const rules = makefile.generateGenericRules([nept]).join(`\n`);
+    console.log(rules);
+
+    expect(rules).toContain(`$(PREPATH)/NEMP.FILE:`);
+  });
+
+  test('makefile partial (without parents, object with children)', async () => {
+    const makefile = new MakeProject(targets.getCwd(), targets, fs);
+    makefile.setPartialOptions({parents: false, withChildren: true});
+    await makefile.setupSettings();
+
+    const resolvedObjects = targets.getResolvedObjects();
+
+    const nept = resolvedObjects.find(f => f.systemName === `NEWEMP` && f.type === `PGM`);
+    const targetsOut = makefile.generateTargets([nept]).join(`\n`);
+    console.log(targetsOut);
+
+    expect(targetsOut).toContain(`all: .logs .evfevent library $(PREPATH)/NEWEMP.PGM`);
+    expect(targetsOut).toContain(`$(PREPATH)/NEWEMP.PGM:`);
+
+    const rules = makefile.generateGenericRules([nept]).join(`\n`);
+    console.log(rules);
+
+    expect(rules).toContain(`$(PREPATH)/NEMP.FILE:`);
+  });
+
+  test('makefile partial (without parents, object with children, but using withChildren false)', async () => {
+    const makefile = new MakeProject(targets.getCwd(), targets, fs);
+    makefile.setPartialOptions({parents: false, withChildren: false});
+    await makefile.setupSettings();
+
+    const resolvedObjects = targets.getResolvedObjects();
+
+    const nept = resolvedObjects.find(f => f.systemName === `NEWEMP` && f.type === `PGM`);
+    const targetsOut = makefile.generateTargets([nept]).join(`\n`);
+    console.log(targetsOut);
+
+    expect(targetsOut).toContain(`all: .logs .evfevent library $(PREPATH)/NEWEMP.PGM`);
+    expect(targetsOut).not.toContain(`$(PREPATH)/NEWEMP.PGM:`);
+
+    const rules = makefile.generateGenericRules([nept]).join(`\n`);
+    console.log(rules);
+
+    expect(rules).not.toContain(`$(PREPATH)/NEMP.FILE:`);
+    expect(rules).toContain(`$(PREPATH)/NEWEMP.PGM: qrpglesrc/newemp.pgm.sqlrpgle`);
+  });
+
+  test('makefile partial (with parents)', async () => {
+    const makefile = new MakeProject(targets.getCwd(), targets, fs);
+    makefile.setPartialOptions({parents: true});
     await makefile.setupSettings();
 
     const resolvedObjects = targets.getResolvedObjects();
@@ -116,6 +177,30 @@ describe(`pseudo tests`, () => {
     expect(rules).toContain(`$(PREPATH)/NEMP.FILE:`);
     expect(rules).toContain(`$(PREPATH)/NEWEMP.PGM:`);
     expect(rules).toContain(`$(PREPATH)/DEPTS.PGM:`);
+    expect(rules).not.toContain(`$(PREPATH)/EMPLOYEES.PGM:`);
+  });
+
+  test('makefile partial (with parents, and children parent)', async () => {
+    const makefile = new MakeProject(targets.getCwd(), targets, fs);
+    makefile.setPartialOptions({parents: true, parentsChildren: true});
+    await makefile.setupSettings();
+
+    const resolvedObjects = targets.getResolvedObjects();
+
+    const nept = resolvedObjects.find(f => f.systemName === `NEMP` && f.type === `FILE`);
+    const targetsOut = makefile.generateTargets([nept]).join(`\n`);
+    console.log(targetsOut);
+
+    expect(targetsOut).toContain(`all: .logs .evfevent library $(PREPATH)/NEMP.FILE $(PREPATH)/NEWEMP.PGM $(PREPATH)/DEPTS.PGM`);
+    expect(targetsOut).toContain(`$(PREPATH)/NEWEMP.PGM: $(PREPATH)/EMPLOYEE.FILE $(PREPATH)/NEMP.FILE`);
+
+    const rules = makefile.generateGenericRules([nept]).join(`\n`);
+    console.log(rules);
+
+    expect(rules).toContain(`$(PREPATH)/NEMP.FILE:`);
+    expect(rules).toContain(`$(PREPATH)/NEWEMP.PGM:`);
+    expect(rules).toContain(`$(PREPATH)/DEPTS.PGM:`);
+    expect(rules).toContain(`$(PREPATH)/EMPLOYEES.PGM:`);
   });
 
   test('ibmi-bob rules', () => {
