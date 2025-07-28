@@ -77,6 +77,11 @@ async function main() {
 				cliSettings.makefileWithParents = true;
 				break;
 
+			case `-wpc`:
+			case `--with-parents-children`:
+				cliSettings.makefileWithParentsChildren = true;
+				break;
+
 			case '-ap':
 			case '--assume-programs':
 				cliSettings.assumeSourcesArePrograms = true;
@@ -248,7 +253,8 @@ async function main() {
 			
 			makeProj.setPartialOptions({
 				partial: cliSettings.makefileIsPartial,
-				parents: cliSettings.makefileWithParents
+				parents: cliSettings.makefileWithParents,
+				parentsChildren: cliSettings.makefileWithParentsChildren
 			})
 
 			let specificObjects: ILEObject[] | undefined = cliSettings.lookupFiles ? cliSettings.lookupFiles.map(f => targets.getResolvedObject(path.join(cwd, f))).filter(o => o) : undefined;

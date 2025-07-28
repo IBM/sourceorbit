@@ -12,6 +12,7 @@ export let cliSettings = {
 	userBranch: ``,
 	makefileIsPartial: false,
 	makefileWithParents: false,
+	makefileWithParentsChildren: false,
 	assumeSourcesArePrograms: false,
 };
 

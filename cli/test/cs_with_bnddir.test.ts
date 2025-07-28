@@ -105,12 +105,17 @@ describe(`pseudo tests`, () => {
 
     const nept = resolvedObjects.find(f => f.systemName === `NEMP` && f.type === `FILE`);
     const targetsOut = makefile.generateTargets([nept]).join(`\n`);
+    console.log(targetsOut);
 
     expect(targetsOut).toContain(`all: .logs .evfevent library $(PREPATH)/NEMP.FILE $(PREPATH)/NEWEMP.PGM $(PREPATH)/DEPTS.PGM`);
     expect(targetsOut).not.toContain(`$(PREPATH)/NEWEMP.PGM:`);
 
     const rules = makefile.generateGenericRules([nept]).join(`\n`);
     console.log(rules);
+
+    expect(rules).toContain(`$(PREPATH)/NEMP.FILE:`);
+    expect(rules).toContain(`$(PREPATH)/NEWEMP.PGM:`);
+    expect(rules).toContain(`$(PREPATH)/DEPTS.PGM:`);
   });
 
   test('ibmi-bob rules', () => {

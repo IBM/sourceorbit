@@ -24,7 +24,7 @@ interface Step {
  * parents: this property controls the all target. It will include all the parents of partial build objects.
  * partial: if this property is true, the makefile will only include targets for the partial build objects (and optionally their parents)
  */
-type PartialOptions = { partial: boolean, parents: boolean };
+type PartialOptions = { partial?: boolean, parents?: boolean, parentsChildren?: boolean };
 
 interface PartialTargets {
 	partial: ILEObject[];
@@ -32,7 +32,7 @@ interface PartialTargets {
 }
 
 export class MakeProject {
-	private partialOptions: PartialOptions = { partial: false, parents: false };
+	private partialOptions: PartialOptions = { partial: false, parents: false, parentsChildren: false };
 	private settings: iProject = new iProject();
 	private projectActions: ProjectActions;
 	private actionsEnabled: boolean = false;
@@ -235,6 +235,8 @@ export class MakeProject {
 			return;
 		}
 
+		// Gets children of the partial build objects.
+		let allChildren: ILEObject[]|undefined = this.partialOptions.partial ? this.targets.getRequiredObjects(partialBuild) : undefined;
 		let allParents: ILEObject[]|undefined;
 
 		// we also want to build their parents too. We update `partialBuild`
@@ -256,7 +258,9 @@ export class MakeProject {
 			partialBuild = allParents;
 		}
 
-		let allChildren: ILEObject[]|undefined = this.partialOptions.partial ? this.targets.getRequiredObjects(partialBuild) : undefined;
+		if (this.partialOptions.parentsChildren) {
+			allChildren = this.targets.getRequiredObjects(partialBuild);
+		}
 
 		return {
 			partial: partialBuild,
