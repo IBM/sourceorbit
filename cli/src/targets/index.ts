@@ -762,7 +762,7 @@ export class Targets {
 	/**
 	 * Returns a list of all the required objects to build this target
 	 */
-	public getRequiredObjects(bases: (ILEObject|ILEObjectTarget)[]) {
+	public getRequiredChildren(bases: (ILEObject|ILEObjectTarget)[]) {
 		let deps: ILEObject[] = [];
 
 		const addDep = (dep: ILEObject|ILEObjectTarget) => {

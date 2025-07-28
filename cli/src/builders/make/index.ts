@@ -24,15 +24,19 @@ interface Step {
  * parents: this property controls the all target. It will include all the parents of partial build objects.
  * partial: if this property is true, the makefile will only include targets for the partial build objects (and optionally their parents)
  */
-type PartialOptions = { partial?: boolean, parents?: boolean, parentsChildren?: boolean };
+type PartialOptions = {
+	parents?: boolean,
+	withChildren?: boolean,
+	parentsChildren?: boolean 
+};
 
 interface PartialTargets {
-	partial: ILEObject[];
-	children?: ILEObject[];
+	targets: ILEObject[];
+	children: ILEObject[];
 }
 
 export class MakeProject {
-	private partialOptions: PartialOptions = { partial: false, parents: false, parentsChildren: false };
+	private partialOptions: PartialOptions|undefined
 	private settings: iProject = new iProject();
 	private projectActions: ProjectActions;
 	private actionsEnabled: boolean = false;
@@ -235,36 +239,37 @@ export class MakeProject {
 			return;
 		}
 
-		// Gets children of the partial build objects.
-		let allChildren: ILEObject[]|undefined = this.partialOptions.partial ? this.targets.getRequiredObjects(partialBuild) : undefined;
-		let allParents: ILEObject[]|undefined;
+		let children: ILEObject[] = [];
 
 		// we also want to build their parents too. We update `partialBuild`
 		// to include all the parents of the specific objects.
-		if (this.partialOptions.parents) {
-			allParents = [];
-			const impacts = partialBuild.map(o => this.targets.getImpactFor(o));
+		
+		const allParents: ILEObject[] = [];
+		const impacts = partialBuild.map(o => this.targets.getImpactFor(o));
 
-			const addImpact = (impactedObj: ImpactedObject) => {
-				if (!allParents.some(o => o.systemName === impactedObj.ileObject.systemName && o.type === impactedObj.ileObject.type)) {
-					allParents.push(impactedObj.ileObject);
-				}
-
-				impactedObj.children.forEach(child => addImpact(child));
+		const addImpact = (impactedObj: ImpactedObject) => {
+			if (!allParents.some(o => o.systemName === impactedObj.ileObject.systemName && o.type === impactedObj.ileObject.type)) {
+				allParents.push(impactedObj.ileObject);
 			}
 
-			impacts.forEach(impact => addImpact(impact));
+			impactedObj.children.forEach(child => addImpact(child));
+		}
 
+		impacts.forEach(impact => addImpact(impact));
+
+		if (this.partialOptions.parentsChildren) {
+			children = this.targets.getRequiredChildren(allParents);
+		} else if (this.partialOptions.withChildren) {
+			children = this.targets.getRequiredChildren(partialBuild);
+		}
+
+		if (this.partialOptions.parents) {
 			partialBuild = allParents;
 		}
 
-		if (this.partialOptions.parentsChildren) {
-			allChildren = this.targets.getRequiredObjects(partialBuild);
-		}
-
 		return {
-			partial: partialBuild,
-			children: allChildren
+			targets: partialBuild,
+			children: children
 		}
 	}
 
@@ -275,7 +280,7 @@ export class MakeProject {
 		const buildObjects = this.getPartialTargets(partialBuild);
 
 		if (buildObjects) {
-			partialBuild = buildObjects.partial;
+			partialBuild = buildObjects.targets;
 		}
 
 		// If we are in partial mode, we only want to generate targets for the specific objects
@@ -292,9 +297,19 @@ export class MakeProject {
 			)
 		}
 
-		if (buildObjects && buildObjects.children) {
+		let allTargetObjects: ILEObject[]|undefined = undefined;
+		if (this.partialOptions && buildObjects) {
+			allTargetObjects = [];
+			if (this.partialOptions.parentsChildren) {
+				allTargetObjects = partialBuild.concat(buildObjects.children || []).filter((t, i, self) => self.indexOf(t) === i);
+			} else if (this.partialOptions.withChildren) {
+				allTargetObjects = buildObjects.children.filter((t, i, self) => self.indexOf(t) === i);
+			}
+		}
+
+		if (allTargetObjects) {
 			// If we don't want the children to get built, we only generate the targets for the specific objects
-			for (const obj of buildObjects.children) {
+			for (const obj of allTargetObjects) {
 				if (obj.reference) continue; // Skip references
 
 				const target = this.targets.getTarget(obj);
@@ -328,13 +343,13 @@ export class MakeProject {
 		return lines;
 	}
 
-	public generateGenericRules(partialBuild?: ILEObject[]): string[] {
+	public generateGenericRules(buildFor?: ILEObject[]): string[] {
 		let lines = [];
 
-		const buildObjects = this.getPartialTargets(partialBuild);
+		const buildObjects = this.getPartialTargets(buildFor);
 
 		if (buildObjects) {
-			partialBuild = buildObjects.partial;
+			buildFor = buildObjects.children.concat(buildObjects.targets);
 		}
 
 		for (const entry of Object.entries(this.settings.compiles)) {
@@ -380,7 +395,7 @@ export class MakeProject {
 					for (const ileObject of objects) {
 						if (ileObject.reference) continue;
 
-						if (buildObjects && buildObjects.children && !buildObjects.children.some(o => o.systemName === ileObject.systemName && o.type === ileObject.type)) {
+						if (buildFor && !buildFor.some(o => o.systemName === ileObject.systemName && o.type === ileObject.type)) {
 							continue; // Skip this object
 						}
 						
