@@ -75,7 +75,7 @@ describe(`pseudo tests`, () => {
     expect(employees.deps.find(f => f.systemName === `EMPLOYEE` && f.type === `FILE`)).toBeDefined();
   });
 
-    test('makefile', async () => {
+  test('makefile', async () => {
     const makefile = new MakeProject(targets.getCwd(), targets, fs);
     await makefile.setupSettings();
 
@@ -94,6 +94,23 @@ describe(`pseudo tests`, () => {
     const steps = makefile.getSteps(empsSteps);
 
     expect(steps.length).toBe(8);
+  });
+
+  test('makefile partial', async () => {
+    const makefile = new MakeProject(targets.getCwd(), targets, fs);
+    makefile.setPartialOptions({partial: true, parents: true});
+    await makefile.setupSettings();
+
+    const resolvedObjects = targets.getResolvedObjects();
+
+    const nept = resolvedObjects.find(f => f.systemName === `NEMP` && f.type === `FILE`);
+    const targetsOut = makefile.generateTargets([nept]).join(`\n`);
+
+    expect(targetsOut).toContain(`all: .logs .evfevent library $(PREPATH)/NEMP.FILE $(PREPATH)/NEWEMP.PGM $(PREPATH)/DEPTS.PGM`);
+    expect(targetsOut).not.toContain(`$(PREPATH)/NEWEMP.PGM:`);
+
+    const rules = makefile.generateGenericRules([nept]).join(`\n`);
+    console.log(rules);
   });
 
   test('ibmi-bob rules', () => {
