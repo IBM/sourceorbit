@@ -153,7 +153,15 @@ describe(`Reference files`, () => {
     expect(refObjects[1]).toMatchObject({
       type: `SRVPGM`,
       systemName: `UTILS`,
-      exports: [`TOUPPER`, `TOLOWER`]
+      functions: [{
+        name: `TOUPPER`,
+        export: true,
+        lineRange: [6, 6]
+      }, {
+        name: `TOLOWER`,
+        export: true,
+        lineRange: [7, 7]
+      }],
     });
   });
 })

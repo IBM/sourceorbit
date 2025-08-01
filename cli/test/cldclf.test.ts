@@ -35,7 +35,6 @@ describe(`CL with DCLF`, () => {
     expect(apgm).toBeDefined();
 
     const logs = targets.logger.getLogsFor(apgm.relativePath);
-    console.log(logs);
     expect(logs.length).toBe(0);
 
     expect(apgm.deps.length).toBe(1);

@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 
-import { Targets } from '../src/targets'
+import { ILEObject, Targets } from '../src/targets'
 import { setupFixture } from './fixtures/projects';
 import { ReadFileSystem } from '../src/readFileSystem';
 
@@ -35,8 +35,13 @@ describe(`pr with mixed case exports exports `, () => {
 
     expect(srvPgmTarget.deps.length).toBe(1);
 
-    expect(srvPgmTarget.exports.length).toBe(3);
-    expect(srvPgmTarget.exports).toStrictEqual(srvPgmTarget.deps[0].exports);
+    expect(srvPgmTarget.functions.length).toBe(3);
+    
+    const exportsOf = (theObject: ILEObject) => {
+      return theObject.functions.filter(f => f.export).map(f => f.name);
+    }
+
+    expect(exportsOf(srvPgmTarget)).toStrictEqual(exportsOf(srvPgmTarget.deps[0]));
 
     expect(allLogs[srvPgmObj.relativePath].length).toBe(0);
   });

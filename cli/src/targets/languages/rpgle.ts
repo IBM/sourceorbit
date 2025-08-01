@@ -65,12 +65,13 @@ export async function rpgleTargetCallback(targets: Targets, localPath: string, c
     // define exported functions
     if (cache.keyword[`NOMAIN`]) {
       ileObject.type = `MODULE`;
-
-      // Note that we store exports as uppercase.
-      ileObject.exports = cache.procedures
-        .filter((proc: any) => proc.keyword[`EXPORT`])
-        .map(ref => ref.name.toUpperCase());
     }
+
+    ileObject.functions = cache.procedures.map(p => ({
+      name: p.name.toUpperCase(),
+      export: p.keyword[`EXPORT`] ? true : false,
+      lineRange: [p.range.start, p.range.end]
+    }));
 
     infoOut(`${ileObject.systemName}.${ileObject.type}: ${ileObject.relativePath}`);
 

@@ -21,7 +21,7 @@ export async function binderTargetCallback(targets: Targets, localPath: string, 
   const target: ILEObjectTarget = {
     ...ileObject,
     deps: [],
-    exports: []
+    functions: []
   };
 
   if (ileObject.extension === `binder`) {
@@ -58,10 +58,20 @@ export async function binderTargetCallback(targets: Targets, localPath: string, 
       const symbolTokens = parms[`SYMBOL`];
 
       if (symbolTokens.block && symbolTokens.block.length === 1 && symbolTokens.block[0].type === `string` && symbolTokens.block[0].value) {
-        target.exports.push(trimQuotes(symbolTokens.block[0].value));
+        // target.exports.push(trimQuotes(symbolTokens.block[0].value));
+        target.functions.push({
+          name: trimQuotes(symbolTokens.block[0].value),
+          export: true,
+          lineRange: [0, 0] //TODO: how to get line range?
+        });
       } else
         if (symbolTokens.block && symbolTokens.block.length === 1 && symbolTokens.block[0].type === `word` && symbolTokens.block[0].value) {
-          target.exports.push(trimQuotes(symbolTokens.block[0].value, `"`));
+          // target.exports.push(trimQuotes(symbolTokens.block[0].value, `"`));
+          target.functions.push({
+            name: trimQuotes(symbolTokens.block[0].value, `"`),
+            export: true,
+            lineRange: [0, 0] // TODO: how to get line range?
+          });
         } else {
           targets.logger.fileLog(ileObject.relativePath, {
             message: `Invalid EXPORT found. Single quote string expected.`,
@@ -81,7 +91,10 @@ export async function binderTargetCallback(targets: Targets, localPath: string, 
   }
 
   // Exports are always uppercase
-  target.exports = target.exports.map(e => e.toUpperCase());
+  target.functions = target.functions.map(e => ({
+    ...e,
+    name: e.name.toUpperCase()
+  }));
 
   targets.addNewTarget(target);
 }

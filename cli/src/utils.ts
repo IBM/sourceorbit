@@ -142,11 +142,14 @@ export function getReferenceObjectsFrom(content: string) {
 
 	const newLine = content.includes(`\r\n`) ? `\r\n` : `\n`;
 
+	let lineNumber = -1;
 	const lines = content.split(newLine);
 
 	let currentObject: ILEObject;
 
 	for (let line of lines) {
+		lineNumber++;
+		
 		const upperLine = line.trim().toUpperCase();
 		if (upperLine.length === 0) continue;
 		if (upperLine.startsWith(`#`)) continue;
@@ -154,7 +157,11 @@ export function getReferenceObjectsFrom(content: string) {
 		// If the line starts with space, then it's an export of the parent
 		if (line.startsWith(` `) || line.startsWith(`\t`)) {
 			if (currentObject) {
-				currentObject.exports.push(upperLine);
+				currentObject.functions.push({
+					name: upperLine,
+					export: true,
+					lineRange: [lineNumber, lineNumber]
+				});
 			}
 
 		} else {
@@ -167,7 +174,7 @@ export function getReferenceObjectsFrom(content: string) {
 			currentObject = {
 				systemName: objectParts[0],
 				type: objectParts[1] as ObjectType, //TODO: validate type
-				exports: [],
+				functions: [],
 				reference: true,
 			}
 
