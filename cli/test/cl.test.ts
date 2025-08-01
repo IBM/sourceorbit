@@ -10,7 +10,6 @@ describe(`CL parsing / generating`, () => {
     expect(command).toBe('CRTSQLRPGI');
     expect(Object.keys(parameters)).toHaveLength(8);
 
-    console.log(parameters);
     expect(parameters[`compileopt`]).toBe(`'TGTCCSID(*JOB)'`);
 
     const generated = toCl(command, parameters);

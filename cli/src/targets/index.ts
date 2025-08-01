@@ -25,6 +25,12 @@ export interface ParserError {
 
 export type ParserErrorCallback = (error: ParserError) => void;
 
+export interface ILEFunction {
+	name: string;
+	export?: boolean;
+	lineRange: [number, number];
+}
+
 export interface ILEObject {
 	systemName: string;
 	longName?: string;
@@ -36,7 +42,7 @@ export interface ILEObject {
 	reference?: boolean;
 
 	/** exported functions */
-	exports?: string[];
+	functions?: ILEFunction[];
 	/** each function import in the object */
 	imports?: string[];
 
@@ -483,15 +489,20 @@ export class Targets {
 		const allSrvPgms = this.getTargetsOfType(`SRVPGM`);
 		const allModules = this.getTargetsOfType(`MODULE`);
 
+		const exportsOf = (theObject: ILEObject) => {
+			return theObject.functions?.filter(f => f.export).map(f => f.name.toUpperCase()) || [];
+		}
+
 		for (const target of allSrvPgms) {
-			if (target.exports) {
+			const targetExports = exportsOf(target);
+			if (targetExports.length > 0) {
 				infoOut(`Resolving modules for ${target.systemName}.${target.type}`);
 
 				target.deps = [];
 
-				for (const exportName of target.exports) {
+				for (const exportName of targetExports) {
 					// We loop through each export of the service program and find the module that exports it
-					const foundModule = allModules.find(mod => mod.exports && mod.exports.includes(exportName.toUpperCase()));
+					const foundModule = allModules.find(mod => mod.functions && exportsOf(mod).includes(exportName.toUpperCase()));
 					if (foundModule) {
 						const alreadyBound = target.deps.some(dep => dep.systemName === foundModule.systemName && dep.type === `MODULE`);
 						if (!alreadyBound) {
@@ -506,7 +517,7 @@ export class Targets {
 					this.createOrAppend(this.projectBindingDirectory, target);
 
 					// Make sure we can resolve to this service program
-					for (const e of target.exports) {
+					for (const e of targetExports) {
 						this.resolvedExports[e.toUpperCase()] = target;
 					}
 				} else {
@@ -534,7 +545,7 @@ export class Targets {
 			currentTarget.deps = currentTarget.deps.filter(d => ![`SRVPGM`].includes(d.type));
 
 			for (const importName of currentTarget.imports) {
-				if (currentTarget.exports?.includes(importName.toUpperCase())) {
+				if (exportsOf(currentTarget).includes(importName.toUpperCase())) {
 					// This happens when a source copy has the prototype and the implementation (export)
 					continue; // Don't add imports that are also exports
 				}
@@ -551,7 +562,7 @@ export class Targets {
 				} else if ([`PGM`, `MODULE`].includes(currentTarget.type)) {
 					// Perhaps we're looking at a program object, which actually should be a multi
 					// module program, so we do a lookup for additional modules.
-					const possibleModuleDep = allModules.find(mod => mod.exports && mod.exports.includes(importName.toUpperCase()));
+					const possibleModuleDep = allModules.find(mod => mod.functions && exportsOf(mod).includes(importName.toUpperCase()));
 					if (possibleModuleDep) {
 						if (!newImports.some(i => i.systemName === possibleModuleDep.systemName && i.type === possibleModuleDep.type)) {
 							newImports.push(possibleModuleDep);
@@ -639,7 +650,7 @@ export class Targets {
 		const newModule: ILEObject = {
 			systemName: currentTarget.systemName,
 			imports: currentTarget.imports,
-			exports: [],
+			functions: [],
 			headers: currentTarget.headers,
 			type: `MODULE`,
 			relativePath: basePath,

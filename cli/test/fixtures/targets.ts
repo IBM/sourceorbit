@@ -52,7 +52,9 @@ export async function baseTargets(withDeps = false) {
   expect(moduleA.type).toBe(`MODULE`);
   expect(moduleA.extension).toBe(`rpgle`);
   expect(moduleA.relativePath).toBe(path.join(`qrpglesrc`, `moduleA.rpgle`));
-  moduleA.exports = [`SUMNUMS`];
+  moduleA.functions = [
+    {name: `SUMNUMS`, export: true, lineRange: [0, 0]},
+  ]
   
   // Module MODULEB.MODULE, which exports TOLOWER
   const moduleB = await targets.resolvePathToObject(path.join(cwd, `qrpglesrc`, `moduleB.sqlrpgle`));
@@ -60,7 +62,9 @@ export async function baseTargets(withDeps = false) {
   expect(moduleB.type).toBe(`MODULE`);
   expect(moduleB.extension).toBe(`sqlrpgle`);
   expect(moduleB.relativePath).toBe(path.join(`qrpglesrc`, `moduleB.sqlrpgle`));
-  moduleB.exports = [`TOLOWER`];
+  moduleB.functions = [
+    {name: `TOLOWER`, export: true, lineRange: [0, 0]},
+  ];
 
   // SRVPGMA.SRVPGM, which imports TOLOWER from MODULEB.MODULE and therefore exports TOLOWER
   const srvpgmAModule = await targets.resolvePathToObject(path.join(cwd, `qsrvsrc`, `srvpgmA.bnd`));
@@ -69,7 +73,9 @@ export async function baseTargets(withDeps = false) {
   expect(srvpgmAModule.extension).toBe(`bnd`);
   expect(srvpgmAModule.relativePath).toBe(path.join(`qsrvsrc`, `srvpgmA.bnd`));
   srvpgmAModule.imports = [`TOLOWER`];
-  srvpgmAModule.exports = [`TOLOWER`];
+  srvpgmAModule.functions = [
+    {name: `TOLOWER`, export: true, lineRange: [0, 0]},
+  ];
   
   // FILEA.FILE
   const fileA = await targets.resolvePathToObject(path.join(cwd, `qddssrc`, `fileA.sql`));
@@ -87,7 +93,9 @@ export async function baseTargets(withDeps = false) {
 
   // ORDENTSRV.SRVPGM, which exports/imports FIXTOTALS
   const ORDENTSRV = await targets.resolvePathToObject(path.join(cwd, `qbndsrc`, `ordentsrv.binder`));
-  ORDENTSRV.exports = [`FIXTOTALS`];
+  ORDENTSRV.functions = [
+    {name: `FIXTOTALS`, export: true, lineRange: [0, 0]}
+  ]
   ORDENTSRV.imports = [`FIXTOTALS`];
   expect(ORDENTSRV.systemName).toBe(`ORDENTSRV`);
   expect(ORDENTSRV.type).toBe(`SRVPGM`);
@@ -96,7 +104,9 @@ export async function baseTargets(withDeps = false) {
 
   // ORDENTMOD.MODULE which exports FIXTOTALS
   const ORDENTMOD = await targets.resolvePathToObject(path.join(cwd, `qrpglesrc`, `ordentmod.rpgle`));
-  ORDENTMOD.exports = [`FIXTOTALS`];
+  ORDENTMOD.functions = [
+    {name: `FIXTOTALS`, export: true, lineRange: [0, 0]}
+  ];
   expect(ORDENTMOD.systemName).toBe(`ORDENTMOD`);
   expect(ORDENTMOD.type).toBe(`MODULE`);
   expect(ORDENTMOD.extension).toBe(`rpgle`);
@@ -104,7 +114,9 @@ export async function baseTargets(withDeps = false) {
 
   // UNUSEDSRV.SRVPGM, which exports BIGNOPE and is not used.
   const UNUSEDSRV = await targets.resolvePathToObject(path.join(cwd, `qbndsrc`, `unusedsrv.binder`));
-  UNUSEDSRV.exports = [`BIGNOPE`];
+  UNUSEDSRV.functions = [
+    {name: `BIGNOPE`, export: true, lineRange: [0, 0]}
+  ];
   expect(UNUSEDSRV.systemName).toBe(`UNUSEDSRV`);
   expect(UNUSEDSRV.type).toBe(`SRVPGM`);
   expect(UNUSEDSRV.extension).toBe(`binder`);
@@ -138,26 +150,37 @@ export async function multiModuleObjects() {
 
   // Module that is required by the MYWEBAPP.PGM
   const handlerAMod = await targets.resolvePathToObject(path.join(cwd, `qrpglesrc`, `handlerA.rpgle`));
-  handlerAMod.exports = [`ROUTEHANDLERA`];
+  handlerAMod.functions = [
+    {name: `ROUTEHANDLERA`, export: true, lineRange: [0, 0]}
+  ]
   handlerAMod.imports = [`JSON_SQLRESULTSET`, `IL_RESPONSEWRITESTREAM`];
 
   // Another module that is required by the MYWEBAPP.PGM
   const handlerBMod = await targets.resolvePathToObject(path.join(cwd, `qrpglesrc`, `handlerB.rpgle`));
-  handlerBMod.exports = [`ROUTEHANDLERB`];
+  handlerBMod.functions = [
+    {name: `ROUTEHANDLERB`, export: true, lineRange: [0, 0]}
+  ]
   handlerBMod.imports = [`API_VALIDATE`, `JSON_SQLRESULTSET`, `IL_RESPONSEWRITESTREAM`];
 
   // Another module that is part of the JWTHANDLER.SRVPGM object
   const jwtHandlerMod = await targets.resolvePathToObject(path.join(cwd, `qrpglesrc`, `jwtHandler.rpgle`));
-  jwtHandlerMod.exports = [`JWT_MIDDLEWARE`];
+  jwtHandlerMod.functions = [
+    {name: `JWT_MIDDLEWARE`, export: true, lineRange: [0, 0]}
+  ]
 
   // Another module that is part of the JWTHANDLER.SRVPGM object
   const validateMod = await targets.resolvePathToObject(path.join(cwd, `qrpglesrc`, `validate.rpgle`));
-  validateMod.exports = [`API_VALIDATE`];
+  validateMod.functions = [
+    {name: `API_VALIDATE`, export: true, lineRange: [0, 0]}
+  ];
 
   // Service program for JWTHANDLER, used by MYWEBAPP
   const jwtHandlerSrv = await targets.resolvePathToObject(path.join(cwd, `qsrvsrc`, `utils.binder`));
   jwtHandlerSrv.imports = [`JWT_MIDDLEWARE`, `API_VALIDATE`];
-  jwtHandlerSrv.exports = [`JWT_MIDDLEWARE`, `API_VALIDATE`];
+  jwtHandlerSrv.functions = [
+    {name: `JWT_MIDDLEWARE`, export: true, lineRange: [0, 0]},
+    {name: `API_VALIDATE`, export: true, lineRange: [0, 0]}
+  ];
 
   targets.createOrAppend(myWebApp);
   targets.createOrAppend(handlerAMod);

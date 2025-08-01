@@ -326,8 +326,6 @@ describe(`company_system tests`, () => {
     // Generate targets on it's own will have BNDDIR, PGM, etc
     const headerContent = makeProject.generateTargets([employeeFile]);
 
-    console.log(headerContent.join(`\n`));
-
     const allTarget = headerContent.find(l => l.startsWith(`all:`));
     expect(allTarget).toBeDefined();
 
@@ -358,7 +356,6 @@ describe(`company_system tests`, () => {
     expect(allTarget).toBeDefined();
 
     const allTargets = allTarget.substring(5).split(` `);
-    console.log(allTargets);
     expect(allTargets[0]).toBe(`.logs`);
     expect(allTargets[1]).toBe(`.evfevent`);
     expect(allTargets[2]).toBe(`library`);
@@ -367,8 +364,6 @@ describe(`company_system tests`, () => {
     expect(allTargets).toContain(`$(PREPATH)/DEPTS.PGM`);
     expect(allTargets).toContain(`$(PREPATH)/SHOWEMPS.PGM`);
     expect(allTargets).toContain(`$(PREPATH)/GETTOTSAL.SRVPGM`);
-
-    console.log(headerContent.join(`\n`));
   });
 
   test(`Impact of EMPLOYEES`, () => {
