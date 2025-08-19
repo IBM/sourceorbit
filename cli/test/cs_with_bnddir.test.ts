@@ -66,6 +66,14 @@ describe(`pseudo tests`, () => {
     expect(empdetImpacts.find(f => f.systemName === `TEMPDETT` && f.type === `MODULE`)).toBeDefined();
   });
 
+  test('Deps are picked up for the service program', () => {
+    const empdet = targets.getTarget({systemName: `EMPDET`, type: `SRVPGM`});
+    expect(empdet).toBeDefined();
+
+    expect(empdet.deps.length).toBe(1);
+    expect(empdet.deps.find(f => f.systemName === `EMPDET` && f.type === `MODULE`)).toBeDefined();
+  });
+
   test('Deps are picked up for the module', () => {
     const empdet = targets.getTarget({systemName: `EMPDET`, type: `MODULE`});
     expect(empdet).toBeDefined();
