@@ -36,6 +36,14 @@ describe(`pseudo tests`, () => {
     expect(testModule.deps.find(f => f.systemName === `EMPLOYEE`)).toBeDefined();
     expect(testModule.deps.find(f => f.systemName === `DEPARTMENT`)).toBeDefined();
     expect(testModule.deps.find(f => f.systemName === `EMPDET` && f.type === `SRVPGM`)).toBeDefined();
+
+    const employees = targets.getTarget({systemName: `EMPLOYEES`, type: `PGM`});
+    expect(employees).toBeDefined();
+
+    expect(employees.deps.length).toBe(3);
+    expect(employees.deps.find(f => f.systemName === `EMPDET` && f.type === `SRVPGM`)).toBeDefined();
+    expect(employees.deps.find(f => f.systemName === `EMPS` && f.type === `FILE`)).toBeDefined();
+    expect(employees.deps.find(f => f.systemName === `EMPLOYEE` && f.type === `FILE`)).toBeDefined();
   });
 
   test(`We can get a list of headers`, () => {
