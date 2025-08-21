@@ -55,13 +55,11 @@ export class BobProject {
 
 		if (this.targets.binderRequired()) {
 			const servicePrograms = this.targets.getResolvedObjects(`SRVPGM`);
-			const relativePaths = servicePrograms.map(sp => path.dirname(sp.relativePath));
+			const relativePaths = [...new Set(servicePrograms.map(sp => path.dirname(sp.relativePath)))];
 
-			if (relativePaths.length === 1) {
+			if (relativePaths.length >= 1) {
 				// We know the rules
 				bnddirRulesDir = relativePaths[0];
-			} else if (relativePaths.length > 1) {
-				throw new Error(`All service programs must be in the same directory.`);
 			}
 		}
 
