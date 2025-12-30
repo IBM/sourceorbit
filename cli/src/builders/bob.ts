@@ -43,8 +43,6 @@ export class BobProject {
 		return list;
 	}
 
-	public 
-
 	public createRules(): OutFiles {
 		let output: OutFiles = {};
 		const subdirs = Object.keys(this.dirTargets);
