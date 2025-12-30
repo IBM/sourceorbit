@@ -79,6 +79,11 @@ export async function rpgleTargetCallback(targets: Targets, localPath: string, c
       ileObject.headers = [];
 
       cache.includes.forEach((include: IncludeStatement) => {
+        // Only process includes that are directly in this file, not nested includes
+        if (include.fromPath !== localPath) {
+          return;
+        }
+
         // RPGLE includes are always returned as posix paths
         // even on Windows. We need to do some magic to convert here for Windows systems
         include.toPath = toLocalPath(include.toPath);
