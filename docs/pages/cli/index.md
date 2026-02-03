@@ -29,8 +29,8 @@ Source Orbit CLI can generate different file formats using the `-bf <type>` para
 Types available:
 
 * `json`: Generate all dependency info as JSON
-* `bob`: Generate the required `Rules.mk` files for bob
-   *  See the documentation [here](https://ibm.github.io/ibmi-bob/#/prepare-the-project/rules.mk) on defining targets using Rules.mk in the Bob documentation.
+* `TOBI (FKA bob)`: Generate the required `Rules.mk` files for TOBI
+   *  See the documentation [here](https://ibm.github.io/ibmi-tobi/#/prepare-the-project/rules.mk) on defining targets using Rules.mk in the Bob documentation.
 * `make`: Generates a single makefile with the targets and rules
    *  [See more here](./pages/cli/make.md) for our make support.
 * `imd`: Generate analysis reports for branches
