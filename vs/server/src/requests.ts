@@ -18,7 +18,7 @@ export function setupRequestHandler(connection: Connection) {
 		return TargetsManager.getDepsForTarget(params[0], params[1]);
 	});
 
-	connection.onRequest(`getImpacts`, async (params: [string, string[]]) => {
+	connection.onRequest(`getImpactsToUris`, async (params: [string, string[]]) => {
 		const target = TargetsManager.getTargetsForWorkspaceUri(params[0]);
 
 		if (target) {
@@ -34,8 +34,40 @@ export function setupRequestHandler(connection: Connection) {
 		return [];
 	});
 
+	connection.onRequest(`getImpactsToObjects`, async (params: [string, ILEObject[]]) => {
+		const target = TargetsManager.getTargetsForWorkspaceUri(params[0]);
+
+		if (target) {
+			const ileObjects = params[1];
+
+			return ileObjects.map(ileObject => target.getImpactFor(ileObject));
+		}
+
+		return [];
+	});
+
 	connection.onRequest(`reloadProject`, (params: [string]) => {
 		return initAndRefresh(params[0]);
+	});
+
+	connection.onRequest(`resolvePathToObject`, async (params: [string, string]) => {
+		const target = TargetsManager.getTargetsForWorkspaceUri(params[0]);
+
+		if (target) {
+			return await target.resolvePathToObject(params[1]);
+		}
+
+		return undefined;
+	});
+
+	connection.onRequest(`getExports`, async (params: [string]) => {
+		const target = TargetsManager.getTargetsForWorkspaceUri(params[0]);
+
+		if (target) {
+			return target.getExports();
+		}
+
+		return {};
 	});
 
 	connection.onRequest(`fixProject`, (params: [string, keyof TargetSuggestions]) => {

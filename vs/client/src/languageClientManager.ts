@@ -78,6 +78,14 @@ export class LanguageClientManager {
 		}
 	}
 
+	public static async resolvePathToObject(workspaceFolder: WorkspaceFolder, localPath: string): Promise<ILEObject | undefined> {
+		if (LanguageClientManager.client) {
+			return await LanguageClientManager.client.sendRequest<ILEObject | undefined>(`resolvePathToObject`, [workspaceFolder.uri.toString(), localPath]);
+		} else {
+			return undefined;
+		}
+	}
+
 	public static async getDeps(workspaceFolder: WorkspaceFolder, ileObject: ILEObject): Promise<ILEObject[]> {
 		if (LanguageClientManager.client) {
 			return await LanguageClientManager.client.sendRequest<ILEObject[]>(`getDeps`, [workspaceFolder.uri.toString(), ileObject]);
@@ -86,11 +94,27 @@ export class LanguageClientManager {
 		}
 	}
 
-	public static async getImpacts(workspaceFolder: WorkspaceFolder, fileUris: Uri[]): Promise<ImpactedObject[]> {
+	public static async getImpactsToUris(workspaceFolder: WorkspaceFolder, fileUris: Uri[]): Promise<ImpactedObject[]> {
 		if (LanguageClientManager.client) {
-			return await LanguageClientManager.client.sendRequest<ImpactedObject[]>(`getImpacts`, [workspaceFolder.uri.toString(), fileUris.map(uri => uri.toString())]);
+			return await LanguageClientManager.client.sendRequest<ImpactedObject[]>(`getImpactsToUris`, [workspaceFolder.uri.toString(), fileUris.map(uri => uri.toString())]);
 		} else {
 			return [];
+		}
+	}
+
+	public static async getImpactsToObjects(workspaceFolder: WorkspaceFolder, ileObjects: ILEObject[]): Promise<ImpactedObject[]> {
+		if (LanguageClientManager.client) {
+			return await LanguageClientManager.client.sendRequest<ImpactedObject[]>(`getImpactsToObjects`, [workspaceFolder.uri.toString(), ileObjects]);
+		} else {
+			return [];
+		}
+	}
+
+	public static async getExports(workspaceFolder: WorkspaceFolder): Promise<{ [key: string]: ILEObject }> {
+		if (LanguageClientManager.client) {
+			return await LanguageClientManager.client.sendRequest<{ [key: string]: ILEObject }>(`getExports`, [workspaceFolder.uri.toString()]);
+		} else {
+			return {};
 		}
 	}
 
