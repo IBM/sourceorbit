@@ -280,8 +280,11 @@ export function globalEntryIsValid(fullPath: string, search: string, ignoreBase?
 		}
 	}
 
-	const baseParts = fullPath.toUpperCase().split(path.sep);
-	const nameParts = search.split(path.posix.sep);
+	// Normalize path separators to forward slashes before splitting
+	// This ensures cross-platform compatibility (Windows uses \, Unix uses /)
+	const normalizedPath = fullPath.replace(/\\/g, '/');
+	const baseParts = normalizedPath.toUpperCase().split('/');
+	const nameParts = search.split('/');
 
 	// Check the preceding parts of the path match
 	if (nameParts.length > 1) {

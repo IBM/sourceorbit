@@ -46,6 +46,21 @@ describe(`pseudo tests`, () => {
     expect(testModule.deps.find(f => f.systemName === `EMPDET` && f.type === `MODULE`)).toBeDefined();
   });
 
+  test('Imports are resolved from include files (cross-platform path fix)', () => {
+    // This test validates the fix for the path separator bug where imports
+    // from .rpgleinc files were not being resolved in the VS Code extension
+    const empdet = targets.getTarget({systemName: `EMPDET`, type: `MODULE`});
+    expect(empdet).toBeDefined();
+
+    // The EMPDET module should have imports from qrpgleref/empdet.rpgleinc
+    // This was failing before the fix because globalEntryIsValid() couldn't
+    // match paths with different separators (/ vs \)
+    expect(empdet.imports).toBeDefined();
+    expect(empdet.imports.length).toBe(2);
+    expect(empdet.imports).toContain('GETDEPTDETAIL');
+    expect(empdet.imports).toContain('GETEMPLOYEEDETAIL');
+  });
+
   test('Deps are picked up for the module', () => {
     const empdet = targets.getTarget({systemName: `EMPDET`, type: `MODULE`});
     expect(empdet).toBeDefined();
